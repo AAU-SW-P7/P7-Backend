@@ -26,9 +26,6 @@ SECRET_KEY = 'django-insecure-^pxui41@j26x%)!9bgbwljhi!32xfj(nh2a2tsv=utx2ls2)zu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "130.225.39.162"]
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -53,8 +50,37 @@ MIDDLEWARE = [
 ]
 
 # CORS: allow Next.js origins
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+ALLOWED_HOSTS = [
+    "localhost", 
+    "127.0.0.1", 
+    "130.225.39.162", 
+    "backend", 
+    "frontend"
+]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost", 
+    "https://localhost", 
+    "http://127.0.0.1",
+    "https://127.0.0.1",
+    "http://130.225.39.162",
+    "https://130.225.39.162",
+    "http://frontend:3000", 
+    "https://frontend:3000", 
+    "http://backend:8000", 
+    "https://backend:8000",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost", 
+    "https://localhost", 
+    "http://127.0.0.1",
+    "https://127.0.0.1",
+    "http://130.225.39.162",
+    "https://130.225.39.162",
+    "http://frontend:3000", 
+    "https://frontend:3000", 
+    "http://backend:8000", 
+    "https://backend:8000",
+]
 
 ROOT_URLCONF = 'p7.urls'
 
