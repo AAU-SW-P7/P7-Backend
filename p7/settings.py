@@ -52,6 +52,7 @@ MIDDLEWARE = [
 # CORS: allow Next.js origins
 ALLOWED_HOSTS = [
     "localhost", 
+    "api.localhost",
     "127.0.0.1", 
     "130.225.39.162", 
     "backend", 
@@ -60,6 +61,8 @@ ALLOWED_HOSTS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost", 
     "https://localhost", 
+    "http://api.localhost",
+    "https://api.localhost",
     "http://127.0.0.1",
     "https://127.0.0.1",
     "http://130.225.39.162",
@@ -72,6 +75,8 @@ CORS_ALLOWED_ORIGINS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost", 
     "https://localhost", 
+    "http://api.localhost",
+    "https://api.localhost",
     "http://127.0.0.1",
     "https://127.0.0.1",
     "http://130.225.39.162",
@@ -108,12 +113,12 @@ WSGI_APPLICATION = 'p7.wsgi.application'
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": os.getenv("POSTGRES_ENGINE"),
         "NAME": os.getenv("POSTGRES_DB"),
         "USER": os.getenv("POSTGRES_USER"),
         "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
-        "HOST": "p7",
-        "PORT": 5432,
+        "HOST": os.getenv("POSTGRES_HOST"),
+        "PORT": os.getenv("POSTGRES_PORT"),
     }
 }
 
