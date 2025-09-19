@@ -9,15 +9,6 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-HTTP_TIMEOUT_SECONDS = 60          # per-request timeout
-MAX_TOTAL_FILES = None             # set an int to hard-cap results, e.g., 20_000
-RETRY_EXECUTE = 5
-FIELDS = (
-    "nextPageToken,"
-    "files(id,name,mimeType,size,modifiedTime,parents,owners(displayName,emailAddress),"
-    "driveId,trashed,webViewLink,iconLink)"
-)
-
 def fetch_drive_files(request):
     """
     Fetch files from Google Drive for a given user.
@@ -45,19 +36,34 @@ def fetch_drive_files(request):
     if not refresh_token:
         return JsonResponse({"error": "No refresh_token available"}, status=400)
 
+    # Ensure required OAuth fields are present (avoid refresh error)
+    token_uri = "https://oauth2.googleapis.com/token"
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    missing = [name for name, val in (("refresh_token", refresh_token),
+                                       ("token_uri", token_uri),
+                                       ("client_id", client_id),
+                                       ("client_secret", client_secret)) if not val]
+    if missing:
+        return JsonResponse(
+            {"error": "Missing OAuth fields required to refresh token", "missing": missing},
+            status=500,
+        )
+
     # Build credentials object. token may be stale; refresh() will update it.
     creds = Credentials(
-        token=access_token,
+        token=access_token or None,
         refresh_token=refresh_token,
-        token_uri="https://oauth2.googleapis.com/token",
-        client_id=getattr(settings, "GOOGLE_CLIENT_ID", os.getenv("GOOGLE_ID")),
-        client_secret=getattr(settings, "GOOGLE_CLIENT_SECRET", os.getenv("GOOGLE_SECRET")),
+        token_uri=token_uri,
+        client_id=client_id,
+        client_secret=client_secret,
         scopes=["https://www.googleapis.com/auth/drive.readonly"],
     )
 
     try:
         # Refresh if needed (this will update creds.token)
         if not creds.valid:
+            print("Refreshing Google access token...")
             creds.refresh(Request())
 
         # Optionally persist the new access_token back to DB so next calls use it
