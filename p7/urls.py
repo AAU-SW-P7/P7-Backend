@@ -18,10 +18,10 @@ from django.contrib import admin
 from django.urls import path
 
 from api.views import hello
-from api.GoogleDriveFetcher import getGoogleDriveFiles
+from api.GoogleDriveFetcher import fetch_drive_files
 
 urlpatterns = [
     path("django/admin/", admin.site.urls),
     path("django/hi/", hello),
-    path("django/getGoogleDriveFiles", getGoogleDriveFiles)
+    path("django/getGoogleDriveFiles", fetch_drive_files)
 ]
