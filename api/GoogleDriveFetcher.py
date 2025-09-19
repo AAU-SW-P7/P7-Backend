@@ -21,7 +21,7 @@ def fetch_drive_files(request):
         return JsonResponse({"error": "userId required"}, status=400)
 
     # Read tokens from DB (simple raw SQL; adapt if you have an ORM model)
-    with connection.cursor() as cuarsor:
+    with connection.cursor() as cursor:
         cursor.execute(
             "SELECT access_token, refresh_token FROM accounts WHERE \"userId\" = %s LIMIT 1",
             [int(user_id)],
@@ -43,7 +43,7 @@ def fetch_drive_files(request):
         token_uri="https://oauth2.googleapis.com/token",
         client_id=getattr(settings, "GOOGLE_CLIENT_ID", os.getenv("GOOGLE_ID")),
         client_secret=getattr(settings, "GOOGLE_CLIENT_SECRET", os.getenv("GOOGLE_SECRET")),
-        scopes=["https://www.googleapis.com/auth/drive.metadata.readonly"],
+        scopes=["https://www.googleapis.com/auth/drive.readonly"],
     )
 
     try:
@@ -62,7 +62,7 @@ def fetch_drive_files(request):
 
         # Build Drive service and list files
         service = build("drive", "v3", credentials=creds)
-        results = service.files().list(pageSize=20, fields="files(id, name, mimeType)").execute()
+        results = service.files().list(pageSize=1000, fields="files(id, name, mimeType)").execute()
         files = results.get("files", [])
 
         return JsonResponse({"files": files})
