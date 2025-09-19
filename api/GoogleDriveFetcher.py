@@ -9,6 +9,15 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
+HTTP_TIMEOUT_SECONDS = 60          # per-request timeout
+MAX_TOTAL_FILES = None             # set an int to hard-cap results, e.g., 20_000
+RETRY_EXECUTE = 5
+FIELDS = (
+    "nextPageToken,"
+    "files(id,name,mimeType,size,modifiedTime,parents,owners(displayName,emailAddress),"
+    "driveId,trashed,webViewLink,iconLink)"
+)
+
 def fetch_drive_files(request):
     """
     Fetch files from Google Drive for a given user.
@@ -62,10 +71,29 @@ def fetch_drive_files(request):
 
         # Build Drive service and list files
         service = build("drive", "v3", credentials=creds)
-        results = service.files().list(pageSize=1000, fields="files(id, name, mimeType)").execute()
-        files = results.get("files", [])
+        # Request all file fields and paginate through results
+        files = []
+        page_token = None
+        while True:
+            resp = service.files().list(
+                pageSize=1000,
+                fields="nextPageToken, files(id, name, parents, " \
+                "                            capabilities/canCopy, capabilities/canDownload, downloadRestrictions, " \
+                "                            kind, mimeType, starred, " \
+                "                            trashed, webContentLink, webViewLink, " \
+                "                            iconLink, hasThumbnail, viewedByMeTime, " \
+                "                            createdTime, modifiedTime, shared, " \
+                "                            ownedByMe, originalFilename, fullFileExtension, " \
+                "                            size)",
+                pageToken=page_token,
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True,
+            ).execute()
+            files.extend(resp.get("files", []))
+            page_token = resp.get("nextPageToken")
+            if not page_token:
+                break
 
         return JsonResponse({"files": files})
-
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
