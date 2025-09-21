@@ -11,7 +11,7 @@ CREATE TABLE users
 (
   id SERIAL,
   name VARCHAR(255),
-  email VARCHAR(255),
+  email VARCHAR(255) NOT NULL,
   "emailVerified" TIMESTAMPTZ,
   image TEXT,
   provider TEXT,
@@ -26,7 +26,7 @@ CREATE TABLE accounts
   type VARCHAR(255),
   provider TEXT,
   "providerAccountId" TEXT,
-  email VARCHAR(256),
+  email VARCHAR(255) NOT NULL,
   refresh_token TEXT,
   access_token TEXT,
   expires_at BIGINT,
