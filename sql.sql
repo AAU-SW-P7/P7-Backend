@@ -6,14 +6,27 @@ CREATE TABLE verification_token
  
   PRIMARY KEY (identifier, token)
 );
+
+CREATE TABLE users
+(
+  id SERIAL,
+  name VARCHAR(255),
+  email VARCHAR(255),
+  "emailVerified" TIMESTAMPTZ,
+  image TEXT,
+  provider TEXT,
+ 
+  PRIMARY KEY (id)
+);
  
 CREATE TABLE accounts
 (
   id SERIAL,
-  "userId" INTEGER NOT NULL,
-  type VARCHAR(255) NOT NULL,
-  provider VARCHAR(255) NOT NULL,
-  "providerAccountId" VARCHAR(255) NOT NULL,
+  "userId" SERIAL NOT NULL REFERENCES users(id),
+  type VARCHAR(255),
+  provider TEXT,
+  "providerAccountId" TEXT,
+  email VARCHAR(256),
   refresh_token TEXT,
   access_token TEXT,
   expires_at BIGINT,
@@ -31,17 +44,6 @@ CREATE TABLE sessions
   "userId" INTEGER NOT NULL,
   expires TIMESTAMPTZ NOT NULL,
   "sessionToken" VARCHAR(255) NOT NULL,
- 
-  PRIMARY KEY (id)
-);
- 
-CREATE TABLE users
-(
-  id SERIAL,
-  name VARCHAR(255),
-  email VARCHAR(255),
-  "emailVerified" TIMESTAMPTZ,
-  image TEXT,
  
   PRIMARY KEY (id)
 );
