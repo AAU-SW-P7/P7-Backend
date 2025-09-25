@@ -71,7 +71,7 @@ def fetch_drive_files(request):
         if new_token and new_token != access_token:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "UPDATE accounts SET access_token = %s WHERE \"userId\" = %s",
+                    "UPDATE accounts SET access_token = %s WHERE \"userId\" = %s and provider = 'google'",
                     [new_token, int(user_id)],
                 )
 
@@ -100,6 +100,6 @@ def fetch_drive_files(request):
             if not page_token:
                 break
 
-        return JsonResponse({"files": files})
+        return JsonResponse(files, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
