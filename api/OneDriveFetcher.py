@@ -108,7 +108,18 @@ def fetch_drive_files(request):
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
-    response = requests.get("https://graph.microsoft.com/v1.0/me/drive/root/children", headers=headers)
+
+    # Option A — recommended: use the special 'documents' folder (not affected by localized display name)
+    url = "https://graph.microsoft.com/v1.0/me/drive/special/documents/children"
+
+    # Option B — use the folder path (works if the folder name is exactly "Dokumenter")
+    # url = "https://graph.microsoft.com/v1.0/me/drive/root:/Dokumenter:/children"
+
+    # Option C — use the item's id (stable). Replace item_id with the id from your metadata.
+    # item_id = "424E269D1E5CEBB3!155214"
+    # url = f"https://graph.microsoft.com/v1.0/me/drive/items/{item_id}/children"
+
+    response = requests.get(url, headers=headers)
 
     if response.status_code != 200:
         return JsonResponse(
