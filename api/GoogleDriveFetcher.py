@@ -23,7 +23,7 @@ def fetch_drive_files(request):
     # Read tokens from DB (simple raw SQL; adapt if you have an ORM model)
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT access_token, refresh_token FROM accounts WHERE \"userId\" = %s LIMIT 1",
+            "SELECT access_token, refresh_token FROM accounts WHERE \"userId\" = %s and provider = 'google' LIMIT 1",
             [int(user_id)],
         )
         row = cursor.fetchone()
