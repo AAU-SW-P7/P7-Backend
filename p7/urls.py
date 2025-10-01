@@ -18,8 +18,14 @@ from django.contrib import admin
 from django.urls import path
 
 from api.views import hello
+from api.DropboxFetcher import fetch_drive_files as fetch_dropbox_files
+from api.GoogleDriveFetcher import fetch_drive_files as fetch_google_drive_files
+from api.OneDriveFetcher import fetch_drive_files as fetch_onedrive_files
 
 urlpatterns = [
     path("django/admin/", admin.site.urls),
     path("django/hi/", hello),
+    path("django/getDropboxFiles", fetch_dropbox_files),
+    path("django/getGoogleDriveFiles", fetch_google_drive_files),
+    path("django/getOneDriveFiles", fetch_onedrive_files)
 ]
