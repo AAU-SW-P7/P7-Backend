@@ -1,6 +1,8 @@
+"""API endpoints for interacting with Google Drive via Django Ninja."""
 import os
+import requests
 
-from django.conf import settings
+from ninja import Router
 from django.http import JsonResponse
 from django.db import connection
 
@@ -9,7 +11,12 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-def fetch_drive_files(request):
+router = Router()
+
+router.get("/")
+
+# If someone can refactor to remove 2 local variables, then please do.
+def fetch_drive_files(request): # pylint: disable=too-many-locals
     """
     Fetch files from Google Drive for a given user.
     Uses access_token and refresh_token stored in the `accounts` table.
@@ -23,7 +30,9 @@ def fetch_drive_files(request):
     # Read tokens from DB (simple raw SQL; adapt if you have an ORM model)
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT access_token, refresh_token FROM accounts WHERE \"userId\" = %s and provider = 'google' LIMIT 1",
+            "SELECT access_token, refresh_token " \
+            "FROM accounts " \
+            "WHERE \"userId\" = %s and provider = 'google' LIMIT 1",
             [int(user_id)],
         )
         row = cursor.fetchone()
@@ -71,7 +80,8 @@ def fetch_drive_files(request):
         if new_token and new_token != access_token:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "UPDATE accounts SET access_token = %s WHERE \"userId\" = %s and provider = 'google'",
+                    "UPDATE accounts SET access_token = %s " \
+                    "WHERE \"userId\" = %s and provider = 'google'",
                     [new_token, int(user_id)],
                 )
 
@@ -81,10 +91,12 @@ def fetch_drive_files(request):
         files = []
         page_token = None
         while True:
-            resp = service.files().list(
+            # If someone can fix service has no files member, please do.
+            resp = service.files().list( # pylint: disable=no-member
                 pageSize=1000,
                 fields="nextPageToken, files(id, name, parents, " \
-                "                            capabilities/canCopy, capabilities/canDownload, downloadRestrictions, " \
+                "                            capabilities/canCopy, capabilities/canDownload, " \
+                "                            downloadRestrictions, " \
                 "                            kind, mimeType, starred, " \
                 "                            trashed, webContentLink, webViewLink, " \
                 "                            iconLink, hasThumbnail, viewedByMeTime, " \
@@ -101,5 +113,5 @@ def fetch_drive_files(request):
                 break
 
         return JsonResponse(files, safe=False)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except (requests.RequestException, ValueError, KeyError) as e:
+        return JsonResponse({"error": "Error fetching files", "details": str(e)}, status=500)
