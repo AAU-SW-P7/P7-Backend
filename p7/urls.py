@@ -19,9 +19,9 @@ from django.urls import path
 
 
 from .api import api
-from api.DropboxFetcher import fetch_drive_files as fetch_dropbox_files
-from api.GoogleDriveFetcher import fetch_drive_files as fetch_google_drive_files
-from api.OneDriveFetcher import fetch_drive_files as fetch_onedrive_files
+from backend.api.dropbox_fetcher import fetch_drive_files as fetch_dropbox_files
+from backend.api.google_drive_fetcher import fetch_drive_files as fetch_google_drive_files
+from backend.api.onedrive_fetcher import fetch_drive_files as fetch_onedrive_files
 
 
 
