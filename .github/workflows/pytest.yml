@@ -1,7 +1,8 @@
 name: pytest
 on:
   pull_request:
-    branches: ["main", "staging", "setupTestFrameworks"]
+    branches: 
+      - '**'
   
   jobs: 
     build-test:
