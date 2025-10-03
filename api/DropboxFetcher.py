@@ -2,30 +2,16 @@ import requests
 
 from django.conf import settings
 from django.http import JsonResponse
-from django.db import connection
+from repository.service import get_tokens
 
 def fetch_drive_files(request):
     # Determine user id
     user_id = getattr(request.user, "id", None) or request.GET.get("userId")
     if not user_id:
         return JsonResponse({"error": "userId required"}, status=400)
-
-    # Read token from DB (simple raw SQL; adapt if you have an ORM model)
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT accessToken, refreshToken FROM service WHERE \"userId\" = %s and name = 'dropbox' LIMIT 1",
-            [int(user_id)],
-        )
-        row = cursor.fetchone()
-
-    if not row:
-        return JsonResponse({"error": "No account tokens found for user"}, status=404)
-
-    access_token, refresh_token = row
-
-    if not refresh_token:
-        return JsonResponse({"error": "No refresh_token available"}, status=400)
-
+    
+    access_token, refresh_token = get_tokens(user_id, 'dropbox')
+    
     try:
         # Fetch root folder metadata
         url = "https://api.dropboxapi.com/2/files/list_folder"

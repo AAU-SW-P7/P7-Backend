@@ -1,3 +1,4 @@
+# The model we use for our database
 from django.db import models
 
 class User(models.Model):
