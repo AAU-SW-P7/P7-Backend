@@ -4,21 +4,21 @@ on:
     branches: 
     - '**'
   
-  jobs: 
-    build-test:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-        - name: Set up Python 3.11
-          uses: actions/setup-python@v4
-          with:
-            python-version: 3.11
-        - name: Install dependencies
-          run: |
-            python -m pip install --upgrade pip==25.2
-            pip install -r backend/requirements.txt
-        - name: Run tests
-          run: |
-            cd test
-            pytest
+jobs: 
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip==25.2
+          pip install -r backend/requirements.txt
+      - name: Run tests
+        run: |
+          cd test
+          pytest
           
