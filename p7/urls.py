@@ -19,16 +19,8 @@ from django.urls import path
 
 
 from .api import api
-from backend.api.dropbox_fetcher import fetch_drive_files as fetch_dropbox_files
-from backend.api.google_drive_fetcher import fetch_drive_files as fetch_google_drive_files
-from backend.api.onedrive_fetcher import fetch_drive_files as fetch_onedrive_files
-
-
-
 
 urlpatterns = [
     path("django/admin/", admin.site.urls),
-    path("django/getGoogleDriveFiles", fetch_google_drive_files),
-    path("django/getOneDriveFiles", fetch_onedrive_files),
     path("api/", api.urls)
 ]
