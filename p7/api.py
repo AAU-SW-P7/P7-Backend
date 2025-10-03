@@ -1,8 +1,8 @@
 """API routing for the P7 backend."""
 from ninja import NinjaAPI
-from .getDropboxFiles.api import router as dropbox_router
-from .getOnedriveFiles.api import router as onedrive_router
-from .getGoogleDrive.api import router as google_drive_router
+from .get_dropbox_files.api import router as dropbox_router
+from .get_onedrive_files.api import router as onedrive_router
+from .get_google_drive.api import router as google_drive_router
 
 
 api = NinjaAPI()
