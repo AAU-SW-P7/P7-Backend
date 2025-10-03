@@ -1,13 +1,39 @@
+"""
+Fetch files from OneDrive using stored tokens.
+"""
+
 import os
 import requests
- 
+
 from django.conf import settings
 from django.http import JsonResponse
 from django.db import connection
+from ninja import Router
 
 # Microsoft libs
 import msal
 
+router = Router()
+
+def get_token(user_id:int):
+    """Retrieve access and refresh tokens for a given user from the database.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        Tuple (access_token, refresh_token) or None if not found.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT access_token, refresh_token " \
+            "FROM accounts " \
+            "WHERE \"userId\" = %s and provider = 'microsoft-entra-id' " \
+            "LIMIT 1",
+            [int(user_id)],
+        )
+        return cursor.fetchone()
+
+
+@router.get("/")
 def fetch_drive_files(request):
     """
     Fetch files from OneDrive for a given user.
@@ -20,13 +46,7 @@ def fetch_drive_files(request):
         return JsonResponse({"error": "userId required"}, status=400)
 
     # Read tokens from DB (simple raw SQL; adapt if you have an ORM model)
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT access_token, refresh_token FROM accounts WHERE \"userId\" = %s and provider = 'microsoft-entra-id' LIMIT 1",
-            [int(user_id)],
-        )
-        row = cursor.fetchone()
-
+    row = get_token(user_id)
     if not row:
         return JsonResponse({"error": "No account tokens found for user"}, status=404)
 
@@ -49,7 +69,7 @@ def fetch_drive_files(request):
             {"error": "Missing OAuth fields required to refresh token", "missing": missing},
             status=500,
         )
-        
+
     try:
 
         # Build MSAL app instance
@@ -69,15 +89,16 @@ def fetch_drive_files(request):
             scopes=scopes,
         )
 
-        # Helpful diagnostics if refresh fails (common AADSTS700016 / wrong tenant or missing consent)
         if "access_token" not in result:
             # If the error says the user must sign in / grant consent, return an auth URL
             err_desc = result.get("error_description", "")
-            if "must first sign in" in err_desc or "unauthorized or expired" in err_desc or result.get("error") in ("invalid_grant",):
+            if ("must first sign in" in err_desc
+                or "unauthorized or expired" in err_desc
+                or result.get("error") in ("invalid_grant",)):
                 try:
                     redirect_uri = getattr(settings, "MICROSOFT_REDIRECT_URI", None)
                     auth_url = app.get_authorization_request_url(scopes, redirect_uri=redirect_uri)
-                except Exception:
+                except AttributeError:
                     auth_url = None
 
                 return JsonResponse(
@@ -101,7 +122,9 @@ def fetch_drive_files(request):
         if new_refresh_token:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "UPDATE accounts SET refresh_token = %s WHERE \"userId\" = %s and provider = 'microsoft-entra-id'",
+                    "UPDATE accounts " \
+                    "SET refresh_token = %s " \
+                    "WHERE \"userId\" = %s and provider = 'microsoft-entra-id'",
                     [new_refresh_token, int(user_id)],
                 )
 
@@ -116,7 +139,7 @@ def fetch_drive_files(request):
 
                 while url:
                     resp = requests.get(url, headers=headers, timeout=30)
-                    
+
                     if resp.ok:
                         data = resp.json()
                         items = data.get("value", [])
@@ -124,19 +147,30 @@ def fetch_drive_files(request):
                         for obj in items:
                             if "folder" in obj:
                                 child_id = obj.get("id")
-                                print(f"Recursing into folder {obj.get('name')} (id={child_id}) at depth {depth}")
-                                obj["children"] = walk(f"https://graph.microsoft.com/v1.0/me/drive/items/{child_id}/children?$top={page_limit}", depth + 1)
+                                print(
+                                    f"Recursing into folder "
+                                    f"{obj.get('name')} "
+                                    f"(id={child_id}) "
+                                    f"at depth {depth}"
+                                )
+                                obj["children"] = walk(
+                                    f"https://graph.microsoft.com/v1.0/"
+                                    f"me/drive/items/{child_id}/"
+                                    f"children?$top={page_limit}",
+                                    depth + 1
+                                )
 
                             results.append(obj)
-                    
+
                     url = data.get("@odata.nextLink", None) # follow paging if present
                     if "@odata.nextLink" in data:
                         print(f"Following paging link: {url}")
 
                 return results
 
-            return walk(f"https://graph.microsoft.com/v1.0/me/drive/root/children?$top={page_limit}")
+            return walk(f"https://graph.microsoft.com/v1.0/me/drive/root/"
+                        f"children?$top={page_limit}")
 
         return JsonResponse(get_onedrive_tree(access_token, page_limit=999), safe=False)
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         return JsonResponse({"error": str(e)}, status=500)

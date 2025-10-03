@@ -1,10 +1,20 @@
+"""Fetch all files from a user's Dropbox account using stored tokens."""
 import requests
 
-from django.conf import settings
+from ninja import Router
 from django.http import JsonResponse
 from django.db import connection
 
+router = Router()
+
+router.get("/")
 def fetch_drive_files(request):
+    """Fetch all files from a user's Dropbox account using stored tokens.
+    Parameters:
+    - request: Django HttpRequest object, expecting user authentication or userId in GET params.
+    Returns:
+    - JsonResponse with list of files or error message.
+    """
     # Determine user id
     user_id = getattr(request.user, "id", None) or request.GET.get("userId")
     if not user_id:
@@ -13,7 +23,9 @@ def fetch_drive_files(request):
     # Read token from DB (simple raw SQL; adapt if you have an ORM model)
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT access_token, refresh_token FROM accounts WHERE \"userId\" = %s and provider = 'dropbox' LIMIT 1",
+            "SELECT access_token, refresh_token " \
+            "FROM accounts " \
+            "WHERE \"userId\" = %s and provider = 'dropbox' LIMIT 1",
             [int(user_id)],
         )
         row = cursor.fetchone()
@@ -43,19 +55,27 @@ def fetch_drive_files(request):
             "include_non_downloadable_files": True,
         }
 
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(url, headers=headers, json=data, timeout=30)
         if not response.ok:
-            return JsonResponse({"error": "Failed to fetch files", "details": response.json()}, status=response.status_code)
-        
+            return JsonResponse(
+                {"error": "Failed to fetch files", "details": response.json()},
+                status=response.status_code
+                )
+
         response_json = response.json()
         files = response_json["entries"]
         pages_searched = 1
         if "has_more" in response_json and response_json["has_more"] and "cursor" in response_json:
             cursor = response_json["cursor"]
             while cursor:
-                response = requests.post(url + '/continue', headers=headers, json={"cursor": cursor})
+                response = requests.post(
+                    url + '/continue', headers=headers, json={"cursor": cursor}, timeout=30
+                    )
                 if not response.ok:
-                    return JsonResponse({"error": "Failed to fetch files", "details": response.json()}, status=response.status_code)
+                    return JsonResponse(
+                        {"error": "Failed to fetch files", "details": response.json()},
+                        status=response.status_code
+                        )
                 response_json = response.json()
                 print(response_json)
                 cursor = response_json.get("cursor")
@@ -67,5 +87,8 @@ def fetch_drive_files(request):
                     break
 
         return JsonResponse(files, safe=False)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except requests.RequestException as e:
+        return JsonResponse({"error": "Network error", "details": str(e)}, status=502)
+    except KeyError as e:
+        return JsonResponse(
+            {"error": "Unexpected response structure", "details": str(e)}, status=500)
