@@ -14,6 +14,25 @@ from ninja import Router
 import msal
 
 router = Router()
+
+def get_token(user_id:int):
+    """Retrieve access and refresh tokens for a given user from the database.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        Tuple (access_token, refresh_token) or None if not found.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT access_token, refresh_token " \
+            "FROM accounts " \
+            "WHERE \"userId\" = %s and provider = 'microsoft-entra-id' " \
+            "LIMIT 1",
+            [int(user_id)],
+        )
+        return cursor.fetchone()
+
+
 @router.get("/")
 def fetch_drive_files(request):
     """
@@ -27,16 +46,7 @@ def fetch_drive_files(request):
         return JsonResponse({"error": "userId required"}, status=400)
 
     # Read tokens from DB (simple raw SQL; adapt if you have an ORM model)
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT access_token, refresh_token " \
-            "FROM accounts " \
-            "WHERE \"userId\" = %s and provider = 'microsoft-entra-id' " \
-            "LIMIT 1",
-            [int(user_id)],
-        )
-        row = cursor.fetchone()
-
+    row = get_token(user_id)
     if not row:
         return JsonResponse({"error": "No account tokens found for user"}, status=404)
 
