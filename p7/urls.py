@@ -14,7 +14,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import path
 
 
@@ -27,7 +26,6 @@ from api.OneDriveFetcher import fetch_drive_files as fetch_onedrive_files
 
 
 urlpatterns = [
-    path("django/admin/", admin.site.urls),
     path("django/getGoogleDriveFiles", fetch_google_drive_files),
     path("django/getOneDriveFiles", fetch_onedrive_files),
     path("api/", api.urls)
