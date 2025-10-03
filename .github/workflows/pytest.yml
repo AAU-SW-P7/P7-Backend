@@ -9,8 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Run tests with Docker Compose
-        run: docker compose up --abort-on-container-exit --exit-code-from backend
+      - name: Build the Docker image
+        run: |
+          docker build . --file dev.Dockerfile --tag p7-backend:latest 
+          docker build . --file dev.Dockerfile --tag postgres:16-alpine
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
@@ -22,5 +24,5 @@ jobs:
       - name: Run tests
         run: |
           cd test
-          pytest
+          docker run --rm p7-backend:latest pytest
           
