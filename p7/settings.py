@@ -172,3 +172,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 """ MIGRATION_MODULES = {
     "repository": None,             # <- Name for repo we should not create migrations for
 } """
+
+APPEND_SLASH = True  # Ensure trailing slashes are appended to URLs

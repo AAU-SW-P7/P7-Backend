@@ -18,15 +18,15 @@ from django.urls import path
 
 
 from .api import api
-from api.DropboxFetcher import fetch_drive_files as fetch_dropbox_files
-from api.GoogleDriveFetcher import fetch_drive_files as fetch_google_drive_files
-from api.OneDriveFetcher import fetch_drive_files as fetch_onedrive_files
+# from api.DropboxFetcher import fetch_drive_files as fetch_dropbox_files
+# from api.GoogleDriveFetcher import fetch_drive_files as fetch_google_drive_files
+# from api.OneDriveFetcher import fetch_drive_files as fetch_onedrive_files
 
 
 
 
 urlpatterns = [
-    path("django/getGoogleDriveFiles", fetch_google_drive_files),
-    path("django/getOneDriveFiles", fetch_onedrive_files),
+    # path("django/getGoogleDriveFiles", fetch_google_drive_files),
+    # path("django/getOneDriveFiles", fetch_onedrive_files),
     path("api/", api.urls)
 ]

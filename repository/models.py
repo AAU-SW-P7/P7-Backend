@@ -2,14 +2,15 @@
 from django.db import models
 
 class User(models.Model):
-    username = models.TextField()
-    primaryProvider = models.TextField()
+    # email = models.TextField(unique=True)
+    username = models.TextField(null=True)
+    primaryProvider = models.TextField(null=True)
 
     class Meta:
         db_table = '"users"'
 
 class Service(models.Model):
-    userid = models.ForeignKey(User, on_delete=models.CASCADE, db_column='userid')
+    userId = models.ForeignKey(User, on_delete=models.CASCADE, db_column='userId')
     oauthType = models.TextField()
     oauthToken = models.TextField()
     accessToken = models.TextField()
