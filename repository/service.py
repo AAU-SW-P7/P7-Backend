@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Dict, Any
 
-from ninja import Router, Body
+from ninja import Router, Body, Header
 from django.http import JsonResponse
 from django.db import IntegrityError
 from repository.models import User, Service
@@ -12,21 +12,20 @@ find_user_by_email_router = Router()
 create_service_router = Router()
 find_services_router = Router()
 
-def _require_internal_auth(request):
+def _validate_internal_auth(x_internal_auth: str):
     """
-    Enforce presence of 'x-internal-auth' header for internal endpoints.
-    Returns a JsonResponse (401) when missing, otherwise None.
+    Validate the internal auth header value. Returns JsonResponse on failure, otherwise None.
     """
-    if not request.headers.get("x-internal-auth") or request.headers.get("x-internal-auth") != os.getenv("INTERNAL_API_KEY"):
-        return JsonResponse({"error": "Unauthorized - missing x-internal-auth header"}, status=401)
+    if x_internal_auth != os.getenv("INTERNAL_API_KEY"):
+        return JsonResponse({"error": "Unauthorized - invalid x-internal-auth"}, status=401)
     return None
 
 @create_user_router.post("/")
-def create_user(request, payload: Dict[str, str] = Body(...)):
-    auth_resp = _require_internal_auth(request)
+def create_user(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), payload: Dict[str, str] = Body(...)):
+    auth_resp = _validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
-
+    
     username = payload.get("username")
     primary_provider = payload.get("primaryProvider")
 
@@ -50,8 +49,8 @@ def create_user(request, payload: Dict[str, str] = Body(...)):
     }
 
 @find_user_by_email_router.get("/")
-def find_user_by_email(request, email: str):
-    auth_resp = _require_internal_auth(request)
+def find_user_by_email(request, email: str, x_internal_auth: str = Header(..., alias="x-internal-auth")):
+    auth_resp = _validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
@@ -73,8 +72,8 @@ def find_user_by_email(request, email: str):
     }
 
 @create_service_router.post("/")
-def create_service(request, payload: Dict[str, Any] = Body(...)):
-    auth_resp = _require_internal_auth(request)
+def create_service(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), payload: Dict[str, Any] = Body(...)):
+    auth_resp = _validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
@@ -131,8 +130,8 @@ def create_service(request, payload: Dict[str, Any] = Body(...)):
     }
 
 @find_services_router.get("/")
-def find_services(request, userId: str = None):
-    auth_resp = _require_internal_auth(request)
+def find_services(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), userId: str = None):
+    auth_resp = _validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
