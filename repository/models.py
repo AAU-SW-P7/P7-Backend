@@ -2,10 +2,7 @@
 from django.db import models
 
 class User(models.Model):
-    # email = models.TextField(unique=True)
-    username = models.TextField(null=True)
-    primaryProvider = models.TextField(null=True)
-
+    # No extra fields; default "id" primary key is used (SERIAL)
     class Meta:
         db_table = '"users"'
 
@@ -26,23 +23,28 @@ class Service(models.Model):
 
 class File(models.Model):
     serviceId = models.ForeignKey(Service, on_delete=models.CASCADE, db_column='serviceId')
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, db_column='parent')
+    serviceFileId = models.TextField()
     name = models.TextField()
-    type = models.TextField()
+    extension = models.TextField()
     downloadable = models.BooleanField()
     path = models.TextField()
     link = models.TextField()
+    size = models.BigIntegerField()
     createdAt = models.DateTimeField()
-    lastIndexed = models.DateTimeField()
-    checksum = models.TextField(null=True, blank=True)
+    modifiedAt = models.DateTimeField()
+    lastIndexed = models.DateTimeField(null=True, blank=True)
     snippet = models.TextField(null=True, blank=True)
+    content = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = '"file"'
+        constraints = [
+            models.UniqueConstraint(fields=['serviceId', 'serviceFileId'], name='uq_service_file_id'),
+        ]
 
 class Term(models.Model):
     termName = models.TextField()
-    documentFrequency = models.IntegerField()
+    documentFrequency = models.BigIntegerField()
 
     class Meta:
         db_table = '"term"'
@@ -53,13 +55,14 @@ class InvertedIndex(models.Model):
 
     class Meta:
         db_table = '"invertedindex"'
-        # If you add a unique pair at the DB level, reflect it here:
-        # unique_together = (('userId', 'termId'),)
+        constraints = [
+            models.UniqueConstraint(fields=['userId', 'termId'], name='uq_inv_user_term'),
+        ]
 
 class Posting(models.Model):
     termId = models.ForeignKey(Term, on_delete=models.CASCADE, db_column='termId')
     fileId = models.ForeignKey(File, on_delete=models.CASCADE, db_column='fileId')
-    termFrequency = models.IntegerField()
+    termFrequency = models.BigIntegerField()
 
     class Meta:
         db_table = '"posting"'
