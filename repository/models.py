@@ -1,13 +1,22 @@
 # The model we use for our database
 from django.db import models
 
+
 class User(models.Model):
-    # No extra fields; default "id" primary key is used (SERIAL)
+    id = models.BigAutoField(primary_key=True)
+
     class Meta:
         db_table = '"users"'
 
+
 class Service(models.Model):
-    userId = models.ForeignKey(User, on_delete=models.CASCADE, db_column='userId')
+    id = models.BigAutoField(primary_key=True)
+    userId = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        db_column='userId',
+        related_name='services',
+    )
     oauthType = models.TextField()
     oauthToken = models.TextField()
     accessToken = models.TextField()
@@ -21,8 +30,15 @@ class Service(models.Model):
     class Meta:
         db_table = '"service"'
 
+
 class File(models.Model):
-    serviceId = models.ForeignKey(Service, on_delete=models.CASCADE, db_column='serviceId')
+    id = models.BigAutoField(primary_key=True)
+    serviceId = models.ForeignKey(
+        Service,
+        on_delete=models.CASCADE,
+        db_column='serviceId',
+        related_name='files',
+    )
     serviceFileId = models.TextField()
     name = models.TextField()
     extension = models.TextField()
@@ -39,30 +55,69 @@ class File(models.Model):
     class Meta:
         db_table = '"file"'
         constraints = [
-            models.UniqueConstraint(fields=['serviceId', 'serviceFileId'], name='uq_service_file_id'),
+            models.UniqueConstraint(
+                fields=['serviceId', 'serviceFileId'],
+                name='uq_service_file_id',
+            ),
         ]
 
+
 class Term(models.Model):
-    termName = models.TextField()
-    documentFrequency = models.BigIntegerField()
+    # Natural key used by FKs in other tables
+    termName = models.TextField(unique=True)
 
     class Meta:
         db_table = '"term"'
 
+
 class InvertedIndex(models.Model):
-    userId = models.ForeignKey(User, on_delete=models.CASCADE, db_column='userId')
-    termId = models.ForeignKey(Term, on_delete=models.CASCADE, db_column='termId')
+    # Per-user term stats
+    userId = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        db_column='userId',
+        related_name='inverted_terms',
+    )
+    termName = models.ForeignKey(
+        Term,
+        to_field='termName',              # reference Term.termName (unique field)
+        on_delete=models.CASCADE,
+        db_column='termName',
+        related_name='user_inverted_rows',
+    )
+    documentFrequency = models.BigIntegerField()
 
     class Meta:
         db_table = '"invertedindex"'
         constraints = [
-            models.UniqueConstraint(fields=['userId', 'termId'], name='uq_inv_user_term'),
+            models.UniqueConstraint(
+                fields=['userId', 'termName'],
+                name='uq_inv_user_term_name',
+            ),
         ]
 
+
 class Posting(models.Model):
-    termId = models.ForeignKey(Term, on_delete=models.CASCADE, db_column='termId')
-    fileId = models.ForeignKey(File, on_delete=models.CASCADE, db_column='fileId')
+    termName = models.ForeignKey(
+        Term,
+        to_field='termName',              # reference Term.termName (unique field)
+        on_delete=models.CASCADE,
+        db_column='termName',
+        related_name='postings',
+    )
+    fileId = models.ForeignKey(
+        File,
+        on_delete=models.CASCADE,
+        db_column='fileId',
+        related_name='postings',
+    )
     termFrequency = models.BigIntegerField()
 
     class Meta:
         db_table = '"posting"'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['termName', 'fileId'],
+                name='uq_term_name_file_id',
+            ),
+        ]
