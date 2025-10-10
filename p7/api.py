@@ -3,7 +3,9 @@ from ninja import NinjaAPI
 # from getDropboxFiles.api import router as dropbox_router
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
 from p7.get_google_drive.api import fetch_google_drive_files_router
-from repository.service import fetch_onedrive_files_router, create_user_router, find_user_by_email_router, create_service_router, find_services_router
+from p7.get_onedrive_files.api import fetch_onedrive_files_router
+
+from repository.service import create_user_router, find_user_by_email_router, create_service_router, find_services_router
 
 api = NinjaAPI()
 

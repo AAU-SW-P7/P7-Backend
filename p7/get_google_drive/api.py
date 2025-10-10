@@ -1,18 +1,15 @@
 import os
 import requests
-from p7.helpers import validate_internal_auth, fetch_api
+from p7.helpers import validate_internal_auth
 from repository.service import get_tokens, get_service
 from repository.file import save_file
-from datetime import datetime
-from typing import Dict, Any
+from typing import Dict
 
 # Helper: compute the folder path pieces for a given folder id (memoized)
 from functools import lru_cache
 
 from ninja import Router, Body, Header
 from django.http import JsonResponse
-from django.db import IntegrityError
-from repository.models import Service, File
 
 
 # Google libs

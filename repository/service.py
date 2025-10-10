@@ -10,122 +10,13 @@ from functools import lru_cache
 from ninja import Router, Body, Header
 from django.http import JsonResponse
 from django.db import IntegrityError
-from repository.models import User, Service, File
+from repository.models import User, Service
 
-# Google libs
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
-
-# Microsoft libs
-import msal
-
-fetch_onedrive_files_router = Router()
 create_user_router = Router()
 find_user_by_email_router = Router()
 create_service_router = Router()
 find_services_router = Router()
     
-@fetch_onedrive_files_router.get("/")
-def fetch_onedrive_files(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), userId: str = None):
-    auth_resp = validate_internal_auth(x_internal_auth)
-    if auth_resp:
-        return auth_resp
-    
-    if not userId:
-        return JsonResponse({"error": "userId required"}, status=400)
-
-    access_token, refresh_token = get_tokens(userId, 'microsoft-entra-id')
-    
-    try:
-        service = Service.objects.get(userId_id=userId, name='microsoft-entra-id')
-    except Service.DoesNotExist:
-        return JsonResponse({"error": "Service (OneDrive) not found for user"}, status=404)
-    except Exception as e:
-        return JsonResponse({"error": "Failed to retrieve service (OneDrive)", "detail": str(e)}, status=500)
-
-    try:
-        # Build MSAL app instance
-        app = msal.ConfidentialClientApplication(
-            os.getenv("MICROSOFT_CLIENT_ID"),
-            authority="https://login.microsoftonline.com/common",
-            client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
-        )
-
-        # Scopes that should match what was consented at initial sign-in.
-        # Ensure your initial auth requested offline_access and the Graph file scope.
-        scopes = ["Files.Read.All"]
-
-        # Refresh token
-        result = app.acquire_token_by_refresh_token(
-            refresh_token,
-            scopes=scopes,
-        )
-
-        access_token = result["access_token"]
-        new_refresh_token = result.get("refresh_token")  # May be None; only update if provided
-
-        # Optionally update the refresh token in the database
-        if new_refresh_token:
-            service.refreshToken = new_refresh_token
-            service.save(update_fields=["refreshToken"])
-
-        def get_onedrive_tree(access_token: str, page_limit: int = 999) -> list[dict]:
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            }
-
-            def walk(url: str, depth: int = 0) -> list[dict]: # dette kan der i hvertfald godt være nogle workers som kan tage sig af
-                results: list[dict] = []
-
-                while url:
-                    resp = requests.get(url, headers=headers, timeout=30)
-                    
-                    if resp.ok:
-                        data = resp.json()
-                        items = data.get("value", [])
-
-                        for obj in items:
-                            if "folder" in obj:
-                                child_id = obj["id"]
-                                print(f"Recursing into folder {obj.get('name')} (id={child_id}) at depth {depth}")
-                                results.extend(walk(f"https://graph.microsoft.com/v1.0/me/drive/items/{child_id}/children?$top={page_limit}", depth + 1))
-                            elif "file" in obj:
-                                results.append(obj)
-                    
-                    url = data.get("@odata.nextLink", None) # follow paging if present
-                    if "@odata.nextLink" in data:
-                        print(f"Following paging link: {url}")
-
-                return results
-
-            return walk(f"https://graph.microsoft.com/v1.0/me/drive/root/children?$top={page_limit}")
-                
-        for file in get_onedrive_tree(access_token, page_limit=999):
-            if "folder" in file:  # Skip folders
-                continue
-
-            File.objects.create(
-                serviceId=service,
-                serviceFileId=file["id"],
-                name=file["name"],
-                extension=os.path.splitext(file["name"])[1],
-                downloadable=True,  # idk, der er ikke noget felt for det i onedrive
-                path=(file.get("parentReference", {}).get("path", "")).replace("/drive/root:", "") + "/" + file["name"],
-                link=file.get("webUrl"), # file.get("@microsoft.graph.downloadUrl", ""),
-                size=file.get("size", 0),
-                createdAt=file.get("createdDateTime"),
-                modifiedAt=file.get("lastModifiedDateTime"),
-                lastIndexed=None,
-                snippet=None,
-                content=None,
-            )
-
-        # return JsonResponse(files, safe=False)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
 @create_user_router.post("/")
 def create_user(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), payload: Dict[str, str] = Body(...)):
     auth_resp = validate_internal_auth(x_internal_auth)
