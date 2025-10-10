@@ -1,73 +1,76 @@
-"""API endpoints for interacting with Google Drive via Django Ninja."""
 import os
 import requests
+from p7.helpers import validate_internal_auth, fetch_api
+from repository.service import get_tokens, get_service
+from repository.file import save_file
+from datetime import datetime
+from typing import Dict, Any
 
-from ninja import Router
+# Helper: compute the folder path pieces for a given folder id (memoized)
+from functools import lru_cache
+
+from ninja import Router, Body, Header
 from django.http import JsonResponse
-from django.db import connection
+from django.db import IntegrityError
+from repository.models import Service, File
+
 
 # Google libs
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-router = Router()
+fetch_google_drive_files_router = Router()
 
-router.get("/")
 
-# If someone can refactor to remove 2 local variables, then please do.
-def fetch_drive_files(request): # pylint: disable=too-many-locals
+def _google_drive_folder_path_parts(
+    folder_id: str, file_by_id: Dict[str, dict]
+) -> list:
     """
-    Fetch files from Google Drive for a given user.
-    Uses access_token and refresh_token stored in the `accounts` table.
-    Provide userId either as request.user.id (if authenticated) or ?userId=...
+    Returns a list like ['FolderA', 'FolderB'] for a folder id.
+    Stops gracefully if an ancestor isn't in `files`.
+    Works for 'root' (My Drive) and shared drives (top-level folder has no parents).
     """
-    # Determine user id
-    user_id = getattr(request.user, "id", None) or request.GET.get("userId")
-    if not user_id:
+    if not folder_id or folder_id == "root":
+        return []
+
+    folder = file_by_id.get(folder_id)
+    if not folder:  # ancestor not present in current listing
+        return []  # return partial path instead of failing
+
+    parents = folder.get("parents") or []
+    # Use the first parent if multiple
+    prefix = _google_drive_folder_path_parts(parents[0], file_by_id) if parents else []
+    return prefix + [folder.get("name", folder_id)]
+
+
+@fetch_google_drive_files_router.get("/")
+def fetch_google_drive_files(
+    request,
+    x_internal_auth: str = Header(..., alias="x-internal-auth"),
+    userId: str = None,
+):
+    auth_resp = validate_internal_auth(x_internal_auth)
+    if auth_resp:
+        return auth_resp
+
+    if not userId:
         return JsonResponse({"error": "userId required"}, status=400)
 
-    # Read tokens from DB (simple raw SQL; adapt if you have an ORM model)
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT accessToken, refreshToken FROM service WHERE \"userId\" = %s and name = 'google' LIMIT 1",
-            [int(user_id)],
-        )
-        row = cursor.fetchone()
-
-    if not row:
-        return JsonResponse({"error": "No account tokens found for user"}, status=404)
-
-    access_token, refresh_token = row
-
-    if not refresh_token:
-        return JsonResponse({"error": "No refresh_token available"}, status=400)
-
-    # Ensure required OAuth fields are present (avoid refresh error)
-    token_uri = "https://oauth2.googleapis.com/token"
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
-    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-    missing = [name for name, val in (("refresh_token", refresh_token),
-                                       ("token_uri", token_uri),
-                                       ("client_id", client_id),
-                                       ("client_secret", client_secret)) if not val]
-    if missing:
-        return JsonResponse(
-            {"error": "Missing OAuth fields required to refresh token", "missing": missing},
-            status=500,
-        )
-
-    # Build credentials object. token may be stale; refresh() will update it.
-    creds = Credentials(
-        token=access_token or None,
-        refresh_token=refresh_token,
-        token_uri=token_uri,
-        client_id=client_id,
-        client_secret=client_secret,
-        scopes=["https://www.googleapis.com/auth/drive.readonly"],
-    )
+    access_token, refresh_token = get_tokens(userId, "google")
+    service = get_service(userId, "google")
 
     try:
+        # Build credentials object. token may be stale; refresh() will update it.
+        creds = Credentials(
+            token=access_token or None,
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=os.getenv("GOOGLE_CLIENT_ID"),
+            client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+            scopes=["https://www.googleapis.com/auth/drive.readonly"],
+        )
+
         # Refresh if needed (this will update creds.token)
         if not creds.valid:
             print("Refreshing Google access token...")
@@ -76,40 +79,81 @@ def fetch_drive_files(request): # pylint: disable=too-many-locals
         # Optionally persist the new access_token back to DB so next calls use it
         new_token = creds.token
         if new_token and new_token != access_token:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "UPDATE accounts SET access_token = %s " \
-                    "WHERE \"userId\" = %s and provider = 'google'",
-                    [new_token, int(user_id)],
-                )
+            # Update via Django ORM instead of raw SQL
+            service.accessToken = new_token
+            service.save(update_fields=["accessToken"])
 
         # Build Drive service and list files
-        service = build("drive", "v3", credentials=creds)
+        drive_api = build("drive", "v3", credentials=creds)
         # Request all file fields and paginate through results
         files = []
         page_token = None
         while True:
-            # If someone can fix service has no files member, please do.
-            resp = service.files().list( # pylint: disable=no-member
-                pageSize=1000,
-                fields="nextPageToken, files(id, name, parents, " \
-                "                            capabilities/canCopy, capabilities/canDownload, " \
-                "                            downloadRestrictions, " \
-                "                            kind, mimeType, starred, " \
-                "                            trashed, webContentLink, webViewLink, " \
-                "                            iconLink, hasThumbnail, viewedByMeTime, " \
-                "                            createdTime, modifiedTime, shared, " \
-                "                            ownedByMe, originalFilename, fullFileExtension, " \
-                "                            size)",
-                pageToken=page_token,
-                supportsAllDrives=True,
-                includeItemsFromAllDrives=True,
-            ).execute()
+            resp = (
+                drive_api.files()
+                .list(
+                    pageSize=1000,
+                    fields="nextPageToken, files(id, name, parents, "
+                    "capabilities/canCopy, capabilities/canDownload, downloadRestrictions, "
+                    "kind, mimeType, starred, "
+                    "trashed, webContentLink, webViewLink, "
+                    "iconLink, hasThumbnail, viewedByMeTime, "
+                    "createdTime, modifiedTime, shared, "
+                    "ownedByMe, originalFilename, size)",
+                    pageToken=page_token,
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True,
+                )
+                .execute()
+            )
             files.extend(resp.get("files", []))
             page_token = resp.get("nextPageToken")
             if not page_token:
                 break
 
-        return JsonResponse(files, safe=False)
-    except (requests.RequestException, ValueError, KeyError) as e:
-        return JsonResponse({"error": "Error fetching files", "details": str(e)}, status=500)
+        # Build a fast lookup for any item (files + folders)
+        file_by_id = {file["id"]: file for file in files}
+
+        def build_google_drive_path(file_meta: dict) -> str:
+            """
+            Build a display path like /FolderA/FolderB/filename using only the current `files` array.
+            """
+            parents = file_meta.get("parents") or []
+            prefix_parts = (
+                _google_drive_folder_path_parts(parents[0], file_by_id)
+                if parents
+                else []
+            )
+            # Join and include filename at the end to mimic Dropbox-style path_display
+            return "/" + "/".join(prefix_parts + [file_meta.get("name", "")])
+
+        for file in files:
+            if (
+                file.get("mimeType") == "application/vnd.google-apps.folder"
+                or file.get("mimeType") == "application/vnd.google-apps.shortcut"
+                or file.get("mimeType") == "application/vnd.google-apps.drive-sdk"
+            ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
+                continue
+            extension = os.path.splitext(file.get("name", ""))[1]
+            downloadable = file.get("capabilities", {}).get("canDownload")
+            path = build_google_drive_path(file)
+            
+            save_file(
+                service,
+                file["id"],
+                file["name"],
+                extension,
+                downloadable,
+                path,
+                file["webViewLink"],
+                file.get("size", 0), # Can be empty
+                file["createdTime"],
+                file["modifiedTime"],
+                None,
+                None,
+                None,
+            )
+
+        # return JsonResponse(files, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

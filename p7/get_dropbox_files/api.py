@@ -3,19 +3,14 @@ import requests
 from p7.helpers import validate_internal_auth, fetch_api
 from repository.service import get_tokens, get_service
 from repository.file import save_file
-from datetime import datetime
-from typing import Dict, Any
 
 # Helper: compute the folder path pieces for a given folder id (memoized)
 from functools import lru_cache
 
-from ninja import Router, Body, Header
+from ninja import Router, Header
 from django.http import JsonResponse
-from django.db import IntegrityError
-from repository.models import Service, File
 
 fetch_dropbox_files_router = Router()
-
 
 @fetch_dropbox_files_router.get("/")
 def fetch_dropbox_files(
@@ -83,9 +78,8 @@ def fetch_dropbox_files(
 
             extension = os.path.splitext(file["name"])[1]
             path = file["path_display"]
-            link = (
-                "https://www.dropbox.com/preview" + path,
-            )  # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
+            link = "https://www.dropbox.com/preview" + path
+            # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
 
             # Vi burde nok fjerne "name" fra path for at spare plads
             save_file(
