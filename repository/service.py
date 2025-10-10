@@ -2,6 +2,7 @@ import os
 import requests
 from datetime import datetime
 from typing import Dict, Any
+from p7.helpers import validate_internal_auth
 
 # Helper: compute the folder path pieces for a given folder id (memoized)
 from functools import lru_cache
@@ -27,14 +28,6 @@ find_user_by_email_router = Router()
 create_service_router = Router()
 find_services_router = Router()
 
-def _validate_internal_auth(x_internal_auth: str) -> Any:
-    """
-    Validate the internal auth header value. Returns JsonResponse on failure, otherwise None.
-    """
-    if x_internal_auth != os.getenv("INTERNAL_API_KEY"):
-        return JsonResponse({"error": "Unauthorized - invalid x-internal-auth"}, status=401)
-    return None
-
 def _google_drive_folder_path_parts(folder_id: str, file_by_id: Dict[str, dict]) -> list:
     """
     Returns a list like ['FolderA', 'FolderB'] for a folder id.
@@ -52,93 +45,10 @@ def _google_drive_folder_path_parts(folder_id: str, file_by_id: Dict[str, dict])
     # Use the first parent if multiple
     prefix = _google_drive_folder_path_parts(parents[0], file_by_id) if parents else []
     return prefix + [folder.get("name", folder_id)]
-
-@fetch_dropbox_files_router.get("/")
-def fetch_dropbox_files(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), userId: str = None):
-    auth_resp = _validate_internal_auth(x_internal_auth)
-    if auth_resp:
-        return auth_resp
-    
-    if not userId:
-        return JsonResponse({"error": "userId required"}, status=400)
-
-    access_token, refresh_token = get_tokens(userId, 'dropbox')
-    
-    try:
-        service = Service.objects.get(userId_id=userId, name='dropbox')
-    except Service.DoesNotExist:
-        return JsonResponse({"error": "Service (Dropbox) not found for user"}, status=404)
-    except Exception as e:
-        return JsonResponse({"error": "Failed to retrieve service (Dropbox)", "detail": str(e)}, status=500)
-
-    try:
-        # Fetch root folder metadata
-        url = "https://api.dropboxapi.com/2/files/list_folder"
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-        }
-        data = {
-            "path": "",
-            "recursive": True,
-            "include_deleted": False,
-            "include_has_explicit_shared_members": False,
-            "include_mounted_folders": True,
-            "limit": 2000,
-            "include_non_downloadable_files": True,
-        }
-
-        response = requests.post(url, headers=headers, json=data)
-        if not response.ok:
-            return JsonResponse({"error": "Failed to fetch files", "details": response.json()}, status=response.status_code)
-        
-        response_json = response.json()
-        files = response_json["entries"]
-        pages_searched = 1
-        if "has_more" in response_json and response_json["has_more"] and "cursor" in response_json:
-            cursor = response_json["cursor"]
-            while cursor:
-                response = requests.post(url + '/continue', headers=headers, json={"cursor": cursor})
-                if not response.ok:
-                    return JsonResponse({"error": "Failed to fetch files", "details": response.json()}, status=response.status_code)
-                response_json = response.json()
-                print(response_json)
-                cursor = response_json.get("cursor")
-                if "entries" in response_json:
-                    files.extend(response_json["entries"])
-                    pages_searched += 1
-                    print(f"Fetched page {pages_searched}, total items: {len(files)}")
-                    break # for testing, remove later
-                if "has_more" in response_json and not response_json["has_more"]:
-                    break
-                
-        for file in files:
-            if file[".tag"] != "file":
-                continue
-            
-            File.objects.create(
-                serviceId=service,
-                serviceFileId=file["id"],
-                name=file["name"],
-                extension=os.path.splitext(file["name"])[1],
-                downloadable=file.get("is_downloadable"),
-                path=file["path_display"], # or path_lower? - Vi burde nok fjerne "name" fra path for at spare plads
-                link="https://www.dropbox.com/preview" + file["path_display"], # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
-                size=file["size"],
-                createdAt=file["client_modified"],
-                modifiedAt=file["server_modified"],
-                lastIndexed=None,
-                snippet=None,
-                content=None,
-            )
-
-        # return JsonResponse(files, safe=False)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
     
 @fetch_google_drive_files_router.get("/")
 def fetch_google_drive_files(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), userId: str = None):
-    auth_resp = _validate_internal_auth(x_internal_auth)
+    auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
@@ -255,7 +165,7 @@ def fetch_google_drive_files(request, x_internal_auth: str = Header(..., alias="
     
 @fetch_onedrive_files_router.get("/")
 def fetch_onedrive_files(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), userId: str = None):
-    auth_resp = _validate_internal_auth(x_internal_auth)
+    auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
@@ -355,7 +265,7 @@ def fetch_onedrive_files(request, x_internal_auth: str = Header(..., alias="x-in
 
 @create_user_router.post("/")
 def create_user(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), payload: Dict[str, str] = Body(...)):
-    auth_resp = _validate_internal_auth(x_internal_auth)
+    auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
@@ -383,7 +293,7 @@ def create_user(request, x_internal_auth: str = Header(..., alias="x-internal-au
 
 @find_user_by_email_router.get("/")
 def find_user_by_email(request, email: str, x_internal_auth: str = Header(..., alias="x-internal-auth")):
-    auth_resp = _validate_internal_auth(x_internal_auth)
+    auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
@@ -406,7 +316,7 @@ def find_user_by_email(request, email: str, x_internal_auth: str = Header(..., a
 
 @create_service_router.post("/")
 def create_service(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), payload: Dict[str, Any] = Body(...)):
-    auth_resp = _validate_internal_auth(x_internal_auth)
+    auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
@@ -464,7 +374,7 @@ def create_service(request, x_internal_auth: str = Header(..., alias="x-internal
 
 @find_services_router.get("/")
 def find_services(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), userId: str = None):
-    auth_resp = _validate_internal_auth(x_internal_auth)
+    auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
     
@@ -506,3 +416,15 @@ def get_tokens(user_id, service_name):
         return JsonResponse({"error": "No account tokens found for user"}, status=404)
     
     return service.accessToken, service.refreshToken
+
+def get_service(user_id, service_name):
+    """
+    Fetches the entire service object based on user and service name
+    """
+    try:
+        service = Service.objects.get(userId_id=user_id, name=service_name)
+        return service
+    except Service.DoesNotExist:
+        return JsonResponse({"error": f"Service ({service_name}) not found for user"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to retrieve service ({service_name})", "detail": str(e)}, status=500)

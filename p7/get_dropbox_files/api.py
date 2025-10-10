@@ -1,34 +1,46 @@
-"""Fetch all files from a user's Dropbox account using stored tokens."""
+import os
 import requests
+from p7.helpers import validate_internal_auth, fetch_api
+from repository.service import get_tokens, get_service
+from repository.file import save_file
+from datetime import datetime
+from typing import Dict, Any
 
-from ninja import Router
+# Helper: compute the folder path pieces for a given folder id (memoized)
+from functools import lru_cache
+
+from ninja import Router, Body, Header
 from django.http import JsonResponse
-from repository.service import get_tokens
+from django.db import IntegrityError
+from repository.models import Service, File
 
-router = Router()
+fetch_dropbox_files_router = Router()
 
-router.get("/")
-def fetch_drive_files(request):
-    """Fetch all files from a user's Dropbox account using stored tokens.
-    Parameters:
-    - request: Django HttpRequest object, expecting user authentication or userId in GET params.
-    Returns:
-    - JsonResponse with list of files or error message.
-    """
-    # Determine user id
-    user_id = getattr(request.user, "id", None) or request.GET.get("userId")
-    if not user_id:
+
+@fetch_dropbox_files_router.get("/")
+def fetch_dropbox_files(
+    request,
+    x_internal_auth: str = Header(..., alias="x-internal-auth"),
+    userId: str = None,
+):
+    auth_resp = validate_internal_auth(x_internal_auth)
+    if auth_resp:
+        return auth_resp
+
+    if not userId:
         return JsonResponse({"error": "userId required"}, status=400)
-    
-    access_token, refresh_token = get_tokens(user_id, 'dropbox')
-    
+
+    access_token, _ = get_tokens(userId, "dropbox")
+    service = get_service(userId, "dropbox")
+
     try:
-        # Fetch root folder metadata
         url = "https://api.dropboxapi.com/2/files/list_folder"
+
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
+
         data = {
             "path": "",
             "recursive": True,
@@ -39,27 +51,21 @@ def fetch_drive_files(request):
             "include_non_downloadable_files": True,
         }
 
-        response = requests.post(url, headers=headers, json=data, timeout=30)
-        if not response.ok:
-            return JsonResponse(
-                {"error": "Failed to fetch files", "details": response.json()},
-                status=response.status_code
-                )
-
-        response_json = response.json()
+        response_json = fetch_api(url, headers, data).json()
         files = response_json["entries"]
+
         pages_searched = 1
-        if "has_more" in response_json and response_json["has_more"] and "cursor" in response_json:
+
+        if (
+            "has_more" in response_json
+            and response_json["has_more"]
+            and "cursor" in response_json
+        ):
             cursor = response_json["cursor"]
             while cursor:
-                response = requests.post(
-                    url + '/continue', headers=headers, json={"cursor": cursor}, timeout=30
-                    )
-                if not response.ok:
-                    return JsonResponse(
-                        {"error": "Failed to fetch files", "details": response.json()},
-                        status=response.status_code
-                        )
+                response = fetch_api(
+                    url + "/continue", headers=headers, data={"cursor": cursor}
+                )
                 response_json = response.json()
                 print(response_json)
                 cursor = response_json.get("cursor")
@@ -67,12 +73,36 @@ def fetch_drive_files(request):
                     files.extend(response_json["entries"])
                     pages_searched += 1
                     print(f"Fetched page {pages_searched}, total items: {len(files)}")
+                    break  # for testing, remove later
                 if "has_more" in response_json and not response_json["has_more"]:
                     break
 
-        return JsonResponse(files, safe=False)
-    except requests.RequestException as e:
-        return JsonResponse({"error": "Network error", "details": str(e)}, status=502)
-    except KeyError as e:
-        return JsonResponse(
-            {"error": "Unexpected response structure", "details": str(e)}, status=500)
+        for file in files:
+            if file[".tag"] != "file":
+                continue
+
+            extension = os.path.splitext(file["name"])[1]
+            path = file["path_display"]
+            link = (
+                "https://www.dropbox.com/preview" + path,
+            )  # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
+
+            # Vi burde nok fjerne "name" fra path for at spare plads
+            save_file(
+                service,
+                file["id"],
+                file["name"],
+                extension,
+                file["is_downloadable"],
+                path,
+                link,
+                file["size"],
+                file["client_modified"],
+                file["server_modified"],
+                None,
+                None,
+                None,
+            )
+        # return JsonResponse(files, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

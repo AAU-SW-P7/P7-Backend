@@ -1,7 +1,8 @@
 """API routing for the P7 backend."""
 from ninja import NinjaAPI
 # from getDropboxFiles.api import router as dropbox_router
-from repository.service import fetch_dropbox_files_router, fetch_google_drive_files_router, fetch_onedrive_files_router, create_user_router, find_user_by_email_router, create_service_router, find_services_router
+from p7.get_dropbox_files.api import fetch_dropbox_files_router
+from repository.service import fetch_google_drive_files_router, fetch_onedrive_files_router, create_user_router, find_user_by_email_router, create_service_router, find_services_router
 
 api = NinjaAPI()
 
