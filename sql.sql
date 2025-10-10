@@ -53,7 +53,7 @@ CREATE UNIQUE INDEX "uq_service_file_id" ON "file" ("serviceId", "serviceFileId"
 
 CREATE UNIQUE INDEX "uq_term_name" ON "term" ("termName");
 
-CREATE UNIQUE INDEX "uq_inv_user" ON "invertedindex" ("userId");
+CREATE UNIQUE INDEX "uq_inv_user_term_name" ON "invertedindex" ("userId", "termName");
 
 CREATE UNIQUE INDEX "uq_term_name_file_id" ON "posting" ("termName", "fileId");
 
