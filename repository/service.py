@@ -10,7 +10,7 @@ def get_tokens(user_id, service_name):
         service = Service.objects.get(userId=user_id, name=service_name)
     except Service.DoesNotExist:
         return JsonResponse({"error": "No account tokens found for user"}, status=404)
-    
+
     return service.accessToken, service.refreshToken
 
 def get_service(user_id, service_name) -> Service:

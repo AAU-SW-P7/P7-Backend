@@ -15,7 +15,7 @@ def save_file(
     snippet,
     content,
 ):
-    File.objects.create(
+    File.objects.update_or_create(
         serviceId=sericeId,
         serviceFileId=serviceFileId,
         name=name,

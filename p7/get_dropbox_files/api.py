@@ -18,6 +18,47 @@ def fetch_dropbox_files(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     userId: str = None,
 ):
+    """Fetches all file metadata from a user's Dropbox account and saves it to the DB."""
+    try:
+        files, service = get_file_meta_data(x_internal_auth, userId)
+
+        for file in files:
+            if file[".tag"] != "file":
+                continue
+            update_or_create_file(file, service)
+
+    # return JsonResponse(files, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+sync_dropbox_router = Router()
+@sync_dropbox_router.get("/")
+def update_dropbox_files(
+    request,
+    x_internal_auth: str = Header(..., alias="x-internal-auth"),
+    userId: str = None,
+):
+    """Fetches file metadata and updates files that have been modified since the last sync."""
+    try:
+        files, service = get_file_meta_data(x_internal_auth, userId)
+
+        for file in files:
+            if file[".tag"] != "file":
+                continue
+            if file["server_modified"] <= service.modifiedAt:
+                continue  # No changes since last sync
+
+            update_or_create_file(file, service)
+
+    # return JsonResponse(files, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+def get_file_meta_data(
+    x_internal_auth,
+    userId
+    ):
+
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
@@ -28,75 +69,72 @@ def fetch_dropbox_files(
     access_token, _ = get_tokens(userId, "dropbox")
     service = get_service(userId, "dropbox")
 
-    try:
-        url = "https://api.dropboxapi.com/2/files/list_folder"
+    
+    url = "https://api.dropboxapi.com/2/files/list_folder"
 
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-        }
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
 
-        data = {
-            "path": "",
-            "recursive": True,
-            "include_deleted": False,
-            "include_has_explicit_shared_members": False,
-            "include_mounted_folders": True,
-            "limit": 2000,
-            "include_non_downloadable_files": True,
-        }
+    data = {
+        "path": "",
+        "recursive": True,
+        "include_deleted": False,
+        "include_has_explicit_shared_members": False,
+        "include_mounted_folders": True,
+        "limit": 2000,
+        "include_non_downloadable_files": True,
+    }
 
-        response_json = fetch_api(url, headers, data).json()
-        files = response_json["entries"]
+    response_json = fetch_api(url, headers, data).json()
+    files = response_json["entries"]
 
-        pages_searched = 1
+    # I am unsure of the purpose of the following code, as I believe Dropbox returns all files in one go.
+    # However, I will keep it for now in case it is actually needed
+    pages_searched = 1
 
-        if (
-            "has_more" in response_json
-            and response_json["has_more"]
-            and "cursor" in response_json
-        ):
-            cursor = response_json["cursor"]
-            while cursor:
-                response = fetch_api(
-                    url + "/continue", headers=headers, data={"cursor": cursor}
-                )
-                response_json = response.json()
-                print(response_json)
-                cursor = response_json.get("cursor")
-                if "entries" in response_json:
-                    files.extend(response_json["entries"])
-                    pages_searched += 1
-                    print(f"Fetched page {pages_searched}, total items: {len(files)}")
-                    break  # for testing, remove later
-                if "has_more" in response_json and not response_json["has_more"]:
-                    break
-
-        for file in files:
-            if file[".tag"] != "file":
-                continue
-
-            extension = os.path.splitext(file["name"])[1]
-            path = file["path_display"]
-            link = "https://www.dropbox.com/preview" + path
-            # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
-
-            # Vi burde nok fjerne "name" fra path for at spare plads
-            save_file(
-                service,
-                file["id"],
-                file["name"],
-                extension,
-                file["is_downloadable"],
-                path,
-                link,
-                file["size"],
-                file["client_modified"],
-                file["server_modified"],
-                None,
-                None,
-                None,
+    if (
+        "has_more" in response_json
+        and response_json["has_more"]
+        and "cursor" in response_json
+    ):
+        cursor = response_json["cursor"]
+        while cursor:
+            response = fetch_api(
+                url + "/continue", headers=headers, data={"cursor": cursor}
             )
-        # return JsonResponse(files, safe=False)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+            response_json = response.json()
+            print(response_json)
+            cursor = response_json.get("cursor")
+            if "entries" in response_json:
+                files.extend(response_json["entries"])
+                pages_searched += 1
+                print(f"Fetched page {pages_searched}, total items: {len(files)}")
+                break  # for testing, remove later
+            if "has_more" in response_json and not response_json["has_more"]:
+                break
+    return files, service
+
+def update_or_create_file(file, service):
+    extension = os.path.splitext(file["name"])[1]
+    path = file["path_display"]
+    link = "https://www.dropbox.com/preview" + path
+    # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
+
+    # Vi burde nok fjerne "name" fra path for at spare plads
+    save_file(
+        service,
+        file["id"],
+        file["name"],
+        extension,
+        file["is_downloadable"],
+        path,
+        link,
+        file["size"],
+        file["client_modified"],
+        file["server_modified"],
+        None,
+        None,
+        None,
+    )
