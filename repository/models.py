@@ -6,6 +6,7 @@ class User(models.Model):
     id = models.BigAutoField(primary_key=True)
 
     class Meta:
+        app_label = "repository"
         db_table = '"users"'
 
 
@@ -28,6 +29,7 @@ class Service(models.Model):
     scopeName = models.TextField()
 
     class Meta:
+        app_label = "repository"
         db_table = '"service"'
 
 
@@ -53,6 +55,7 @@ class File(models.Model):
     content = models.TextField(null=True, blank=True)
 
     class Meta:
+        app_label = "repository"
         db_table = '"file"'
         constraints = [
             models.UniqueConstraint(
@@ -67,6 +70,7 @@ class Term(models.Model):
     termName = models.TextField(unique=True)
 
     class Meta:
+        app_label = "repository"
         db_table = '"term"'
 
 
@@ -88,6 +92,7 @@ class InvertedIndex(models.Model):
     documentFrequency = models.BigIntegerField()
 
     class Meta:
+        app_label = "repository"
         db_table = '"invertedindex"'
         constraints = [
             models.UniqueConstraint(
@@ -114,6 +119,7 @@ class Posting(models.Model):
     termFrequency = models.BigIntegerField()
 
     class Meta:
+        app_label = "repository"
         db_table = '"posting"'
         constraints = [
             models.UniqueConstraint(
