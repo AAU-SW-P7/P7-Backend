@@ -16,11 +16,11 @@ fetch_dropbox_files_router = Router()
 def fetch_dropbox_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    userId: str = None,
+    user_id: str = None,
 ):
     """Fetches all file metadata from a user's Dropbox account and saves it to the DB."""
     try:
-        files, service = get_file_meta_data(x_internal_auth, userId)
+        files, service = get_file_meta_data(x_internal_auth, user_id)
 
         for file in files:
             if file[".tag"] != "file":
@@ -36,17 +36,17 @@ sync_dropbox_router = Router()
 def update_dropbox_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    userId: str = None,
+    user_id = None
 ):
     """Fetches file metadata and updates files that have been modified since the last sync."""
     try:
-        files, service = get_file_meta_data(x_internal_auth, userId)
+        files, service = get_file_meta_data(x_internal_auth, user_id)
 
         for file in files:
             if file[".tag"] != "file":
                 continue
-            if file["server_modified"] <= service.modifiedAt:
-                continue  # No changes since last sync
+            #if file["server_modified"] <= service.modifiedAt:
+                #continue  # No changes since last sync
 
             update_or_create_file(file, service)
 
@@ -56,20 +56,17 @@ def update_dropbox_files(
 
 def get_file_meta_data(
     x_internal_auth,
-    userId
+    user_id
     ):
-
+    """Fetches all file metadata from Dropbox API via list_folder endpoint."""
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
-
-    if not userId:
+    if not user_id:
         return JsonResponse({"error": "userId required"}, status=400)
+    access_token, _ = get_tokens(user_id, "dropbox")
+    service = get_service(user_id, "dropbox")
 
-    access_token, _ = get_tokens(userId, "dropbox")
-    service = get_service(userId, "dropbox")
-
-    
     url = "https://api.dropboxapi.com/2/files/list_folder"
 
     headers = {
@@ -86,11 +83,11 @@ def get_file_meta_data(
         "limit": 2000,
         "include_non_downloadable_files": True,
     }
-
     response_json = fetch_api(url, headers, data).json()
     files = response_json["entries"]
 
-    # I am unsure of the purpose of the following code, as I believe Dropbox returns all files in one go.
+    # I am unsure of the purpose of the following code,
+    # as I believe Dropbox returns all files in one go.
     # However, I will keep it for now in case it is actually needed
     pages_searched = 1
 
@@ -105,22 +102,22 @@ def get_file_meta_data(
                 url + "/continue", headers=headers, data={"cursor": cursor}
             )
             response_json = response.json()
-            print(response_json)
             cursor = response_json.get("cursor")
             if "entries" in response_json:
                 files.extend(response_json["entries"])
                 pages_searched += 1
-                print(f"Fetched page {pages_searched}, total items: {len(files)}")
                 break  # for testing, remove later
             if "has_more" in response_json and not response_json["has_more"]:
                 break
     return files, service
 
 def update_or_create_file(file, service):
+    """ Updates or creates a file record in the database based on Dropbox file metadata."""
     extension = os.path.splitext(file["name"])[1]
     path = file["path_display"]
     link = "https://www.dropbox.com/preview" + path
-    # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
+    # Behøves vi dette?
+    # Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
 
     # Vi burde nok fjerne "name" fra path for at spare plads
     save_file(

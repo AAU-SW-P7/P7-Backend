@@ -17,18 +17,21 @@ def save_file(
     content,
 ):
     """Saves or updates a file record in the database."""
+    defaults = {
+        "name": name,
+        "extension": extension,
+        "downloadable": downloadable,
+        "path": path,
+        "link": link,
+        "size": size,
+        "createdAt": created_at,
+        "modifiedAt": modified_at,
+        "lastIndexed": last_indexed,
+        "snippet": snippet,
+        "content": content,
+    }
     File.objects.update_or_create(
         serviceId=service_id,
         serviceFileId=service_file_id,
-        name=name,
-        extension=extension,
-        downloadable=downloadable,
-        path=path,
-        link=link,
-        size=size,
-        createdAt=created_at,
-        modifiedAt=modified_at,
-        lastIndexed=last_indexed,
-        snippet=snippet,
-        content=content,
+        defaults=defaults,
     )

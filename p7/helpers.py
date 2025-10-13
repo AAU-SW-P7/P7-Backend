@@ -1,7 +1,8 @@
-import requests
+"""Helper functions for internal auth and API requests."""
 import os
-
 from typing import Any
+
+import requests
 from django.http import JsonResponse
 
 def validate_internal_auth(x_internal_auth: str) -> Any:
@@ -18,5 +19,8 @@ def fetch_api(url, headers, data):
     """
     response = requests.post(url, headers=headers, json=data)
     if not response.ok:
-            return JsonResponse({"error": "Failed to fetch files", "details": response.json()}, status=response.status_code)
+        return JsonResponse({"error": "Failed to fetch files", 
+                             "details": response.json()}, 
+                             status=response.status_code
+                             )
     return response
