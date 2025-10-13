@@ -36,7 +36,8 @@ INSTALLED_APPS = [
     #'django.contrib.messages',
     #'django.contrib.staticfiles',
     "corsheaders",
-    "repository.apps.RepositoryConfig",
+    # "repository.apps.RepositoryConfig",
+    "repository",
 ]
 
 MIDDLEWARE = [

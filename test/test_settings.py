@@ -1,5 +1,9 @@
 import os
 
+INSTALLED_APPS = [
+    "repository",
+]
+
 DATABASES = {
     "default": {
         "ENGINE": os.getenv("DATABASE_ENGINE"),
