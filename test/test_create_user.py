@@ -14,36 +14,46 @@ import django
 django.setup()
 
 import pytest
+import pytest_check as check
 from ninja.testing import TestClient
 from p7.create_user.api import create_user_router
 from repository.models import User
 
 # Use the test settings module instead of manual configure
 
+from django.core.management import call_command
+import pytest
+
+@pytest.fixture(autouse=True)
+def _flush_db(transactional_db, django_db_blocker):
+    with django_db_blocker.unblock():
+        call_command("flush", verbosity=0, interactive=False)
+
 @pytest.fixture
 def client():
     return TestClient(create_user_router)
 
 def test_create_user_success(client):
+    _flush_db(None, None)  # Ensure DB is clean before test
     # Get initial user count
     initial_count = User.objects.count()
     
     response = client.post("/", headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")})
     
     data = response.json()
-    
-    assert response.status_code == 200
-    assert "id" in data
-    assert type(data["id"]) is int
+
+    check.equal(response.status_code, 200)
+    check.equal("id" in data, True)
+    check.equal("error" not in data, True)
+    check.equal(type(data["id"]) is int, True)
     
     # Assert that a new user was created in the database
-    assert User.objects.count() == initial_count + 1
-    
+    check.equal(User.objects.count(), initial_count + 1)
+
     # Assert that the user with the returned ID actually exists
     created_user = User.objects.get(id=data["id"])
-    assert created_user is not None
-    assert created_user.id == data["id"]
-    
+    check.is_not_none(created_user)
+    check.equal(created_user.id, data["id"])
 
 """
 def test_create_user_invalid_auth(mocker, client):

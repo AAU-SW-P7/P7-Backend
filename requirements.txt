@@ -12,4 +12,5 @@ msal
 pytest
 pytest-mock
 pytest-django
+pytest-check
 pylint
