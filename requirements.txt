@@ -11,4 +11,5 @@ google-auth-oauthlib
 msal
 pytest
 pytest-mock
+pytest-django
 pylint
