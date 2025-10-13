@@ -1,0 +1,39 @@
+import os
+import pytest_check as check
+
+from repository.models import User
+
+def assert_create_user_success(client):
+    # Get initial user count
+    initial_count = User.objects.count()
+    
+    check.equal(initial_count == 0, True) 
+    
+    response = client.post("/", headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")})
+    
+    data = response.json()
+
+    check.equal(response.status_code, 200)
+    check.equal("id" in data, True)
+    check.equal("error" not in data, True)
+    check.equal(type(data["id"]) is int, True)
+    
+    # Assert that a new user was created in the database
+    check.equal(User.objects.count(), initial_count + 1)
+
+    # Assert that the user with the returned ID actually exists
+    created_user = User.objects.get(id=data["id"])
+    check.is_not_none(created_user)
+    check.equal(created_user.id, data["id"])
+
+def assert_create_user_invalid_auth(client):
+    response = client.post("/", headers={"x-internal-auth": "invalid_token"})
+
+    check.equal(response.status_code, 401)
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
+def assert_create_user_missing_header(client):
+    response = client.post("/")
+
+    check.equal(response.status_code, 422)
+    check.equal(response.json(), {'detail': [{'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string', 'type': 'string_type'}]})
