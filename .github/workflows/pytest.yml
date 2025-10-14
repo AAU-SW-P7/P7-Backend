@@ -40,5 +40,5 @@ jobs:
 
       - name: Run tests inside Docker
         run: |
-          docker compose -f compose.dev.yml exec -T backend pytest
+          docker compose -f compose.dev.yml run --rm backend pytest
           
