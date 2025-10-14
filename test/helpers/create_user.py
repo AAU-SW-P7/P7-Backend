@@ -3,11 +3,11 @@ import pytest_check as check
 
 from repository.models import User
 
-def assert_create_user_success(client):
+def assert_create_user_success(client, user_number):
     # Get initial user count
     initial_count = User.objects.count()
     
-    check.equal(initial_count == 0, True) 
+    check.equal(initial_count == user_number - 1, True) 
     
     response = client.post("/", headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")})
     
@@ -19,7 +19,7 @@ def assert_create_user_success(client):
     check.equal(type(data["id"]) is int, True)
     
     # Assert that a new user was created in the database
-    check.equal(User.objects.count(), initial_count + 1)
+    check.equal(User.objects.count(), user_number)
 
     # Assert that the user with the returned ID actually exists
     created_user = User.objects.get(id=data["id"])
