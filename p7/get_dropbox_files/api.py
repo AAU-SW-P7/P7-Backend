@@ -36,18 +36,19 @@ sync_dropbox_router = Router()
 def update_dropbox_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    user_id = None
+    user_id: str = None,
 ):
     """Fetches file metadata and updates files that have been modified since the last sync."""
     try:
         files, service = get_file_meta_data(x_internal_auth, user_id)
-
+        updated_files = []
         for file in files:
             if file[".tag"] != "file":
                 continue
+            #This should be added to optimize, and such that a list of new/changed files can be made
             #if file["server_modified"] <= service.modifiedAt:
                 #continue  # No changes since last sync
-
+            updated_files.append(file)
             update_or_create_file(file, service)
 
     # return JsonResponse(files, safe=False)
@@ -86,9 +87,6 @@ def get_file_meta_data(
     response_json = fetch_api(url, headers, data).json()
     files = response_json["entries"]
 
-    # I am unsure of the purpose of the following code,
-    # as I believe Dropbox returns all files in one go.
-    # However, I will keep it for now in case it is actually needed
     pages_searched = 1
 
     if (
