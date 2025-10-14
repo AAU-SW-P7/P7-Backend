@@ -20,6 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "${{ github.repository_owner }}/P7-Frontend"
+          ref: "main"
           path: "${{ github.workspace }}/frontend"
           token: "${{ secrets.PAT }}"
 
@@ -27,7 +28,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "${{ github.repository_owner }}/P7-Backend"
-          ref: "main"
           path: "${{ github.workspace }}/backend"
           token: "${{ secrets.PAT }}"
 
