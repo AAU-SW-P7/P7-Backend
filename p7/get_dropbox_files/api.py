@@ -1,5 +1,4 @@
 import os
-import requests
 from p7.helpers import validate_internal_auth, fetch_api
 from repository.service import get_tokens, get_service
 from repository.file import save_file
