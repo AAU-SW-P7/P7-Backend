@@ -39,7 +39,6 @@ jobs:
           docker compose -f compose.dev.yml up -d --force-recreate --build
 
       - name: Run tests inside Docker
-        working-directory: "${{ github.workspace }}/backend"
         run: |
           docker compose -f compose.dev.yml exec -T backend pytest
           
