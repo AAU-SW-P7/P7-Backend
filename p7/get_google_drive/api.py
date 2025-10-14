@@ -1,21 +1,20 @@
+"""API route to fetch and save Google Drive files for a user."""
 import os
-import requests
-from p7.helpers import validate_internal_auth
-from repository.service import get_tokens, get_service
-from repository.file import save_file
 from typing import Dict
-
-# Helper: compute the folder path pieces for a given folder id (memoized)
-from functools import lru_cache
-
-from ninja import Router, Body, Header
+from ninja import Router, Header
 from django.http import JsonResponse
-
-
 # Google libs
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+
+from p7.helpers import validate_internal_auth
+from repository.service import get_tokens, get_service
+from repository.file import save_file
+
+
+
+
 
 fetch_google_drive_files_router = Router()
 
@@ -27,6 +26,11 @@ def _google_drive_folder_path_parts(
     Returns a list like ['FolderA', 'FolderB'] for a folder id.
     Stops gracefully if an ancestor isn't in `files`.
     Works for 'root' (My Drive) and shared drives (top-level folder has no parents).
+    params:
+        folder_id (str): The Google Drive folder ID to build the path for.
+        file_by_id (Dict[str, dict]): A mapping of file IDs to their metadata dictionaries.
+    returns:
+        list: A list of folder names from the root to the specified folder.
     """
     if not folder_id or folder_id == "root":
         return []
@@ -45,17 +49,23 @@ def _google_drive_folder_path_parts(
 def fetch_google_drive_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    userId: str = None,
+    user_id: str = None,
 ):
+    """Fetch and save Google Drive files for a given user.
+
+    params:
+        x_internal_auth (str): The internal auth header for validating the request.
+        user_id (str): The ID of the user whose Google Drive files are to be fetched.
+    """
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
 
-    if not userId:
-        return JsonResponse({"error": "userId required"}, status=400)
+    if not user_id:
+        return JsonResponse({"error": "user_id required"}, status=400)
 
-    access_token, refresh_token = get_tokens(userId, "google")
-    service = get_service(userId, "google")
+    access_token, refresh_token = get_tokens(user_id, "google")
+    service = get_service(user_id, "google")
 
     try:
         # Build credentials object. token may be stale; refresh() will update it.
@@ -113,7 +123,13 @@ def fetch_google_drive_files(
 
         def build_google_drive_path(file_meta: dict) -> str:
             """
-            Build a display path like /FolderA/FolderB/filename using only the current `files` array.
+            Build a display path like /FolderA/FolderB/filename 
+            using only the current `files` array.
+
+            params:
+                file_meta (dict): The metadata dictionary of the file for which to build the path.
+            returns:
+                str: The constructed file path.
             """
             parents = file_meta.get("parents") or []
             prefix_parts = (
@@ -134,7 +150,7 @@ def fetch_google_drive_files(
             extension = os.path.splitext(file.get("name", ""))[1]
             downloadable = file.get("capabilities", {}).get("canDownload")
             path = build_google_drive_path(file)
-            
+
             save_file(
                 service,
                 file["id"],
@@ -152,5 +168,5 @@ def fetch_google_drive_files(
             )
 
         # return JsonResponse(files, safe=False)
-    except Exception as e:
+    except (ValueError,TypeError,KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)

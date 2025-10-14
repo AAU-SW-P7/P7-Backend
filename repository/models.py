@@ -1,16 +1,27 @@
-# The model we use for our database
+"""Defines the database models for users, services, files, terms, inverted index, and postings."""
 from django.db import models
 
 
 class User(models.Model):
+    """A class representing a user of the application.
+    
+    params:
+        models (django.db): Base class for all models in Django.
+    """
     id = models.BigAutoField(primary_key=True)
 
     class Meta:
+        """Class defining metadata for the User model."""
         app_label = "repository"
         db_table = '"users"'
 
 
 class Service(models.Model):
+    """A class representing a service used by the application.
+
+    params:
+        models (django.db): Base class for all models in Django.
+    """
     id = models.BigAutoField(primary_key=True)
     userId = models.ForeignKey(
         User,
@@ -29,11 +40,17 @@ class Service(models.Model):
     scopeName = models.TextField()
 
     class Meta:
+        """Class defining metadata for the Service model."""
         app_label = "repository"
         db_table = '"service"'
 
 
 class File(models.Model):
+    """A class representing a file associated with a service.
+
+    params:
+        models (django.db): Base class for all models in Django.
+    """
     id = models.BigAutoField(primary_key=True)
     serviceId = models.ForeignKey(
         Service,
@@ -55,6 +72,7 @@ class File(models.Model):
     content = models.TextField(null=True, blank=True)
 
     class Meta:
+        """Class defining metadata for the File model."""
         app_label = "repository"
         db_table = '"file"'
         constraints = [
@@ -66,15 +84,26 @@ class File(models.Model):
 
 
 class Term(models.Model):
+    """A class representing a unique term used in the inverted index.
+
+    params:
+        models (django.db): Base class for all models in Django.
+    """
     # Natural key used by FKs in other tables
     termName = models.TextField(unique=True)
 
     class Meta:
+        """Class defining metadata for the Term model."""
         app_label = "repository"
         db_table = '"term"'
 
 
 class InvertedIndex(models.Model):
+    """A class representing the inverted index for terms and their document frequencies.
+    
+    params:
+        models (django.db): Base class for all models in Django.
+    """
     # Per-user term stats
     userId = models.ForeignKey(
         User,
@@ -92,6 +121,7 @@ class InvertedIndex(models.Model):
     documentFrequency = models.BigIntegerField()
 
     class Meta:
+        """Class defining metadata for the InvertedIndex model."""
         app_label = "repository"
         db_table = '"invertedindex"'
         constraints = [
@@ -103,6 +133,11 @@ class InvertedIndex(models.Model):
 
 
 class Posting(models.Model):
+    """A class representing a posting in the inverted index, linking terms to files.
+
+    params:
+        models (django.db): Base class for all models in Django.
+    """
     termName = models.ForeignKey(
         Term,
         to_field='termName',              # reference Term.termName (unique field)
@@ -119,6 +154,7 @@ class Posting(models.Model):
     termFrequency = models.BigIntegerField()
 
     class Meta:
+        """Class defining metadata for the Posting model."""
         app_label = "repository"
         db_table = '"posting"'
         constraints = [

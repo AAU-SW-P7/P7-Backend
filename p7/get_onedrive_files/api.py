@@ -1,19 +1,18 @@
+"""Fetch OneDrive files for a user and save them to the database."""
 import os
 import requests
-from p7.helpers import validate_internal_auth, fetch_api
-from repository.service import get_tokens, get_service
-from repository.file import save_file
 
-# Helper: compute the folder path pieces for a given folder id (memoized)
-from functools import lru_cache
 
-from ninja import Router, Body, Header
+
+from ninja import Router, Header
 from django.http import JsonResponse
-from django.db import IntegrityError
-from repository.models import Service, File
 
 # Microsoft libs
 import msal
+
+from repository.service import get_tokens, get_service
+from repository.file import save_file
+from p7.helpers import validate_internal_auth
 
 fetch_onedrive_files_router = Router()
 
@@ -21,18 +20,24 @@ fetch_onedrive_files_router = Router()
 def fetch_onedrive_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    userId: str = None,
+    user_id: str = None,
 ):
+    """Fetch and save OneDrive files for a given user.
+
+    params:
+        x_internal_auth (str): The internal auth header for validating the request.
+        user_id (str): The ID of the user whose OneDrive files are to be fetched.
+    """
     auth_resp = validate_internal_auth(x_internal_auth)
 
     if auth_resp:
         return auth_resp
 
-    if not userId:
-        return JsonResponse({"error": "userId required"}, status=400)
+    if not user_id:
+        return JsonResponse({"error": "user_id required"}, status=400)
 
-    access_token, refresh_token = get_tokens(userId, "microsoft-entra-id")
-    service = get_service(userId, "microsoft-entra-id")
+    access_token, refresh_token = get_tokens(user_id, "microsoft-entra-id")
+    service = get_service(user_id, "microsoft-entra-id")
 
     try:
         # Build MSAL app instance
@@ -86,11 +91,14 @@ def fetch_onedrive_files(
                             if "folder" in obj:
                                 child_id = obj["id"]
                                 print(
-                                    f"Recursing into folder {obj.get('name')} (id={child_id}) at depth {depth}"
+                                    f"Recursing into folder "\
+                                    f"{obj.get('name')} (id={child_id}) at depth {depth}"
                                 )
                                 results.extend(
                                     walk(
-                                        f"https://graph.microsoft.com/v1.0/me/drive/items/{child_id}/children?$top={page_limit}",
+                                        f"https://graph.microsoft.com/"\
+                                        f"v1.0/me/drive/items/{child_id}/children"\
+                                        f"?$top={page_limit}",
                                         depth + 1,
                                     )
                                 )
@@ -137,5 +145,5 @@ def fetch_onedrive_files(
             )
 
         # return JsonResponse(files, safe=False)
-    except Exception as e:
+    except (ValueError, TypeError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)

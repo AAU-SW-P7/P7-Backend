@@ -1,14 +1,11 @@
+"""API endpoint for fetching and saving Dropbox files."""
 import os
-import requests
+from ninja import Router, Header
+from django.http import JsonResponse
 from p7.helpers import validate_internal_auth, fetch_api
 from repository.service import get_tokens, get_service
 from repository.file import save_file
 
-# Helper: compute the folder path pieces for a given folder id (memoized)
-from functools import lru_cache
-
-from ninja import Router, Header
-from django.http import JsonResponse
 
 fetch_dropbox_files_router = Router()
 
@@ -16,17 +13,24 @@ fetch_dropbox_files_router = Router()
 def fetch_dropbox_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    userId: str = None,
+    user_id: str = None,
 ):
+    """Fetch and save Dropbox files for a given user.
+
+    params:
+        x_internal_auth (str): The internal auth header for validating the request.
+        user_id (str): The ID of the user whose Dropbox files are to be fetched.
+    """
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
 
-    if not userId:
-        return JsonResponse({"error": "userId required"}, status=400)
+    if not user_id:
+        response = JsonResponse({"error": "user_id required"}, status=400)
+        return response
 
-    access_token, _ = get_tokens(userId, "dropbox")
-    service = get_service(userId, "dropbox")
+    access_token, _ = get_tokens(user_id, "dropbox")
+    service = get_service(user_id, "dropbox")
 
     try:
         url = "https://api.dropboxapi.com/2/files/list_folder"
@@ -79,7 +83,8 @@ def fetch_dropbox_files(
             extension = os.path.splitext(file["name"])[1]
             path = file["path_display"]
             link = "https://www.dropbox.com/preview" + path
-            # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
+            # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name")
+            # og smække "https://www.dropbox.com/preview" på frontenden
 
             # Vi burde nok fjerne "name" fra path for at spare plads
             save_file(
@@ -97,6 +102,22 @@ def fetch_dropbox_files(
                 None,
                 None,
             )
-        # return JsonResponse(files, safe=False)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse(files, safe=False, status=200)
+    except KeyError as e:
+        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
+        return response
+    except ValueError as e:
+        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
+        return response
+    except ConnectionError as e:
+        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
+        return response
+    except RuntimeError as e:
+        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
+        return response
+    except TypeError as e:
+        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
+        return response
+    except OSError as e:
+        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
+        return response
