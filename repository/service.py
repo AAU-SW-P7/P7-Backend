@@ -1,3 +1,4 @@
+"""Service repository for managing user service tokens and details."""
 from django.http import JsonResponse
 from repository.models import Service
 

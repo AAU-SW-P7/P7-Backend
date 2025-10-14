@@ -1,10 +1,8 @@
+"""API for fetching and syncing Dropbox files."""
 import os
 from p7.helpers import validate_internal_auth, fetch_api
 from repository.service import get_tokens, get_service
 from repository.file import save_file
-
-# Helper: compute the folder path pieces for a given folder id (memoized)
-from functools import lru_cache
 
 from ninja import Router, Header
 from django.http import JsonResponse
@@ -26,12 +24,11 @@ def fetch_dropbox_files(
                 continue
             update_or_create_file(file, service)
 
-    # return JsonResponse(files, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-sync_dropbox_router = Router()
-@sync_dropbox_router.get("/")
+sync_dropbox_files_router = Router()
+@sync_dropbox_files_router.get("/")
 def update_dropbox_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
@@ -50,7 +47,6 @@ def update_dropbox_files(
             updated_files.append(file)
             update_or_create_file(file, service)
 
-    # return JsonResponse(files, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -58,7 +54,8 @@ def get_file_meta_data(
     x_internal_auth,
     user_id
     ):
-    """Fetches all file metadata from Dropbox API via list_folder endpoint."""
+    """Fetches all file metadata from Dropbox API via list_folder endpoint.
+    Returns the list of fetched files and the service object."""
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
@@ -114,7 +111,8 @@ def update_or_create_file(file, service):
     path = file["path_display"]
     link = "https://www.dropbox.com/preview" + path
     # Behøves vi dette?
-    # Vi kunne jo tage "path" ("path" + "name") og smække "https://www.dropbox.com/preview" på frontenden
+    # Vi kunne jo tage "path" ("path" + "name")
+    # og smække "https://www.dropbox.com/preview" på frontenden
 
     # Vi burde nok fjerne "name" fra path for at spare plads
     save_file(

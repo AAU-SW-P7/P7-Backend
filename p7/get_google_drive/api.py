@@ -1,13 +1,11 @@
+"""API for fetching and syncing Google Drive files."""
 import os
 from typing import Dict
 from p7.helpers import validate_internal_auth
 from repository.service import get_tokens, get_service
 from repository.file import save_file
 
-# Helper: compute the folder path pieces for a given folder id (memoized)
-from functools import lru_cache
-
-from ninja import Router, Body, Header
+from ninja import Router, Header
 from django.http import JsonResponse
 
 
@@ -54,7 +52,29 @@ def fetch_google_drive_files(
         for file in files:
             update_or_create_file(file, service, file_by_id)
 
-        # return JsonResponse(files, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+sync_google_drive_files_router = Router()
+@sync_google_drive_files_router.get("/")
+def sync_google_drive_files(
+    request,
+    x_internal_auth: str = Header(..., alias="x-internal-auth"),
+    user_id: str = None,
+):
+    """Fetches file metadata and updates files that have been modified since the last sync."""
+    try:
+        files, service = get_file_meta_data(x_internal_auth, user_id)
+        # Build a fast lookup for any item (files + folders)
+        file_by_id = {file["id"]: file for file in files}
+
+        updated_files = []
+        for file in files:
+            if file.get("modifiedTime") <= service.modifiedAt.isoformat():
+                continue  # No changes since last sync
+            updated_files.append(file)
+            update_or_create_file(file, service, file_by_id)
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -63,7 +83,7 @@ def get_file_meta_data(
     user_id: str = None,
 ):
     """Fetches all file metadata from a user's Google Drive account
-    Returns"""
+    Returns the list of fetched files and the service object."""
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
