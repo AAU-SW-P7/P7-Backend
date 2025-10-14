@@ -28,8 +28,9 @@ pytestmark = pytest.mark.usefixtures("django_db_setup")
 def create_user_client():
     return TestClient(create_user_router)
 
-def test_create_user_success(create_user_client):
-    assert_create_user_success(create_user_client)
+def test_create_user_success(create_user_client): # make 3 users
+    for user_number in range(1, 3+1):  # 3 users
+        assert_create_user_success(create_user_client, user_number)
 
 def test_create_user_invalid_auth(create_user_client):
     assert_create_user_invalid_auth(create_user_client)

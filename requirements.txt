@@ -14,3 +14,4 @@ pytest-mock
 pytest-django
 pytest-check
 pylint
+pylint-django
