@@ -36,9 +36,11 @@ jobs:
 
       - name: Build images with Docker compose
         run: |
-          docker compose -f compose.dev.yml up -d --force-recreate --build --wait --wait-timeout 30
+          docker compose -f compose.dev.yml up -d --force-recreate --build
 
       - name: Run tests inside Docker
         run: |
+          sleep 30 # wait for the services to be fully up and running
+          
           docker compose -f compose.dev.yml run --rm backend pytest
           
