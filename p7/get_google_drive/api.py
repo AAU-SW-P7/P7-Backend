@@ -62,7 +62,12 @@ def sync_google_drive_files(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
-    """Fetches file metadata and updates files that have been modified since the last sync."""
+    """Fetches file metadata and updates files that have been modified since the last sync.
+        params:
+        request: The HTTP request object.
+        x_internal_auth: Internal auth token for validating the request.
+        user_id: The id of the user whose files are to be synced.
+    """
     try:
         files, service = get_file_meta_data(x_internal_auth, user_id)
         # Build a fast lookup for any item (files + folders)
@@ -72,6 +77,7 @@ def sync_google_drive_files(
         for file in files:
             if file.get("modifiedTime") <= service.modifiedAt.isoformat():
                 continue  # No changes since last sync
+            
             updated_files.append(file)
             update_or_create_file(file, service, file_by_id)
 
@@ -82,8 +88,15 @@ def get_file_meta_data(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
-    """Fetches all file metadata from a user's Google Drive account
-    Returns the list of fetched files and the service object."""
+    """Fetches all file metadata from a user's Google Drive account.
+        params:
+        x_internal_auth: Internal auth token for validating the request.
+        user_id: The id of the user whose files are to be fetched.
+        
+        Returns:
+        List of fetched files
+        Service object.
+    """
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
@@ -146,7 +159,12 @@ def get_file_meta_data(
     return files, service
 
 def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
-    """ Updates or creates a File record from Google Drive file metadata."""
+    """ Updates or creates a File record from Google Drive file metadata.
+        params:
+        file: A dictionary containing Google Drive file metadata.
+        service: The service object associated with the user.
+        file_by_id: A dictionary mapping file IDs to their metadata for path construction.
+    """
     # Skip non-files (folders, shortcuts, etc)
     mime_type = file.get("mimeType", "")
     if (
@@ -176,8 +194,13 @@ def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
     )
 
 def build_google_drive_path(file_meta: dict, file_by_id: Dict[str, dict]) -> str:
-    """
-    Build a display path like /FolderA/FolderB/filename using only the current `files` array.
+    """ Build a display path like /FolderA/FolderB/filename using only the current `files` array.
+        params:
+        file_meta: A dictionary containing Google Drive file metadata.
+        file_by_id: A dictionary mapping file IDs to their metadata for path construction.
+
+        Returns:
+        A string representing the file path.
     """
     parents = file_meta.get("parents") or []
     prefix_parts = (

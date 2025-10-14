@@ -15,7 +15,12 @@ def fetch_dropbox_files(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
-    """Fetches all file metadata from a user's Dropbox account and saves it to the DB."""
+    """Fetches all file metadata from a user's Dropbox account and saves it to the DB
+        params: 
+        request: The HTTP request object.
+        x_internal_auth: Internal auth token for validating the request.
+        user_id: The id of the user whose files are to be fetched.
+    """
     try:
         files, service = get_file_meta_data(x_internal_auth, user_id)
 
@@ -27,6 +32,7 @@ def fetch_dropbox_files(
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+
 sync_dropbox_files_router = Router()
 @sync_dropbox_files_router.get("/")
 def update_dropbox_files(
@@ -34,16 +40,21 @@ def update_dropbox_files(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
-    """Fetches file metadata and updates files that have been modified since the last sync."""
+    """Fetches file metadata and updates files that have been modified since the last sync.
+        params: 
+        request: The HTTP request object.
+        x_internal_auth: Internal auth token for validating the request.
+        user_id: The id of the user whose files are to be synced.
+    """
     try:
         files, service = get_file_meta_data(x_internal_auth, user_id)
         updated_files = []
         for file in files:
             if file[".tag"] != "file":
                 continue
-            #This should be added to optimize, and such that a list of new/changed files can be made
-            #if file["server_modified"] <= service.modifiedAt:
-                #continue  # No changes since last sync
+            if file["server_modified"] <= service.indexedAt:
+                continue  # No changes since last sync
+            
             updated_files.append(file)
             update_or_create_file(file, service)
 
@@ -55,7 +66,14 @@ def get_file_meta_data(
     user_id
     ):
     """Fetches all file metadata from Dropbox API via list_folder endpoint.
-    Returns the list of fetched files and the service object."""
+        params:
+        x_internal_auth: Internal auth token for validating the request.
+        user_id: The id of the user whose files are to be fetched.
+
+        Returns:
+        list of fetched files
+        service object.
+    """
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
@@ -106,7 +124,11 @@ def get_file_meta_data(
     return files, service
 
 def update_or_create_file(file, service):
-    """ Updates or creates a file record in the database based on Dropbox file metadata."""
+    """ Updates or creates a file record in the database based on Dropbox file metadata.
+        params:
+        file: A dictionary containing Dropbox file metadata.
+        service: The service object associated with the user.
+    """
     extension = os.path.splitext(file["name"])[1]
     path = file["path_display"]
     link = "https://www.dropbox.com/preview" + path

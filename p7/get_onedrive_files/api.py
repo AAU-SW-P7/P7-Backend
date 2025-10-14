@@ -7,8 +7,6 @@ from repository.file import save_file
 
 from ninja import Router, Header
 from django.http import JsonResponse
-from django.db import IntegrityError
-from repository.models import Service, File
 
 # Microsoft libs
 import msal
@@ -21,6 +19,12 @@ def fetch_onedrive_files(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     userId: str = None,
 ):
+    """Fetches all file metadata from OneDrive API and saves it to the DB.
+        params:
+        request: The HTTP request object.
+        x_internal_auth: Internal auth token for validating the request.
+        userId: The id of the user whose files are to be fetched.
+    """
     try:
         access_token, service = get_file_meta_data(x_internal_auth, userId)
 
@@ -39,14 +43,23 @@ sync_onedrive_files_router = Router()
 def sync_onedrive_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    userId: str = None,
+    user_id: str = None,
 ):
+    """Fetches file metadata and updates files that have been modified since the last sync.
+        params:
+        request: The HTTP request object.
+        x_internal_auth: Internal auth token for validating the request.
+        user_id: The id of the user whose files are to be synced.
+    """
     try:
-        access_token, service = get_file_meta_data(x_internal_auth, userId)
-
+        access_token, service = get_file_meta_data(x_internal_auth, user_id)
+        updated_files = []
         for file in get_onedrive_tree(access_token, page_limit=999):
             if "folder" in file:  # Skip folders
                 continue
+            if file["lastModifiedDateTime"] <= service.indexedAt.isoformat():
+                continue  # No changes since last sync
+            updated_files.append(file)
             update_or_create_file(file, service)
 
     except Exception as e:
@@ -57,7 +70,13 @@ def get_file_meta_data(
     user_id
     ):
     """Fetches all file metadata from OneDrive API.
-    Returns the list of fetched files and the service object.
+        params:
+        x_internal_auth: Internal auth token for validating the request.
+        user_id: The id of the user whose files are to be fetched.
+
+        Returns:
+        List of fetched files 
+        Service object.
     """
     auth_resp = validate_internal_auth(x_internal_auth)
 
@@ -100,7 +119,11 @@ def get_file_meta_data(
     return access_token, service
 
 def update_or_create_file(file, service):
-    """Updates or creates a File entry in the database based on OneDrive file metadata."""
+    """Updates or creates a File entry in the database based on OneDrive file metadata.
+        params:
+        file: A dictionary containing OneDrive file metadata.
+        service: The service object associated with the user.
+    """
     extension = os.path.splitext(file["name"])[1]
     path = (
         (file.get("parentReference", {}).get("path", "")).replace(
@@ -127,6 +150,15 @@ def update_or_create_file(file, service):
     )
 
 def get_onedrive_tree(access_token: str, page_limit: int = 999) -> list[dict]:
+    """Recursively fetches all files from OneDrive using Microsoft Graph API.
+        params:
+        access_token: The OAuth2 access token for authenticating API requests.
+        page_limit: Number of items to fetch per API call (max 999).
+
+        Returns:
+        The result of walk() on the OneDrive root children endpoint.
+    """
+
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
@@ -137,6 +169,11 @@ def get_onedrive_tree(access_token: str, page_limit: int = 999) -> list[dict]:
     ) -> list[
         dict
     ]:  # dette kan der i hvertfald godt være nogle workers som kan tage sig af
+        """Recursively walks through OneDrive folders to fetch all files.
+            params:
+            url: The API endpoint URL to fetch items from.
+            depth: Current recursion depth.
+        """
         results: list[dict] = []
 
         while url:
