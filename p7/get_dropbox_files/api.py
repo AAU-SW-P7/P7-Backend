@@ -1,11 +1,11 @@
-"""API for fetching and syncing Dropbox files."""
+"""API endpoint for fetching, saving, and syncing Dropbox files."""
 import os
+from ninja import Router, Header
+from django.http import JsonResponse
 from p7.helpers import validate_internal_auth, fetch_api
 from repository.service import get_tokens, get_service
 from repository.file import save_file
 
-from ninja import Router, Header
-from django.http import JsonResponse
 
 fetch_dropbox_files_router = Router()
 
@@ -42,7 +42,6 @@ def update_dropbox_files(
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
         params: 
-        request: The HTTP request object.
         x_internal_auth: Internal auth token for validating the request.
         user_id: The id of the user whose files are to be synced.
     """
@@ -77,8 +76,11 @@ def get_file_meta_data(
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
+
     if not user_id:
-        return JsonResponse({"error": "userId required"}, status=400)
+        response = JsonResponse({"error": "user_id required"}, status=400)
+        return response
+
     access_token, _ = get_tokens(user_id, "dropbox")
     service = get_service(user_id, "dropbox")
 
@@ -136,19 +138,38 @@ def update_or_create_file(file, service):
     # Vi kunne jo tage "path" ("path" + "name")
     # og smække "https://www.dropbox.com/preview" på frontenden
 
-    # Vi burde nok fjerne "name" fra path for at spare plads
-    save_file(
-        service,
-        file["id"],
-        file["name"],
-        extension,
-        file["is_downloadable"],
-        path,
-        link,
-        file["size"],
-        file["client_modified"],
-        file["server_modified"],
-        None,
-        None,
-        None,
-    )
+            # Vi burde nok fjerne "name" fra path for at spare plads
+            save_file(
+                service,
+                file["id"],
+                file["name"],
+                extension,
+                file["is_downloadable"],
+                path,
+                link,
+                file["size"],
+                file["client_modified"],
+                file["server_modified"],
+                None,
+                None,
+                None,
+            )
+        return JsonResponse(files, safe=False, status=200)
+    except KeyError as e:
+        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
+        return response
+    except ValueError as e:
+        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
+        return response
+    except ConnectionError as e:
+        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
+        return response
+    except RuntimeError as e:
+        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
+        return response
+    except TypeError as e:
+        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
+        return response
+    except OSError as e:
+        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
+        return response

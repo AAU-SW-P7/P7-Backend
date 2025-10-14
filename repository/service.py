@@ -12,6 +12,7 @@ def get_tokens(user_id, service_name):
     except Service.DoesNotExist:
         return JsonResponse({"error": "No account tokens found for user"}, status=404)
 
+
     return service.accessToken, service.refreshToken
 
 def get_service(user_id, service_name) -> Service:
@@ -23,5 +24,8 @@ def get_service(user_id, service_name) -> Service:
         return service
     except Service.DoesNotExist:
         return JsonResponse({"error": f"Service ({service_name}) not found for user"}, status=404)
-    except Exception as e:
-        return JsonResponse({"error": f"Failed to retrieve service ({service_name})", "detail": str(e)}, status=500)
+    except Service.MultipleObjectsReturned as e:
+        return JsonResponse(
+            {"error": f"Failed to retrieve service ({service_name})", "detail": str(e)},
+            status=500
+            )

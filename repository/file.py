@@ -16,7 +16,23 @@ def save_file(
     snippet,
     content,
 ):
-    """Saves or updates a file record in the database."""
+    """Saves or updates file metadata and content to the database.
+    
+    params:
+        sericeId: ID of the service the file belongs to.
+        serviceFileId: ID of the file in the external service.
+        name: Name of the file.
+        extension: File extension.
+        downloadable: Boolean indicating if the file is downloadable.
+        path: Path of the file in the service.
+        link: URL link to the file.
+        size: Size of the file in bytes.
+        createdAt: Timestamp when the file was created.
+        modifiedAt: Timestamp when the file was last modified.
+        lastIndexed: Timestamp when the file was last indexed.
+        snippet: Text snippet or preview of the file content.
+        content: Full text content of the file.
+        """
     defaults = {
         "name": name,
         "extension": extension,

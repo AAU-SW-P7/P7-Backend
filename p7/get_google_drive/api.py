@@ -1,4 +1,4 @@
-"""API for fetching and syncing Google Drive files."""
+"""API for fetching, saving, and syncing Google Drive files."""
 import os
 from typing import Dict
 from p7.helpers import validate_internal_auth
@@ -7,12 +7,18 @@ from repository.file import save_file
 
 from ninja import Router, Header
 from django.http import JsonResponse
-
-
 # Google libs
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+
+from p7.helpers import validate_internal_auth
+from repository.service import get_tokens, get_service
+from repository.file import save_file
+
+
+
+
 
 fetch_google_drive_files_router = Router()
 
@@ -24,6 +30,11 @@ def _google_drive_folder_path_parts(
     Returns a list like ['FolderA', 'FolderB'] for a folder id.
     Stops gracefully if an ancestor isn't in `files`.
     Works for 'root' (My Drive) and shared drives (top-level folder has no parents).
+    params:
+        folder_id (str): The Google Drive folder ID to build the path for.
+        file_by_id (Dict[str, dict]): A mapping of file IDs to their metadata dictionaries.
+    returns:
+        list: A list of folder names from the root to the specified folder.
     """
     if not folder_id or folder_id == "root":
         return []
@@ -42,17 +53,23 @@ def _google_drive_folder_path_parts(
 def fetch_google_drive_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    userId: str = None,
+    user_id: str = None,
 ):
+    """
+        Fetches all file metadata from a user's Google Drive account and saves it to the DB
+        params:
+        x_internal_auth: Internal auth token for validating the request.
+        user_id: The id of the user whose files are to be fetched.
+    """
     try:
-        files, service = get_file_meta_data(x_internal_auth, userId)
+        files, service = get_file_meta_data(x_internal_auth, user_id)
         # Build a fast lookup for any item (files + folders)
         file_by_id = {file["id"]: file for file in files}
 
         for file in files:
             update_or_create_file(file, service, file_by_id)
 
-    except Exception as e:
+    except (ValueError,TypeError,KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 
 sync_google_drive_files_router = Router()
@@ -64,7 +81,6 @@ def sync_google_drive_files(
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
         params:
-        request: The HTTP request object.
         x_internal_auth: Internal auth token for validating the request.
         user_id: The id of the user whose files are to be synced.
     """
@@ -102,7 +118,7 @@ def get_file_meta_data(
         return auth_resp
 
     if not user_id:
-        return JsonResponse({"error": "userId required"}, status=400)
+        return JsonResponse({"error": "user_id required"}, status=400)
 
     access_token, refresh_token = get_tokens(user_id, "google")
     service = get_service(user_id, "google")
@@ -173,6 +189,7 @@ def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
         or mime_type == "application/vnd.google-apps.drive-sdk"
     ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
         return
+    
     extension = os.path.splitext(file.get("name", ""))[1]
     downloadable = file.get("capabilities", {}).get("canDownload")
     path = build_google_drive_path(file, file_by_id)

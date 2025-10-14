@@ -11,17 +11,20 @@ from django.http import JsonResponse
 # Microsoft libs
 import msal
 
+from repository.service import get_tokens, get_service
+from repository.file import save_file
+from p7.helpers import validate_internal_auth
+
 fetch_onedrive_files_router = Router()
 
 @fetch_onedrive_files_router.get("/")
 def fetch_onedrive_files(
     request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    userId: str = None,
+    user_id: str = None,
 ):
     """Fetches all file metadata from OneDrive API and saves it to the DB.
         params:
-        request: The HTTP request object.
         x_internal_auth: Internal auth token for validating the request.
         userId: The id of the user whose files are to be fetched.
     """
@@ -84,7 +87,7 @@ def get_file_meta_data(
         return auth_resp
 
     if not user_id:
-        return JsonResponse({"error": "userId required"}, status=400)
+        return JsonResponse({"error": "user_id required"}, status=400)
 
     access_token, refresh_token = get_tokens(user_id, "microsoft-entra-id")
     service = get_service(user_id, "microsoft-entra-id")
@@ -187,13 +190,16 @@ def get_onedrive_tree(access_token: str, page_limit: int = 999) -> list[dict]:
                     if "folder" in obj:
                         child_id = obj["id"]
                         print(
-                            f"Recursing into folder {obj.get('name')} (id={child_id}) at depth {depth}"
-                        )
+                                    f"Recursing into folder "\
+                                    f"{obj.get('name')} (id={child_id}) at depth {depth}"
+                                )
                         results.extend(
                             walk(
-                                f"https://graph.microsoft.com/v1.0/me/drive/items/{child_id}/children?$top={page_limit}",
-                                depth + 1,
-                            )
+                                        f"https://graph.microsoft.com/"\
+                                        f"v1.0/me/drive/items/{child_id}/children"\
+                                        f"?$top={page_limit}",
+                                        depth + 1,
+                                    )
                         )
                     elif "file" in obj:
                         results.append(obj)
