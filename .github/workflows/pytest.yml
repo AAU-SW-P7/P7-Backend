@@ -1,5 +1,6 @@
 name: pytest
 on:
+  workflow_dispatch:
   pull_request:
     branches: 
     - '**'
@@ -41,6 +42,6 @@ jobs:
       - name: Run tests inside Docker
         run: |
           sleep 30 # wait for the services to be fully up and running
-          
+
           docker compose -f compose.dev.yml run --rm backend pytest
           
