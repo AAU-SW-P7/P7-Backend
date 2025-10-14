@@ -6,7 +6,7 @@ from typing import Dict
 create_user_router = Router()
 
 @create_user_router.post("/")
-def create_user(request, x_internal_auth: str = Header(..., alias="x-internal-auth"), payload: Dict[str, str] = Body(...)):
+def create_user(request, x_internal_auth: str = Header(..., alias="x-internal-auth")):
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp

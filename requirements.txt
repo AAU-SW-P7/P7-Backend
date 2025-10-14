@@ -10,4 +10,7 @@ google-auth-httplib2
 google-auth-oauthlib
 msal
 pytest
+pytest-mock
+pytest-django
+pytest-check
 pylint
