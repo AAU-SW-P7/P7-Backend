@@ -1,6 +1,8 @@
+"""Pytest configuration for setting up and tearing down the test database."""
 import pytest
 from django.db import connections
 from django.core.management import call_command
+from django.conf import settings
 
 import psycopg2
 from psycopg2 import sql as psql
@@ -12,7 +14,6 @@ def _admin_conn_kwargs():
     Reads user/password/host/port from Django settings.DATABASES['default'] and
     sets the database name to 'postgres' so we can run CREATE/DROP DATABASE.
     """
-    from django.conf import settings
 
     db = settings.DATABASES.get('default', {})
     engine = db.get('ENGINE', '')
@@ -73,7 +74,7 @@ def terminate_db_connections(dbname):
 
 @pytest.fixture(scope='module', autouse=True)
 def django_db_setup():
-    from django.conf import settings
+    """Set up a clean test database before any tests run."""
 
     settings.DATABASES['default']['NAME'] = settings.DATABASES['default'].get('NAME', 'p7_test')
     test_db_name = settings.DATABASES['default']['NAME']

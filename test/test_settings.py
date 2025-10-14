@@ -1,3 +1,4 @@
+"""Test settings for the Django application."""
 import os
 
 INSTALLED_APPS = [
