@@ -29,8 +29,24 @@ def fetch_dropbox_files(
                 continue
             update_or_create_file(file, service)
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except KeyError as e:
+        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
+        return response
+    except ValueError as e:
+        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
+        return response
+    except ConnectionError as e:
+        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
+        return response
+    except RuntimeError as e:
+        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
+        return response
+    except TypeError as e:
+        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
+        return response
+    except OSError as e:
+        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
+        return response
 
 
 sync_dropbox_files_router = Router()
@@ -53,12 +69,28 @@ def update_dropbox_files(
                 continue
             if file["server_modified"] <= service.indexedAt:
                 continue  # No changes since last sync
-            
+
             updated_files.append(file)
             update_or_create_file(file, service)
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except KeyError as e:
+        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
+        return response
+    except ValueError as e:
+        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
+        return response
+    except ConnectionError as e:
+        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
+        return response
+    except RuntimeError as e:
+        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
+        return response
+    except TypeError as e:
+        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
+        return response
+    except OSError as e:
+        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
+        return response
 
 def get_file_meta_data(
     x_internal_auth,
@@ -138,38 +170,19 @@ def update_or_create_file(file, service):
     # Vi kunne jo tage "path" ("path" + "name")
     # og smække "https://www.dropbox.com/preview" på frontenden
 
-            # Vi burde nok fjerne "name" fra path for at spare plads
-            save_file(
-                service,
-                file["id"],
-                file["name"],
-                extension,
-                file["is_downloadable"],
-                path,
-                link,
-                file["size"],
-                file["client_modified"],
-                file["server_modified"],
-                None,
-                None,
-                None,
-            )
-        return JsonResponse(files, safe=False, status=200)
-    except KeyError as e:
-        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
-        return response
-    except ValueError as e:
-        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
-        return response
-    except ConnectionError as e:
-        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
-        return response
-    except RuntimeError as e:
-        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
-        return response
-    except TypeError as e:
-        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
-        return response
-    except OSError as e:
-        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
-        return response
+    # Vi burde nok fjerne "name" fra path for at spare plads
+    save_file(
+        service,
+        file["id"],
+        file["name"],
+        extension,
+        file["is_downloadable"],
+        path,
+        link,
+        file["size"],
+        file["client_modified"],
+        file["server_modified"],
+        None,
+        None,
+        None,
+    )

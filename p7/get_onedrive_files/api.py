@@ -29,14 +29,14 @@ def fetch_onedrive_files(
         userId: The id of the user whose files are to be fetched.
     """
     try:
-        access_token, service = get_file_meta_data(x_internal_auth, userId)
+        access_token, service = get_file_meta_data(x_internal_auth, user_id)
 
         for file in get_onedrive_tree(access_token, page_limit=999):
             if "folder" in file:  # Skip folders
                 continue
             update_or_create_file(file, service)
 
-    except Exception as e:
+    except (ValueError, TypeError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -65,7 +65,7 @@ def sync_onedrive_files(
             updated_files.append(file)
             update_or_create_file(file, service)
 
-    except Exception as e:
+    except (ValueError, TypeError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 
 def get_file_meta_data(

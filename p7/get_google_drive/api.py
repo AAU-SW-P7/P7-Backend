@@ -93,11 +93,11 @@ def sync_google_drive_files(
         for file in files:
             if file.get("modifiedTime") <= service.modifiedAt.isoformat():
                 continue  # No changes since last sync
-            
+
             updated_files.append(file)
             update_or_create_file(file, service, file_by_id)
 
-    except Exception as e:
+    except (ValueError,TypeError,KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 
 def get_file_meta_data(
@@ -189,7 +189,7 @@ def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
         or mime_type == "application/vnd.google-apps.drive-sdk"
     ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
         return
-    
+
     extension = os.path.splitext(file.get("name", ""))[1]
     downloadable = file.get("capabilities", {}).get("canDownload")
     path = build_google_drive_path(file, file_by_id)
