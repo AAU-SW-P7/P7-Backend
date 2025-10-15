@@ -14,7 +14,6 @@ def _admin_conn_kwargs():
     Reads user/password/host/port from Django settings.DATABASES['default'] and
     sets the database name to 'postgres' so we can run CREATE/DROP DATABASE.
     """
-
     db = settings.DATABASES.get('default', {})
     engine = db.get('ENGINE', '')
     # Only support PostgreSQL here since we use CREATE/DROP DATABASE
@@ -72,8 +71,8 @@ def terminate_db_connections(dbname):
         conn.close()
 
 
-#@pytest.fixture(scope='module', autouse=True)
-@pytest.mark.django_db
+@pytest.fixture(scope='module', autouse=True)
+#@pytest.mark.django_db
 def django_db_setup():
     """Set up a clean test database before any tests run."""
 

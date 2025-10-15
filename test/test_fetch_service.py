@@ -2,10 +2,10 @@
 import os
 import sys
 from pathlib import Path
-import django
+
 
 import pytest
-from ninja.testing import TestClient
+
 
 from helpers.create_user import (
     assert_create_user_success,
@@ -40,18 +40,19 @@ from p7.get_google_drive.api import fetch_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router
 
 # # Make the local backend package importable so `from p7...` works under pytest
-# repo_backend = Path(__file__).resolve().parents[1]  # backend/
-# sys.path.insert(0, str(repo_backend))
+repo_backend = Path(__file__).resolve().parents[1]  # backend/
+sys.path.insert(0, str(repo_backend))
 # # Make the backend/test dir importable so you can use test_settings.py directly
-# sys.path.insert(0, str(repo_backend / "test"))
+sys.path.insert(0, str(repo_backend / "test"))
 
-# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
-
+import django
 django.setup()
 
-#pytestmark = pytest.mark.usefixtures("django_db_setup")
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.usefixtures("django_db_setup")
+#pytestmark = pytest.mark.django_db
+from ninja.testing import TestClient
 
 @pytest.fixture(name="user_client", scope='module', autouse=True)
 def create_user_client():
