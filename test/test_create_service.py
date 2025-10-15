@@ -15,6 +15,7 @@ import django
 django.setup()
 
 import pytest
+from ninja.testing import TestClient
 from helpers.create_user import (
     assert_create_user_success,
     assert_create_user_invalid_auth,
@@ -31,7 +32,6 @@ from p7.create_service.api import create_service_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
-from ninja.testing import TestClient
 
 @pytest.fixture(name="user_client", scope='module', autouse=True)
 def create_user_client():

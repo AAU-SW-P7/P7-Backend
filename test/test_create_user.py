@@ -25,7 +25,6 @@ from p7.create_user.api import create_user_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
-from ninja.testing import TestClient
 
 @pytest.fixture(name="user_client", scope='module', autouse=True)
 def create_user_client():
