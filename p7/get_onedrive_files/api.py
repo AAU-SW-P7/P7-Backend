@@ -59,6 +59,7 @@ def sync_onedrive_files(
                 continue
             if file["lastModifiedDateTime"] <= service.indexedAt.isoformat():
                 continue  # No changes since last sync
+            # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file(file, service)
         return JsonResponse({"status": "success"}, status=200)
