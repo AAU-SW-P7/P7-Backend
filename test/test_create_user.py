@@ -3,15 +3,6 @@ import os
 import sys
 from pathlib import Path
 
-import pytest
-
-from helpers.create_user import (
-    assert_create_user_success,
-    assert_create_user_invalid_auth,
-    assert_create_user_missing_header,
-)
-from p7.create_user.api import create_user_router
-
 # # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
 sys.path.insert(0, str(repo_backend))
@@ -23,9 +14,17 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 import django
 django.setup()
 
+import pytest
+from ninja.testing import TestClient
+from helpers.create_user import (
+    assert_create_user_success,
+    assert_create_user_invalid_auth,
+    assert_create_user_missing_header,
+)
+from p7.create_user.api import create_user_router
+
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
-from ninja.testing import TestClient
 
 @pytest.fixture(name="user_client", scope='module', autouse=True)
 def create_user_client():
