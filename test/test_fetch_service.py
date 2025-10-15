@@ -48,6 +48,8 @@ from p7.get_google_drive.api import fetch_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
+#pytestmark = pytest.mark.django_db
+from ninja.testing import TestClient
 
 @pytest.fixture(name="user_client", scope='module', autouse=True)
 def create_user_client():
