@@ -28,7 +28,7 @@ def fetch_dropbox_files(
             if file[".tag"] != "file":
                 continue
             update_or_create_file(file, service)
-
+        return JsonResponse({"status": "success"}, status=200)
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
         return response
@@ -72,7 +72,7 @@ def update_dropbox_files(
 
             updated_files.append(file)
             update_or_create_file(file, service)
-
+        return JsonResponse({"status": "success"}, status=200)
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
         return response

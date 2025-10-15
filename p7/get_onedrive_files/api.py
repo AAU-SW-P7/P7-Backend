@@ -1,9 +1,6 @@
 """API for fetching and syncing OneDrive files."""
 import os
 import requests
-from p7.helpers import validate_internal_auth
-from repository.service import get_tokens, get_service
-from repository.file import save_file
 
 from ninja import Router, Header
 from django.http import JsonResponse
@@ -11,9 +8,9 @@ from django.http import JsonResponse
 # Microsoft libs
 import msal
 
+from p7.helpers import validate_internal_auth
 from repository.service import get_tokens, get_service
 from repository.file import save_file
-from p7.helpers import validate_internal_auth
 
 fetch_onedrive_files_router = Router()
 
@@ -35,7 +32,7 @@ def fetch_onedrive_files(
             if "folder" in file:  # Skip folders
                 continue
             update_or_create_file(file, service)
-
+        return JsonResponse({"status": "success"}, status=200)
     except (ValueError, TypeError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -64,7 +61,7 @@ def sync_onedrive_files(
                 continue  # No changes since last sync
             updated_files.append(file)
             update_or_create_file(file, service)
-
+        return JsonResponse({"status": "success"}, status=200)
     except (ValueError, TypeError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 

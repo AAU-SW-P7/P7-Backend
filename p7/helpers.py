@@ -30,4 +30,3 @@ def fetch_api(url, headers, data):
             status=response.status_code
         )
     return response
-
