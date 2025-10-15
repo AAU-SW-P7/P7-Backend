@@ -27,11 +27,9 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
     # Assuming no files are created initially
     check.equal(initial_file_count == 0, True)
 
-    print(f"Fetching Dropbox files for user_id: {user_id}")
-
     try:
         response = client.get(
-            f"/?userId={user_id}",
+            f"/?user_id={user_id}",
             headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
             )
     except Exception as e:
@@ -46,7 +44,8 @@ def assert_fetch_dropbox_files_invalid_auth(client, user_id):
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
-    response = client.get(f"/?userId={user_id}", headers={"x-internal-auth": "invalid_token"})
+    print(f"Fetching Dropbox files for user_id: {user_id}")
+    response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"})
 
     check.equal(response.status_code, 401)
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
@@ -57,7 +56,7 @@ def assert_fetch_dropbox_files_missing_header(client, user_id):
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
-    response = client.get(f"/?userId={user_id}")
+    response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
     check.equal(response.json(), {
@@ -85,7 +84,7 @@ def assert_fetch_dropbox_files_missing_userid(client):
             },
             {
                 'type': 'string_type',
-                'loc': ['query', 'userId'],
+                'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
             }
         ]
@@ -113,11 +112,9 @@ def assert_fetch_google_files_success(client, user_id, service):
     # Assuming no files are created initially
     check.equal(initial_file_count == 0, True)
 
-    print(f"Fetching Google files for user_id: {user_id}")
-
     try:
         response = client.get(
-            f"/?userId={user_id}",
+            f"/?user_id={user_id}",
             headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
         )
     except Exception as e:
@@ -131,7 +128,7 @@ def assert_fetch_google_files_invalid_auth(client, user_id):
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
-    response = client.get(f"/?userId={user_id}", headers={"x-internal-auth": "invalid_token"})
+    response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"})
 
     check.equal(response.status_code, 401)
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
@@ -142,7 +139,7 @@ def assert_fetch_google_files_missing_header(client, user_id):
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
-    response = client.get(f"/?userId={user_id}")
+    response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
     check.equal(response.json(), {
@@ -172,7 +169,7 @@ def assert_fetch_google_files_missing_userid(client):
             },
             {
                 'type': 'string_type',
-                'loc': ['query', 'userId'],
+                'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
             }
         ]
@@ -199,11 +196,9 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     # Assuming no files are created initially
     check.equal(initial_file_count == 0, True)
 
-    print(f"Fetching OneDrive files for user_id: {user_id}")
-
     try:
         response = client.get(
-            f"/?userId={user_id}",
+            f"/?user_id={user_id}",
             headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
         )
     except Exception as e:
@@ -217,7 +212,7 @@ def assert_fetch_onedrive_files_invalid_auth(client, user_id):
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
-    response = client.get(f"/?userId={user_id}", headers={"x-internal-auth": "invalid_token"})
+    response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"})
 
     check.equal(response.status_code, 401)
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
@@ -228,7 +223,7 @@ def assert_fetch_onedrive_files_missing_header(client, user_id):
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
-    response = client.get(f"/?userId={user_id}")
+    response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
     check.equal(response.json(), {
@@ -258,7 +253,7 @@ def assert_fetch_onedrive_files_missing_userid(client):
             },
             {
                 'type': 'string_type',
-                'loc': ['query', 'userId'],
+                'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
             }
         ]
