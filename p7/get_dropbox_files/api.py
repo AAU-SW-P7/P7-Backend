@@ -176,6 +176,7 @@ def _get_new_access_token(
         access_token_expiration = access_token_expiration.replace(tzinfo=timezone.utc)
 
     if access_token_expiration <= now:
+        print("Refreshing Dropbox access token...")
         try:
             token_resp = requests.post(
                 "https://api.dropbox.com/oauth2/token", 
