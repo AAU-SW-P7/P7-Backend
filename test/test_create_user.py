@@ -14,18 +14,20 @@ from helpers.create_user import (
 )
 from p7.create_user.api import create_user_router
 
-# Make the local backend package importable so `from p7...` works under pytest
-repo_backend = Path(__file__).resolve().parents[1]  # backend/
-sys.path.insert(0, str(repo_backend))
-# Make the backend/test dir importable so you can use test_settings.py directly
-sys.path.insert(0, str(repo_backend / "test"))
+# # Make the local backend package importable so `from p7...` works under pytest
+# repo_backend = Path(__file__).resolve().parents[1]  # backend/
+# sys.path.insert(0, str(repo_backend))
+# # Make the backend/test dir importable so you can use test_settings.py directly
+# sys.path.insert(0, str(repo_backend / "test"))
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
 
 django.setup()
 
-pytestmark = pytest.mark.usefixtures("django_db_setup")
+#pytestmark = pytest.mark.usefixtures("django_db_setup")
+pytestmark = pytest.mark.django_db
+
 
 @pytest.fixture(name="user_client", scope='module', autouse=True)
 def create_user_client():

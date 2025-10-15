@@ -72,7 +72,8 @@ def terminate_db_connections(dbname):
         conn.close()
 
 
-@pytest.fixture(scope='module', autouse=True)
+#@pytest.fixture(scope='module', autouse=True)
+@pytest.mark.django_db
 def django_db_setup():
     """Set up a clean test database before any tests run."""
 
