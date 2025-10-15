@@ -12,6 +12,22 @@ from django.http import JsonResponse
 from repository.models import User
 
 
+def get_user(user_id: int) -> Union[User, JsonResponse]:
+    """
+    Gets a user from the database
+    """
+    try:
+        # ensure we pass a User instance (ForeignKey expects model instance)
+        user = User.objects.get(pk=user_id)
+        return user
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)
+    except RuntimeError as e:
+        return JsonResponse(
+            {"error": "Failed to retrieve user", "detail": str(e)}, status=500
+        )
+
+
 def save_user() -> Union[User, JsonResponse]:
     """Create and persist a new User.
 
