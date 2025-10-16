@@ -21,19 +21,46 @@ def fetch_onedrive_files(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
-    """Fetches all file metadata from OneDrive API and saves it to the DB.
-        params:
-        x_internal_auth: Internal auth token for validating the request.
-        userId: The id of the user whose files are to be fetched.
-    """
-    try:
-        access_token, service = get_file_meta_data(x_internal_auth, user_id)
+    """Fetch and save OneDrive files for a given user.
 
-        for file in get_onedrive_tree(access_token, page_limit=999):
+    params:
+        x_internal_auth (str): The internal auth header for validating the request.
+        user_id (str): The ID of the user whose OneDrive files are to be fetched.
+    """
+    auth_resp = validate_internal_auth(x_internal_auth)
+
+    if auth_resp:
+        return auth_resp
+
+    if not user_id:
+        return JsonResponse({"error": "user_id required"}, status=400)
+
+    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "microsoft-entra-id")
+    service = get_service(user_id, "microsoft-entra-id")
+
+    try:
+        # Build MSAL app instance
+        app = msal.ConfidentialClientApplication(
+            os.getenv("MICROSOFT_CLIENT_ID"),
+            authority="https://login.microsoftonline.com/common",
+            client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
+        )
+
+        files = _fetch_recursive_files(
+            app,
+            service,
+            access_token,
+            access_token_expiration,
+            refresh_token,
+        )
+
+        for file in files:
             if "folder" in file:  # Skip folders
                 continue
+
             update_or_create_file(file, service)
-        return JsonResponse({"status": "success"}, status=200)
+
+        return JsonResponse(files, safe=False)
     except (ValueError, TypeError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -52,34 +79,6 @@ def sync_onedrive_files(
         x_internal_auth: Internal auth token for validating the request.
         user_id: The id of the user whose files are to be synced.
     """
-    try:
-        access_token, service = get_file_meta_data(x_internal_auth, user_id)
-        updated_files = []
-        for file in get_onedrive_tree(access_token, page_limit=999):
-            if "folder" in file:  # Skip folders
-                continue
-            if file["lastModifiedDateTime"] <= service.indexedAt.isoformat():
-                continue  # No changes since last sync
-            # updated_files should be used, when we want to index the updated files
-            updated_files.append(file)
-            update_or_create_file(file, service)
-        return JsonResponse({"status": "success"}, status=200)
-    except (ValueError, TypeError, RuntimeError) as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
-def get_file_meta_data(
-    x_internal_auth,
-    user_id
-    ):
-    """Fetches all file metadata from OneDrive API.
-        params:
-        x_internal_auth: Internal auth token for validating the request.
-        user_id: The id of the user whose files are to be fetched.
-
-        Returns:
-        List of fetched files 
-        Service object.
-    """
     auth_resp = validate_internal_auth(x_internal_auth)
 
     if auth_resp:
@@ -91,34 +90,35 @@ def get_file_meta_data(
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "microsoft-entra-id")
     service = get_service(user_id, "microsoft-entra-id")
 
-    # Build MSAL app instance
-    app = msal.ConfidentialClientApplication(
-        os.getenv("MICROSOFT_CLIENT_ID"),
-        authority="https://login.microsoftonline.com/common",
-        client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
-    )
+    try:
+        # Build MSAL app instance
+        app = msal.ConfidentialClientApplication(
+            os.getenv("MICROSOFT_CLIENT_ID"),
+            authority="https://login.microsoftonline.com/common",
+            client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
+        )
 
-    # Scopes that should match what was consented at initial sign-in.
-    # Ensure your initial auth requested offline_access and the Graph file scope.
-    scopes = ["Files.Read.All"]
+        files = _fetch_recursive_files(
+            app,
+            service,
+            access_token,
+            access_token_expiration,
+            refresh_token,
+        )
 
-    # Refresh token
-    result = app.acquire_token_by_refresh_token(
-        refresh_token,
-        scopes=scopes,
-    )
+        updated_files = []
+        for file in files:
+            if "folder" in file:  # Skip folders
+                continue
+            if file["lastModifiedDateTime"] <= service.indexedAt.isoformat():
+                continue  # No changes since last sync
+            # updated_files should be used, when we want to index the updated files
+            updated_files.append(file)
+            update_or_create_file(file, service)
 
-    access_token = result["access_token"]
-    new_refresh_token = result.get(
-        "refresh_token"
-    )  # May be None; only update if provided
-
-    # Optionally update the refresh token in the database
-    if new_refresh_token:
-        service.refreshToken = new_refresh_token
-        service.save(update_fields=["refreshToken"])
-
-    return access_token, service
+        return JsonResponse(files, safe=False)
+    except (ValueError, TypeError, RuntimeError) as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 def update_or_create_file(file, service):
     """Updates or creates a File entry in the database based on OneDrive file metadata.
@@ -151,15 +151,23 @@ def update_or_create_file(file, service):
         None,
     )
 
-def get_onedrive_tree(access_token: str, page_limit: int = 999) -> list[dict]:
-    """Recursively fetches all files from OneDrive using Microsoft Graph API.
-        params:
-        access_token: The OAuth2 access token for authenticating API requests.
-        page_limit: Number of items to fetch per API call (max 999).
+def _fetch_recursive_files(
+    app,
+    service,
+    access_token: str,
+    access_token_expiration: datetime,
+    refresh_token: str,
+    page_limit: int = 999,
+) -> list[dict]:
+    """Helper function to fetch the initial set of files from Dropbox."""
 
-        Returns:
-        The result of walk() on the OneDrive root children endpoint.
-    """
+    access_token = _get_new_access_token(
+        service,
+        app,
+        access_token,
+        access_token_expiration,
+        refresh_token,
+    )
 
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -167,18 +175,23 @@ def get_onedrive_tree(access_token: str, page_limit: int = 999) -> list[dict]:
     }
 
     def walk(
-        url: str, depth: int = 0
+        url: str,
+        depth: int = 0,
+        access_token: str = access_token,
     ) -> list[
         dict
     ]:  # dette kan der i hvertfald godt være nogle workers som kan tage sig af
-        """Recursively walks through OneDrive folders to fetch all files.
-            params:
-            url: The API endpoint URL to fetch items from.
-            depth: Current recursion depth.
-        """
         results: list[dict] = []
 
         while url:
+            access_token = _get_new_access_token(
+                service,
+                app,
+                access_token,
+                access_token_expiration,
+                refresh_token,
+            )
+            headers["Authorization"] = f"Bearer {access_token}"
             resp = requests.get(url, headers=headers, timeout=30)
 
             if resp.ok:
@@ -189,16 +202,17 @@ def get_onedrive_tree(access_token: str, page_limit: int = 999) -> list[dict]:
                     if "folder" in obj:
                         child_id = obj["id"]
                         print(
-                                    f"Recursing into folder "\
-                                    f"{obj.get('name')} (id={child_id}) at depth {depth}"
-                                )
+                            f"Recursing into folder "\
+                            f"{obj.get('name')} (id={child_id}) at depth {depth}"
+                        )
                         results.extend(
                             walk(
-                                        f"https://graph.microsoft.com/"\
-                                        f"v1.0/me/drive/items/{child_id}/children"\
-                                        f"?$top={page_limit}",
-                                        depth + 1,
-                                    )
+                                f"https://graph.microsoft.com/"\
+                                f"v1.0/me/drive/items/{child_id}/children"\
+                                f"?$top={page_limit}",
+                                depth + 1,
+                                access_token,
+                            )
                         )
                     elif "file" in obj:
                         results.append(obj)
@@ -210,5 +224,49 @@ def get_onedrive_tree(access_token: str, page_limit: int = 999) -> list[dict]:
         return results
 
     return walk(
-        f"https://graph.microsoft.com/v1.0/me/drive/root/children?$top={page_limit}"
+        f"https://graph.microsoft.com/v1.0/me/drive/root/children?$top={page_limit}",
+        depth=0,
+        access_token=access_token,
     )
+
+def _get_new_access_token(
+    service,
+    app,
+    access_token: str,
+    access_token_expiration: datetime,
+    refresh_token: str,
+) -> str:
+    """Helper function to get a new access token using the refresh token.
+
+    params:
+        refresh_token (str): The refresh token to use for obtaining a new access token.
+    
+    returns:
+        str: A string with the new access token.
+    """
+    now = datetime.now(timezone.utc)
+    if access_token_expiration.tzinfo is None:
+        access_token_expiration = access_token_expiration.replace(tzinfo=timezone.utc)
+
+    if access_token_expiration <= now:
+        print("Refreshing OneDrive access token...")
+        # Refresh token
+        result = app.acquire_token_by_refresh_token(
+            refresh_token,
+            scopes=["Files.Read.All"],
+        )
+
+        new_access_token = result["access_token"]
+        new_refresh_token = result.get(
+            "refresh_token"
+        )
+
+        # Optionally update the refresh token in the database
+        if new_access_token or new_refresh_token:
+            service.accessToken = new_access_token
+            service.refreshToken = new_refresh_token
+            service.save(update_fields=["accessToken", "refreshToken"])
+
+        return new_access_token
+
+    return access_token
