@@ -1,5 +1,6 @@
 """Finds both tokens and service object for a user and service name."""
 
+from typing import Any
 from django.http import JsonResponse
 from django.db import IntegrityError
 from repository.models import Service
@@ -33,6 +34,21 @@ def get_service(user_id, service_name) -> Service:
         )
 
 
+def get_all_user_services(user_id) -> list[Service]:
+    """
+    Gets all services for a given user
+    """
+    try:
+        services = Service.objects.filter(userId_id=user_id)
+        return services
+    except Service.DoesNotExist:
+        return JsonResponse({"error": "Service not found"}, status=404)
+    except (ValueError, TypeError, RuntimeError) as e:
+        return JsonResponse(
+            {"error": "Failed to retrieve service", "detail": str(e)}, status=500
+        )
+
+
 def save_service(
     user_id,
     oauth_type,
@@ -61,7 +77,7 @@ def save_service(
                 "accountId": account_id,
                 "email": email,
                 "scopeName": scope_name,
-            }
+            },
         )
         return service
     except IntegrityError as e:
@@ -72,3 +88,29 @@ def save_service(
         return JsonResponse(
             {"error": "Failed to create service", "detail": str(e)}, status=500
         )
+
+
+def serialize_service(service: Service) -> dict[str, Any]:
+    """
+    Convert database Service representation into object we can return in API response
+    """
+    exp = None
+    try:
+        if getattr(service, "accessTokenExpiration", None) is not None:
+            exp = int(service.accessTokenExpiration.timestamp())
+    except (AttributeError, TypeError, ValueError):
+        exp = None
+
+    return {
+        "id": service.id,
+        "userId": getattr(service.userId, "id", None),
+        "oauthType": service.oauthType,
+        "oauthToken": service.oauthToken,
+        "accessToken": service.accessToken,
+        "accessTokenExpiration": exp,
+        "refreshToken": service.refreshToken,
+        "name": service.name,
+        "accountId": service.accountId,
+        "email": service.email,
+        "scopeName": service.scopeName,
+    }
