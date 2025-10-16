@@ -1,0 +1,6 @@
+[MASTER]
+load-plugins=pylint_django
+django-settings-module=p7.settings
+ignore=migrations, manage.py
+[MESSAGES CONTROL]
+disable=E1101,E0401,W0613,R0903,R0913,R0914,R0917,R0911,R0912,R0801,F0002,C0413
