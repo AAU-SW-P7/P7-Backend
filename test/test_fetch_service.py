@@ -44,7 +44,7 @@ from helpers.fetch_service import (
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
-from p7.get_google_drive.api import fetch_google_drive_files_router
+from p7.get_google_drive_files.api import fetch_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
