@@ -1,8 +1,10 @@
 """Helper functions for testing find user by email endpoint."""
+
 import os
 import pytest_check as check
 
 from repository.models import User
+
 
 def assert_find_user_by_email_success(client, email, expected_user_id):
     """Helper function to assert successful finding of a user by email.
@@ -17,12 +19,11 @@ def assert_find_user_by_email_success(client, email, expected_user_id):
 
     # Assuming 3 users are already created for service creation
     check.equal(initial_user_count == 3, True)
-    
     try:
         response = client.get(
             f"/?email={email}",
-            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
-            )
+            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
+        )
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
