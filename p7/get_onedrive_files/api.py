@@ -1,5 +1,6 @@
 """API for fetching and syncing OneDrive files."""
 import os
+from datetime import datetime, timezone
 import requests
 
 from ninja import Router, Header
@@ -87,7 +88,7 @@ def get_file_meta_data(
     if not user_id:
         return JsonResponse({"error": "user_id required"}, status=400)
 
-    access_token, refresh_token = get_tokens(user_id, "microsoft-entra-id")
+    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "microsoft-entra-id")
     service = get_service(user_id, "microsoft-entra-id")
 
     # Build MSAL app instance

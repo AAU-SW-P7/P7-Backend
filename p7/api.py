@@ -1,7 +1,7 @@
 """API routing for the P7 backend."""
 from ninja import NinjaAPI
 from p7.get_dropbox_files.api import fetch_dropbox_files_router, sync_dropbox_files_router
-from p7.get_google_drive.api import fetch_google_drive_files_router, sync_google_drive_files_router
+from p7.get_google_drive_files.api import fetch_google_drive_files_router, sync_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router, sync_onedrive_files_router
 from p7.create_user.api import create_user_router
 from p7.find_services.api import find_services_router

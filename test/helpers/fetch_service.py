@@ -27,8 +27,6 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
     # Assuming no files are created initially
     check.equal(initial_file_count == 0, True)
 
-    print(f"Fetching Dropbox files for user_id: {user_id}")
-
     try:
         response = client.get(
             f"/?user_id={user_id}",
@@ -46,6 +44,7 @@ def assert_fetch_dropbox_files_invalid_auth(client, user_id):
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
+    print(f"Fetching Dropbox files for user_id: {user_id}")
     response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"})
 
     check.equal(response.status_code, 401)
@@ -112,8 +111,6 @@ def assert_fetch_google_files_success(client, user_id, service):
     check.equal(initial_service_count == 9, True)
     # Assuming no files are created initially
     check.equal(initial_file_count == 0, True)
-
-    print(f"Fetching Google files for user_id: {user_id}")
 
     try:
         response = client.get(
@@ -198,8 +195,6 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     check.equal(initial_service_count == 9, True)
     # Assuming no files are created initially
     check.equal(initial_file_count == 0, True)
-
-    print(f"Fetching OneDrive files for user_id: {user_id}")
 
     try:
         response = client.get(
