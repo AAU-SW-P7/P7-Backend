@@ -27,15 +27,15 @@ from helpers.create_service import (
     assert_create_service_missing_header,
     assert_create_service_missing_payload,
 )
-from helpers.find_user_by_email import (
-    assert_find_user_by_email_success,
-    assert_find_user_by_email_invalid_auth,
-    assert_find_user_by_email_missing_header,
-    assert_find_user_by_email_missing_email,
+from helpers.find_service import (
+    assert_find_service_success,
+    assert_find_service_invalid_auth,
+    assert_find_service_missing_header,
+    assert_find_service_missing_user_id,
 )
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
-from p7.find_user_by_email.api import find_user_by_email_router
+from p7.find_services.api import find_services_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
@@ -56,13 +56,13 @@ def create_service_client():
      """
     return TestClient(create_service_router)
 
-@pytest.fixture(name="find_user_by_email_client", scope='module', autouse=True)
-def find_user_by_email_client():
-    """Fixture for creating a test client for the find_user_by_email endpoint.
+@pytest.fixture(name="find_service_client", scope='module', autouse=True)
+def find_service_client():
+    """Fixture for creating a test client for the find_service endpoint.
     Returns:
-        TestClient: A test client for the find_user_by_email endpoint.
+        TestClient: A test client for the find_service endpoint.
     """
-    return TestClient(find_user_by_email_router)
+    return TestClient(find_services_router)
 
 def test_create_user_success(user_client):
     """Test creating 3 users successfully.
@@ -173,40 +173,38 @@ def test_create_service_missing_payload(service_client):
     """
     assert_create_service_missing_payload(service_client)
 
-def test_find_user_by_email_success(find_user_by_email_client):
-    """Test finding users by email successfully.
+def test_find_service_success(find_service_client):
+    """Test finding services successfully.
     params:
-        find_user_by_email_client: Fixture for creating a test client for the find_user_by_email endpoint.
+        find_service_client: Fixture for creating a test client for the find_service endpoint.
     """
 
     for user_number in range(1, 3+1): # 3 users
         
         email = f"p7swtest{user_number}@gmail.com"
-        assert_find_user_by_email_success(find_user_by_email_client, email, user_number)
-        
-def test_find_user_by_email_invalid_auth(find_user_by_email_client):
-    """Test finding a user by email with invalid auth token.
+        assert_find_service_success(find_service_client, user_number, email)
+
+def test_find_service_invalid_auth(find_service_client):
+    """Test finding a service with invalid auth token.
     params:
-        find_user_by_email_client: Fixture for creating a test client for the find_user_by_email endpoint.
+        find_service_client: Fixture for creating a test client for the find_service endpoint.
     """
     for user_number in range(1, 3+1): # 3 users
 
-        email = f"p7swtest{user_number}@gmail.com"
-        assert_find_user_by_email_invalid_auth(find_user_by_email_client, email)
+        assert_find_service_invalid_auth(find_service_client, user_number)
 
-def test_find_user_by_email_missing_header(find_user_by_email_client):
-    """Test finding a user by email with missing auth header.
+def test_find_service_missing_header(find_service_client):
+    """Test finding a service with missing auth header.
     params:
-        find_user_by_email_client: Fixture for creating a test client for the find_user_by_email endpoint.
+        find_service_client: Fixture for creating a test client for the find_service endpoint.
     """
     for user_number in range(1, 3+1): # 3 users
 
-        email = f"p7swtest{user_number}@gmail.com"
-        assert_find_user_by_email_missing_header(find_user_by_email_client, email)
-        
-def test_find_user_by_email_missing_email(find_user_by_email_client):
-    """Test finding a user by email with missing email parameter.
+        assert_find_service_missing_header(find_service_client, user_number)
+
+def test_find_service_missing_user_id(find_service_client):
+    """Test finding a service with missing user_id parameter.
     params:
-        find_user_by_email_client: Fixture for creating a test client for the find_user_by_email endpoint.
+        find_service_client: Fixture for creating a test client for the find_service endpoint.
     """
-    assert_find_user_by_email_missing_email(find_user_by_email_client)
+    assert_find_service_missing_user_id(find_service_client)

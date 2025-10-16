@@ -4,6 +4,8 @@ import pytest_check as check
 
 from repository.models import Service, User, File
 
+# todo: hvis man caller et endpoint, hvor user_id ikke har oprettet en service, så crasher den.
+
 def assert_fetch_dropbox_files_success(client, user_id, service):
     """Helper function to assert successful fetching of Dropbox files 
     for a given user_id and service.
@@ -35,7 +37,10 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
+
     check.equal(response.status_code, 200)
+    check.equal(response.json() is not None, True)
+    check.equal(isinstance(response.json(), list), True)
 
 def assert_fetch_dropbox_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.
@@ -120,7 +125,10 @@ def assert_fetch_google_files_success(client, user_id, service):
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
+
     check.equal(response.status_code, 200)
+    check.equal(response.json() is not None, True)
+    check.equal(isinstance(response.json(), list), True)
 
 def assert_fetch_google_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.
@@ -204,7 +212,10 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
+
     check.equal(response.status_code, 200)
+    check.equal(response.json() is not None, True)
+    check.equal(isinstance(response.json(), list), True)
 
 def assert_fetch_onedrive_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.

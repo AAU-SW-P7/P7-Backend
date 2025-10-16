@@ -1,16 +1,16 @@
-"""Helper functions for testing find user by email endpoint."""
+"""Helper functions for testing find service endpoint."""
 import os
 import pytest_check as check
 
-from repository.models import User
+from repository.models import User, Service
 
-def assert_find_user_by_email_success(client, email, expected_user_id):
-    """Helper function to assert successful finding of a user by email.
+def assert_find_service_success(client, user_id, email):
+    """Helper function to assert successful finding of a service.
 
     params:
         client: Test client to make requests.
-        email: Email of the user to be found.
-        expected_user_id: Expected ID of the found user.
+        user_id: ID of the user.
+        email: Email of the user.
     """
     # Get initial user count
     initial_user_count = User.objects.count()
@@ -20,29 +20,39 @@ def assert_find_user_by_email_success(client, email, expected_user_id):
     
     try:
         response = client.get(
-            f"/?email={email}",
+            f"/?user_id={user_id}",
             headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
             )
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
 
-    check.equal(response.status_code, 200)
-    check.equal(response.json() is not None, True)
-    check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json().get("id") == expected_user_id, True)
-    check.equal(response.json().get("email") == email, True)
+    data = response.json()
     
-def assert_find_user_by_email_invalid_auth(client, email):
-    """Helper function to assert finding a user by email with invalid auth.
+    check.equal(response.status_code, 200)
+    check.equal(data is not None, True)
+    check.equal(isinstance(data, list), True)
+    
+    for service in data:
+        check.equal(isinstance(service, dict), True)
+        check.equal(service.get("id") is not None, True)
+        check.equal(service.get("userId") is not None, True)
+        check.equal(service.get("name") is not None, True)
+        check.equal(service.get("email") is not None, True)
+        
+        check.equal(service.get("userId") == user_id, True)
+        check.equal(service.get("email") == email, True)
+    
+def assert_find_service_invalid_auth(client, user_id):
+    """Helper function to assert finding a service with invalid auth.
 
     params:
         client: Test client to make requests.
-        email: Email of the user to be found.
+        user_id: ID of the user.
     """
     try:
         response = client.get(
-            f"/?email={email}",
+            f"/?user_id={user_id}",
             headers={"x-internal-auth": "invalid_token"}
             )
     except Exception as e:
@@ -54,15 +64,15 @@ def assert_find_user_by_email_invalid_auth(client, email):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
     
-def assert_find_user_by_email_missing_header(client, email):
-    """Helper function to assert finding a user by email with missing auth header.
+def assert_find_service_missing_header(client, user_id):
+    """Helper function to assert finding a user by user_id with missing auth header.
 
     params:
         client: Test client to make requests.
-        email: Email of the user to be found.
+        user_id: ID of the user.
     """
     try:
-        response = client.get(f"/?email={email}")
+        response = client.get(f"/?user_id={user_id}")
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
@@ -79,17 +89,15 @@ def assert_find_user_by_email_missing_header(client, email):
             }
         ]
     })
-    
-def assert_find_user_by_email_missing_email(client):
-    """Helper function to assert finding a user by email with missing email.
+
+def assert_find_service_missing_user_id(client):
+    """Helper function to assert finding a service by user ID with missing email.
 
     params:
         client: Test client to make requests.
     """
     try:
-        response = client.get(
-            "/",
-            )
+        response = client.get("/",)
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
@@ -106,7 +114,7 @@ def assert_find_user_by_email_missing_email(client):
             },
             {
                 'type': 'string_type',
-                'loc': ['query', 'email'],
+                'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
             }
         ]

@@ -9,8 +9,8 @@ find_user_by_email_router = Router()
 @find_user_by_email_router.get("/")
 def find_user_by_email(
     request,
-    email: str,
-    x_internal_auth: str = Header(..., alias="x-internal-auth")
+    x_internal_auth: str = Header(..., alias="x-internal-auth"),
+    email: str = None,
 ):
     """Find a user by their email address.
     params:
