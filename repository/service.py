@@ -48,6 +48,23 @@ def get_all_user_services(user_id) -> list[Service]:
             {"error": "Failed to retrieve service", "detail": str(e)}, status=500
         )
 
+def get_user_service_related_to_email(email) -> Service:
+    """
+    Get a user based on email connected to service
+    params:
+        email(str): The email of the user
+    """
+    try:
+        user_id = Service.objects.filter(email=email).first()
+        return user_id
+    except Service.DoesNotExist:
+        return JsonResponse({"error": "Service not found"}, status=404)
+    except (ValueError, TypeError, RuntimeError) as e:
+        return JsonResponse(
+            {"error": "Failed to retrieve service", "detail": str(e)}, status=500
+        )
+
+
 
 def save_service(
     user_id,

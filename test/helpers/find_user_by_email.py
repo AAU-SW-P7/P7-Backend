@@ -1,8 +1,10 @@
 """Helper functions for testing find user by email endpoint."""
+
 import os
 import pytest_check as check
 
 from repository.models import User
+
 
 def assert_find_user_by_email_success(client, email, expected_user_id):
     """Helper function to assert successful finding of a user by email.
@@ -17,12 +19,11 @@ def assert_find_user_by_email_success(client, email, expected_user_id):
 
     # Assuming 3 users are already created for service creation
     check.equal(initial_user_count == 3, True)
-    
     try:
         response = client.get(
             f"/?email={email}",
-            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
-            )
+            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
+        )
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
@@ -32,7 +33,7 @@ def assert_find_user_by_email_success(client, email, expected_user_id):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json().get("id") == expected_user_id, True)
     check.equal(response.json().get("email") == email, True)
-    
+
 def assert_find_user_by_email_invalid_auth(client, email):
     """Helper function to assert finding a user by email with invalid auth.
 
@@ -53,7 +54,7 @@ def assert_find_user_by_email_invalid_auth(client, email):
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
-    
+
 def assert_find_user_by_email_missing_header(client, email):
     """Helper function to assert finding a user by email with missing auth header.
 
@@ -79,7 +80,7 @@ def assert_find_user_by_email_missing_header(client, email):
             }
         ]
     })
-    
+
 def assert_find_user_by_email_missing_email(client):
     """Helper function to assert finding a user by email with missing email.
 

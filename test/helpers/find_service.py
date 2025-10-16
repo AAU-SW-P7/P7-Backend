@@ -2,7 +2,7 @@
 import os
 import pytest_check as check
 
-from repository.models import User, Service
+from repository.models import User
 
 def assert_find_service_success(client, user_id, email):
     """Helper function to assert successful finding of a service.
@@ -17,7 +17,7 @@ def assert_find_service_success(client, user_id, email):
 
     # Assuming 3 users are already created for service creation
     check.equal(initial_user_count == 3, True)
-    
+
     try:
         response = client.get(
             f"/?user_id={user_id}",
@@ -28,21 +28,21 @@ def assert_find_service_success(client, user_id, email):
         raise
 
     data = response.json()
-    
+
     check.equal(response.status_code, 200)
     check.equal(data is not None, True)
     check.equal(isinstance(data, list), True)
-    
+
     for service in data:
         check.equal(isinstance(service, dict), True)
         check.equal(service.get("id") is not None, True)
         check.equal(service.get("userId") is not None, True)
         check.equal(service.get("name") is not None, True)
         check.equal(service.get("email") is not None, True)
-        
+
         check.equal(service.get("userId") == user_id, True)
         check.equal(service.get("email") == email, True)
-    
+
 def assert_find_service_invalid_auth(client, user_id):
     """Helper function to assert finding a service with invalid auth.
 
@@ -63,7 +63,7 @@ def assert_find_service_invalid_auth(client, user_id):
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
-    
+
 def assert_find_service_missing_header(client, user_id):
     """Helper function to assert finding a user by user_id with missing auth header.
 

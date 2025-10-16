@@ -4,8 +4,6 @@ import pytest_check as check
 
 from repository.models import Service, User, File
 
-# todo: hvis man caller et endpoint, hvor user_id ikke har oprettet en service, så crasher den.
-
 def assert_fetch_dropbox_files_success(client, user_id, service):
     """Helper function to assert successful fetching of Dropbox files 
     for a given user_id and service.

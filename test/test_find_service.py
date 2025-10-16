@@ -56,7 +56,7 @@ def create_service_client():
      """
     return TestClient(create_service_router)
 
-@pytest.fixture(name="find_service_client", scope='module', autouse=True)
+@pytest.fixture(name="find_service_client_fixture", scope='module', autouse=True)
 def find_service_client():
     """Fixture for creating a test client for the find_service endpoint.
     Returns:
@@ -86,7 +86,7 @@ def test_create_user_missing_header(user_client):
         user_client: Fixture for creating a test client for the create_user endpoint.
     """
     assert_create_user_missing_header(user_client)
-    
+
 def test_create_service_success(service_client):
     """Test creating 9 services successfully (3 each for Dropbox, Google, OneDrive).
     params:
@@ -173,38 +173,38 @@ def test_create_service_missing_payload(service_client):
     """
     assert_create_service_missing_payload(service_client)
 
-def test_find_service_success(find_service_client):
+def test_find_service_success(find_service_client_fixture):
     """Test finding services successfully.
     params:
-        find_service_client: Fixture for creating a test client for the find_service endpoint.
+        find_service_client_fixture: Fixture for creating a test for the find_service endpoint.
     """
 
     for user_number in range(1, 3+1): # 3 users
-        
-        email = f"p7swtest{user_number}@gmail.com"
-        assert_find_service_success(find_service_client, user_number, email)
 
-def test_find_service_invalid_auth(find_service_client):
+        email = f"p7swtest{user_number}@gmail.com"
+        assert_find_service_success(find_service_client_fixture, user_number, email)
+
+def test_find_service_invalid_auth(find_service_client_fixture):
     """Test finding a service with invalid auth token.
     params:
-        find_service_client: Fixture for creating a test client for the find_service endpoint.
+        find_service_client_fixture: Fixture for creating a test for the find_service endpoint.
     """
     for user_number in range(1, 3+1): # 3 users
 
-        assert_find_service_invalid_auth(find_service_client, user_number)
+        assert_find_service_invalid_auth(find_service_client_fixture, user_number)
 
-def test_find_service_missing_header(find_service_client):
+def test_find_service_missing_header(find_service_client_fixture):
     """Test finding a service with missing auth header.
     params:
-        find_service_client: Fixture for creating a test client for the find_service endpoint.
+        find_service_client_fixture: Fixture for creating a test for the find_service endpoint.
     """
     for user_number in range(1, 3+1): # 3 users
 
-        assert_find_service_missing_header(find_service_client, user_number)
+        assert_find_service_missing_header(find_service_client_fixture, user_number)
 
-def test_find_service_missing_user_id(find_service_client):
+def test_find_service_missing_user_id(find_service_client_fixture):
     """Test finding a service with missing user_id parameter.
     params:
-        find_service_client: Fixture for creating a test client for the find_service endpoint.
+        find_service_client_fixture: Fixture for creating a test for the find_service endpoint.
     """
-    assert_find_service_missing_user_id(find_service_client)
+    assert_find_service_missing_user_id(find_service_client_fixture)
