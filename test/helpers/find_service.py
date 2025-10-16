@@ -108,13 +108,13 @@ def assert_find_service_missing_user_id(client):
     check.equal(response.json(), {
         'detail': [
             {
-                'type': 'string_type', 
-                'loc': ['header', 'x-internal-auth'], 
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
             },
             {
-                'type': 'string_type',
-                'loc': ['query', 'user_id'],
+                'type': 'string_type', 
+                'loc': ['header', 'x-internal-auth'], 
                 'msg': 'Input should be a valid string'
             }
         ]

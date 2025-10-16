@@ -13,8 +13,8 @@ find_services_router = Router()
 @find_services_router.get("/")
 def find_services(
     request,
+    user_id: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    user_id: str | None = None,
 ) -> JsonResponse | list[dict[str, Any]]:
     """
     Find services associated with a user ID.

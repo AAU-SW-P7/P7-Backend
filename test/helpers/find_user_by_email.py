@@ -101,13 +101,13 @@ def assert_find_user_by_email_missing_email(client):
     check.equal(response.json(), {
         'detail': [
             {
-                'type': 'string_type', 
-                'loc': ['header', 'x-internal-auth'], 
+                'type': 'string_type',
+                'loc': ['query', 'email'],
                 'msg': 'Input should be a valid string'
             },
             {
-                'type': 'string_type',
-                'loc': ['query', 'email'],
+                'type': 'string_type', 
+                'loc': ['header', 'x-internal-auth'], 
                 'msg': 'Input should be a valid string'
             }
         ]

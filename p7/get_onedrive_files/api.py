@@ -18,8 +18,8 @@ fetch_onedrive_files_router = Router()
 @fetch_onedrive_files_router.get("/")
 def fetch_onedrive_files(
     request,
+    user_id: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    user_id: str = None,
 ):
     """Fetch and save OneDrive files for a given user.
 
@@ -55,9 +55,6 @@ def fetch_onedrive_files(
         )
 
         for file in files:
-            if "folder" in file:  # Skip folders
-                continue
-
             extension = os.path.splitext(file["name"])[1]
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(
@@ -157,7 +154,7 @@ def _fetch_recursive_files(
             if "@odata.nextLink" in data:
                 print(f"Following paging link: {url}")
 
-        return results
+        return [result for result in results if not "folder" in result]
 
     return walk(
         f"https://graph.microsoft.com/v1.0/me/drive/root/children?$top={page_limit}",

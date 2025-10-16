@@ -14,8 +14,8 @@ fetch_dropbox_files_router = Router()
 @fetch_dropbox_files_router.get("/")
 def fetch_dropbox_files(
     request,
+    user_id: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    user_id: str = None,
 ):
     """Fetch and save Dropbox files for a given user.
 
