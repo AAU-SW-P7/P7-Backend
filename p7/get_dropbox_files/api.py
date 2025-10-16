@@ -76,10 +76,7 @@ def fetch_dropbox_files(
         return response
 
 
-sync_dropbox_files_router = Router()
-@sync_dropbox_files_router.get("/")
-def update_dropbox_files(
-    request,
+def sync_dropbox_files(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
@@ -107,6 +104,7 @@ def update_dropbox_files(
             refresh_token,
         )
 
+        indexing_time = datetime.now()(timezone.utc)
         files = _fetch_recursive_files(
             service,
             access_token,
@@ -123,6 +121,8 @@ def update_dropbox_files(
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file(file, service)
+        service.indexedAt = indexing_time
+        service.save(update_fields=["indexedAt"])
 
         return JsonResponse({"status": "success"}, status=200)
     except KeyError as e:

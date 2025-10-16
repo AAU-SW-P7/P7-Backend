@@ -84,10 +84,7 @@ def fetch_google_drive_files(
     except (ValueError,TypeError,KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-sync_google_drive_files_router = Router()
-@sync_google_drive_files_router.get("/")
 def sync_google_drive_files(
-    request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
@@ -123,6 +120,8 @@ def sync_google_drive_files(
             access_token,
         )
 
+        indexing_time = datetime.now()(timezone.utc)
+        
         # Build Drive service and list files
         drive_api = build("drive", "v3", credentials=creds)
         # Request all file fields and paginate through results
@@ -151,6 +150,8 @@ def sync_google_drive_files(
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file(file, service, file_by_id)
+        service.indexedAt = indexing_time
+        service.save(update_fields=["indexedAt"])
 
     except (ValueError,TypeError,KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)

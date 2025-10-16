@@ -65,11 +65,7 @@ def fetch_onedrive_files(
         return JsonResponse({"error": str(e)}, status=500)
 
 
-sync_onedrive_files_router = Router()
-
-@sync_onedrive_files_router.get("/")
 def sync_onedrive_files(
-    request,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
@@ -91,6 +87,7 @@ def sync_onedrive_files(
     service = get_service(user_id, "microsoft-entra-id")
 
     try:
+        indexing_time = datetime.now()(timezone.utc)
         # Build MSAL app instance
         app = msal.ConfidentialClientApplication(
             os.getenv("MICROSOFT_CLIENT_ID"),
@@ -115,6 +112,8 @@ def sync_onedrive_files(
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file(file, service)
+        service.indexedAt = indexing_time
+        service.save(update_fields=["indexedAt"])
 
         return JsonResponse(files, safe=False)
     except (ValueError, TypeError, RuntimeError) as e:
