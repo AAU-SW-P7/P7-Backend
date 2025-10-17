@@ -35,7 +35,10 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
+
     check.equal(response.status_code, 200)
+    check.equal(response.json() is not None, True)
+    check.equal(isinstance(response.json(), list), True)
 
 def assert_fetch_dropbox_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.
@@ -79,12 +82,12 @@ def assert_fetch_dropbox_files_missing_userid(client):
         'detail': [
             {
                 'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
+                'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
             },
             {
                 'type': 'string_type',
-                'loc': ['query', 'user_id'],
+                'loc': ['header', 'x-internal-auth'],
                 'msg': 'Input should be a valid string'
             }
         ]
@@ -120,7 +123,10 @@ def assert_fetch_google_files_success(client, user_id, service):
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
+
     check.equal(response.status_code, 200)
+    check.equal(response.json() is not None, True)
+    check.equal(isinstance(response.json(), list), True)
 
 def assert_fetch_google_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.
@@ -164,12 +170,12 @@ def assert_fetch_google_files_missing_userid(client):
         'detail': [
             {
                 'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
+                'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
             },
             {
                 'type': 'string_type',
-                'loc': ['query', 'user_id'],
+                'loc': ['header', 'x-internal-auth'],
                 'msg': 'Input should be a valid string'
             }
         ]
@@ -204,7 +210,10 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
+
     check.equal(response.status_code, 200)
+    check.equal(response.json() is not None, True)
+    check.equal(isinstance(response.json(), list), True)
 
 def assert_fetch_onedrive_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.
@@ -247,13 +256,13 @@ def assert_fetch_onedrive_files_missing_userid(client):
     check.equal(response.json(), {
         'detail': [
             {
-                'type': 'string_type', 
-                'loc': ['header', 'x-internal-auth'], 
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
             },
             {
-                'type': 'string_type',
-                'loc': ['query', 'user_id'],
+                'type': 'string_type', 
+                'loc': ['header', 'x-internal-auth'], 
                 'msg': 'Input should be a valid string'
             }
         ]

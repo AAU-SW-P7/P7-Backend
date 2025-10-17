@@ -1,0 +1,29 @@
+name: Bump submodules to main@HEAD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  update-submodules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout root repository
+        uses: actions/checkout@v4
+        with:
+          repository: "${{ github.repository_owner }}/P7-Project"
+          submodules: "recursive"
+          token: "${{ secrets.PAT }}"
+        
+      - name: Bump submodules to main@HEAD
+        run: |
+          git submodule update --init --remote --recursive
+          if git status --porcelain | grep -qE '^( M|M |A | D|D )\s+(backend|frontend)'; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add backend frontend
+            git commit -m "ci: bump submodules to main@HEAD"
+            git push
+          else
+            echo "Submodules already at main HEAD"
+          fi

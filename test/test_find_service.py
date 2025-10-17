@@ -1,4 +1,4 @@
-"""Tests for saving files from various services."""
+"""Tests for the find_user_by_email endpoint."""
 import os
 import sys
 from pathlib import Path
@@ -27,17 +27,15 @@ from helpers.create_service import (
     assert_create_service_missing_header,
     assert_create_service_missing_payload,
 )
-from helpers.save_file import (
-    assert_save_file_success,
-    assert_save_file_invalid_auth,
-    assert_save_file_missing_header,
-    assert_save_file_missing_user_id,
+from helpers.find_service import (
+    assert_find_service_success,
+    assert_find_service_invalid_auth,
+    assert_find_service_missing_header,
+    assert_find_service_missing_user_id,
 )
-from p7.get_dropbox_files.api import fetch_dropbox_files_router
-from p7.get_google_drive_files.api import fetch_google_drive_files_router
-from p7.get_onedrive_files.api import fetch_onedrive_files_router
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
+from p7.find_services.api import find_services_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
@@ -53,34 +51,18 @@ def create_user_client():
 @pytest.fixture(name="service_client", scope='module', autouse=True)
 def create_service_client():
     """Fixture for creating a test client for the create_service endpoint.
-    Returns:
-        TestClient: A test client for the create_service endpoint.
-    """
+     Returns:
+         TestClient: A test client for the create_service endpoint.
+     """
     return TestClient(create_service_router)
 
-@pytest.fixture(name="save_dropbox_file_client_fixture", scope='module', autouse=True)
-def save_dropbox_file_client():
-    """Fixture for creating a test client for the save_file endpoint.
+@pytest.fixture(name="find_service_client_fixture", scope='module', autouse=True)
+def find_service_client():
+    """Fixture for creating a test client for the find_service endpoint.
     Returns:
-        TestClient: A test client for the save_file endpoint.
+        TestClient: A test client for the find_service endpoint.
     """
-    return TestClient(fetch_dropbox_files_router)
-
-@pytest.fixture(name="save_google_drive_file_client_fixture", scope='module', autouse=True)
-def save_google_drive_file_client():
-    """Fixture for creating a test client for the save_file endpoint.
-    Returns:
-        TestClient: A test client for the save_file endpoint.
-    """
-    return TestClient(fetch_google_drive_files_router)
-
-@pytest.fixture(name="save_onedrive_file_client_fixture", scope='module', autouse=True)
-def save_onedrive_file_client():
-    """Fixture for creating a test client for the save_file endpoint.
-    Returns:
-        TestClient: A test client for the save_file endpoint.
-    """
-    return TestClient(fetch_onedrive_files_router)
+    return TestClient(find_services_router)
 
 def test_create_user_success(user_client):
     """Test creating 3 users successfully.
@@ -88,6 +70,7 @@ def test_create_user_success(user_client):
         user_client: Fixture for creating a test client for the create_user endpoint.
     """
     for user_number in range(1, 3+1):  # 3 users
+
         assert_create_user_success(user_client, user_number)
 
 def test_create_user_invalid_auth(user_client):
@@ -188,87 +171,40 @@ def test_create_service_missing_payload(service_client):
     params:
         service_client: Fixture for creating a test client for the create_service endpoint.
     """
-
     assert_create_service_missing_payload(service_client)
 
-def test_save_dropbox_file_success(save_dropbox_file_client_fixture):
-    """Test saving a Dropbox file."""
+def test_find_service_success(find_service_client_fixture):
+    """Test finding services successfully.
+    params:
+        find_service_client_fixture: Fixture for creating a test for the find_service endpoint.
+    """
 
-    for user_number in range(1, 3+1):  # 3 users
+    for user_number in range(1, 3+1): # 3 users
 
-        assert_save_file_success(save_dropbox_file_client_fixture, user_number, 'dropbox')
+        email = f"p7swtest{user_number}@gmail.com"
+        assert_find_service_success(find_service_client_fixture, user_number, email)
 
-def test_save_dropbox_file_invalid_auth(save_dropbox_file_client_fixture):
-    """Test saving a Dropbox file."""
+def test_find_service_invalid_auth(find_service_client_fixture):
+    """Test finding a service with invalid auth token.
+    params:
+        find_service_client_fixture: Fixture for creating a test for the find_service endpoint.
+    """
+    for user_number in range(1, 3+1): # 3 users
 
-    for user_number in range(1, 3+1):  # 3 users
+        assert_find_service_invalid_auth(find_service_client_fixture, user_number)
 
-        assert_save_file_invalid_auth(save_dropbox_file_client_fixture, user_number)
+def test_find_service_missing_header(find_service_client_fixture):
+    """Test finding a service with missing auth header.
+    params:
+        find_service_client_fixture: Fixture for creating a test for the find_service endpoint.
+    """
+    for user_number in range(1, 3+1): # 3 users
 
-def test_save_dropbox_file_missing_header(save_dropbox_file_client_fixture):
-    """Test saving a Dropbox file."""
+        assert_find_service_missing_header(find_service_client_fixture, user_number)
 
-    for user_number in range(1, 3+1):  # 3 users
-
-        assert_save_file_missing_header(save_dropbox_file_client_fixture, user_number)
-
-def test_save_dropbox_file_missing_user_id(save_dropbox_file_client_fixture):
-    """Test saving a Dropbox file."""
-
-    assert_save_file_missing_user_id(save_dropbox_file_client_fixture)
-
-def test_save_google_drive_file_success(save_google_drive_file_client_fixture):
-    """Test saving a Google Drive file."""
-
-    for user_number in range(1, 3+1):  # 3 users
-
-        assert_save_file_success(save_google_drive_file_client_fixture, user_number, 'google')
-
-def test_save_google_drive_file_invalid_auth(save_google_drive_file_client_fixture):
-    """Test saving a Google Drive file."""
-
-    for user_number in range(1, 3+1):  # 3 users
-
-        assert_save_file_invalid_auth(save_google_drive_file_client_fixture, user_number)
-
-def test_save_google_drive_file_missing_header(save_google_drive_file_client_fixture):
-    """Test saving a Google Drive file."""
-
-    for user_number in range(1, 3+1):  # 3 users
-
-        assert_save_file_missing_header(save_google_drive_file_client_fixture, user_number)
-
-def test_save_google_drive_file_missing_user_id(save_google_drive_file_client_fixture):
-    """Test saving a Google Drive file."""
-
-    assert_save_file_missing_user_id(save_google_drive_file_client_fixture)
-
-def test_save_onedrive_file_success(save_onedrive_file_client_fixture):
-    """Test saving a OneDrive file."""
-
-    for user_number in range(1, 3+1):  # 3 users
-
-        assert_save_file_success(
-            save_onedrive_file_client_fixture,
-            user_number,
-            'microsoft-entra-id',
-        )
-
-def test_save_onedrive_file_invalid_auth(save_onedrive_file_client_fixture):
-    """Test saving a OneDrive file."""
-
-    for user_number in range(1, 3+1):  # 3 users
-
-        assert_save_file_invalid_auth(save_onedrive_file_client_fixture, user_number)
-
-def test_save_onedrive_file_missing_header(save_onedrive_file_client_fixture):
-    """Test saving a OneDrive file."""
-
-    for user_number in range(1, 3+1):  # 3 users
-
-        assert_save_file_missing_header(save_onedrive_file_client_fixture, user_number)
-
-def test_save_onedrive_file_missing_user_id(save_onedrive_file_client_fixture):
-    """Test saving a OneDrive file."""
-
-    assert_save_file_missing_user_id(save_onedrive_file_client_fixture)
+def test_find_service_missing_user_id(find_service_client_fixture):
+    """Test finding a service with missing user_id parameter.
+    params:
+        find_service_client_fixture: Fixture for creating a test for the find_service endpoint.
+    """
+    assert_find_service_missing_user_id(find_service_client_fixture)

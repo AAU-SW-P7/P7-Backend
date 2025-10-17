@@ -54,9 +54,8 @@ def test_create_user_success(user_client):
     params:
         user_client: Fixture for creating a test client for the create_user endpoint.
     """
-    assert_create_user_success(user_client, 1)
-    assert_create_user_success(user_client, 2)
-    assert_create_user_success(user_client, 3)
+    for user_number in range(1, 3+1):  # 3 users
+        assert_create_user_success(user_client, user_number)
 
 def test_create_user_invalid_auth(user_client):
     """Test creating a user with invalid auth token.

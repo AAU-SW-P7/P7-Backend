@@ -18,8 +18,8 @@ fetch_google_drive_files_router = Router()
 @fetch_google_drive_files_router.get("/")
 def fetch_google_drive_files(
     request,
+    user_id: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
-    user_id: str = None,
 ):
     """Fetch and save Google Drive files for a given user.
 
@@ -222,8 +222,13 @@ def _fetch_recursive_files(
         if not page_token:
             break
 
-    print(files)
-    return files
+    return [
+        file for file in files if not (
+            file.get("mimeType") == "application/vnd.google-apps.folder"
+            or file.get("mimeType") == "application/vnd.google-apps.shortcut"
+            or file.get("mimeType") == "application/vnd.google-apps.drive-sdk"
+        ) # https://developers.google.com/workspace/drive/api/guides/mime-types
+    ]
 
 def _get_new_access_token(
     service,
@@ -254,7 +259,7 @@ def _get_new_access_token(
 
     return access_token
 
-def _build_google_drive_path(file_meta: dict, file_by_id: dict) -> str:
+def build_google_drive_path(file_meta: dict, file_by_id: dict) -> str:
     """
     Build a display path like /FolderA/FolderB/filename 
     using only the current `files` array.
@@ -266,14 +271,14 @@ def _build_google_drive_path(file_meta: dict, file_by_id: dict) -> str:
     """
     parents = file_meta.get("parents") or []
     prefix_parts = (
-        _google_drive_folder_path_parts(parents[0], file_by_id)
+        google_drive_folder_path_parts(parents[0], file_by_id)
         if parents
         else []
     )
     # Join and include filename at the end to mimic Dropbox-style path_display
     return "/" + "/".join(prefix_parts + [file_meta.get("name", "")])
 
-def _google_drive_folder_path_parts(
+def google_drive_folder_path_parts(
     folder_id: str, file_by_id: Dict[str, dict]
 ) -> list:
     """
@@ -295,5 +300,5 @@ def _google_drive_folder_path_parts(
 
     parents = folder.get("parents") or []
     # Use the first parent if multiple
-    prefix = _google_drive_folder_path_parts(parents[0], file_by_id) if parents else []
+    prefix = google_drive_folder_path_parts(parents[0], file_by_id) if parents else []
     return prefix + [folder.get("name", folder_id)]
