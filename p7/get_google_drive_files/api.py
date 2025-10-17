@@ -4,7 +4,7 @@ import os
 from typing import Dict
 from p7.helpers import validate_internal_auth
 from repository.service import get_tokens, get_service
-from repository.file import save_file
+from repository.file import save_file, get_files_by_service
 
 from ninja import Router, Header
 from django.http import JsonResponse
@@ -143,7 +143,8 @@ def sync_google_drive_files(
                 or mime_type == "application/vnd.google-apps.drive-sdk"
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
-            if datetime.fromisoformat(file.get("modifiedTime").replace("Z", "+00:00")) <= service.indexedAt:
+            if datetime.fromisoformat(
+                file.get("modifiedTime").replace("Z", "+00:00")) <= service.indexedAt:
                 continue  # No changes since last sync
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
@@ -151,6 +152,12 @@ def sync_google_drive_files(
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 
+        google_drive_files = get_files_by_service(service)
+
+        for google_drive_file in google_drive_files:
+            if not any(file["id"] == google_drive_file.serviceFileId for file in files):
+                # File has been deleted in Dropbox
+                google_drive_file.delete()
         return updated_files
 
     except (ValueError,TypeError,KeyError, RuntimeError) as e:

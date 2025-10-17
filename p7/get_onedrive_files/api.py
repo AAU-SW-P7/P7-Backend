@@ -11,7 +11,7 @@ import msal
 
 from p7.helpers import validate_internal_auth
 from repository.service import get_tokens, get_service
-from repository.file import save_file
+from repository.file import save_file, get_files_by_service
 
 fetch_onedrive_files_router = Router()
 
@@ -115,6 +115,13 @@ def sync_onedrive_files(
             update_or_create_file(file, service)
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
+
+        onedrive_files = get_files_by_service(service)
+
+        for onedrive_file in onedrive_files:
+            if not any(file["id"] == onedrive_file.serviceFileId for file in files):
+                # File has been deleted in Dropbox
+                onedrive_file.delete()
 
         return updated_files
     except (ValueError, TypeError, RuntimeError) as e:
