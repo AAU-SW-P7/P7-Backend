@@ -76,8 +76,6 @@ def fetch_google_drive_files(
                 or mime_type == "application/vnd.google-apps.drive-sdk"
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
-            if file.get("modifiedTime") <= service.modifiedAt.isoformat():
-                continue  # No changes since last sync
             update_or_create_file(file, service, file_by_id)
 
         return JsonResponse(files, safe=False)
@@ -120,7 +118,7 @@ def sync_google_drive_files(
             access_token,
         )
 
-        indexing_time = datetime.now()(timezone.utc)
+        indexing_time = datetime.now(timezone.utc)
 
         # Build Drive service and list files
         drive_api = build("drive", "v3", credentials=creds)
@@ -145,7 +143,7 @@ def sync_google_drive_files(
                 or mime_type == "application/vnd.google-apps.drive-sdk"
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
-            if file.get("modifiedTime") <= service.modifiedAt.isoformat():
+            if datetime.fromisoformat(file.get("modifiedTime").replace("Z", "+00:00")) <= service.indexedAt:
                 continue  # No changes since last sync
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)

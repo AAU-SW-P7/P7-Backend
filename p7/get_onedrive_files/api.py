@@ -87,7 +87,7 @@ def sync_onedrive_files(
     service = get_service(user_id, "microsoft-entra-id")
 
     try:
-        indexing_time = datetime.now()(timezone.utc)
+        indexing_time = datetime.now(timezone.utc)
         # Build MSAL app instance
         app = msal.ConfidentialClientApplication(
             os.getenv("MICROSOFT_CLIENT_ID"),
@@ -107,7 +107,7 @@ def sync_onedrive_files(
         for file in files:
             if "folder" in file:  # Skip folders
                 continue
-            if file["lastModifiedDateTime"] <= service.indexedAt.isoformat():
+            if datetime.fromisoformat(file["lastModifiedDateTime"].replace("Z", "+00:00")) <= service.indexedAt:
                 continue  # No changes since last sync
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)

@@ -35,7 +35,7 @@ def sync_files(
         google_drive_updated_files = sync_google_drive_files(x_internal_auth, user_id)
     if onedrive_service and not isinstance(onedrive_service, JsonResponse):
         onedrive_updated_files = sync_onedrive_files(x_internal_auth, user_id)
-
+    
     combined_updated_files = (
         dropbox_updated_files + google_drive_updated_files + onedrive_updated_files
     )

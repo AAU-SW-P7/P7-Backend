@@ -104,7 +104,7 @@ def sync_dropbox_files(
             refresh_token,
         )
 
-        indexing_time = datetime.now()(timezone.utc)
+        indexing_time = datetime.now(timezone.utc)
         files = _fetch_recursive_files(
             service,
             access_token,
@@ -115,7 +115,7 @@ def sync_dropbox_files(
         for file in files:
             if file[".tag"] != "file":
                 continue
-            if file["server_modified"] <= service.indexedAt:
+            if datetime.fromisoformat(file["server_modified"].replace("Z", "+00:00")) <= service.indexedAt:
                 continue  # No changes since last sync
 
             # updated_files should be used, when we want to index the updated files
