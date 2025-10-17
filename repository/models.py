@@ -78,7 +78,16 @@ class File(models.Model):
     lastIndexed = models.DateTimeField(null=True, blank=True)
     snippet = models.TextField(null=True, blank=True)
     content = models.TextField(null=True, blank=True)
-    ts = SearchVectorField(null=True, editable=False)
+    ts = models.GeneratedField(
+        expression=(
+            SearchVector('name',   weight='A', config='english') +
+            SearchVector('content', weight='B', config='english')
+        ),
+        output_field=SearchVectorField(),
+        db_persist=True,
+        editable=False,
+        null=True,
+    )
 
     class Meta:
         """Class defining metadata for the File model."""
