@@ -121,7 +121,7 @@ def sync_google_drive_files(
         )
 
         indexing_time = datetime.now()(timezone.utc)
-        
+
         # Build Drive service and list files
         drive_api = build("drive", "v3", credentials=creds)
         # Request all file fields and paginate through results
@@ -165,7 +165,7 @@ def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
     """
     extension = os.path.splitext(file.get("name", ""))[1]
     downloadable = file.get("capabilities", {}).get("canDownload")
-    path = _build_google_drive_path(file, file_by_id)
+    path = build_google_drive_path(file, file_by_id)
 
     save_file(
         service,
