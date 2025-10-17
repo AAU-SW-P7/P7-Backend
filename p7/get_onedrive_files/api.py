@@ -107,7 +107,8 @@ def sync_onedrive_files(
         for file in files:
             if "folder" in file:  # Skip folders
                 continue
-            if datetime.fromisoformat(file["lastModifiedDateTime"].replace("Z", "+00:00")) <= service.indexedAt:
+            if datetime.fromisoformat(
+                file["lastModifiedDateTime"].replace("Z", "+00:00")) <= service.indexedAt:
                 continue  # No changes since last sync
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)

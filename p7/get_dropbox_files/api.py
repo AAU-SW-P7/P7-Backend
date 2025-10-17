@@ -115,7 +115,8 @@ def sync_dropbox_files(
         for file in files:
             if file[".tag"] != "file":
                 continue
-            if datetime.fromisoformat(file["server_modified"].replace("Z", "+00:00")) <= service.indexedAt:
+            if datetime.fromisoformat(
+                file["server_modified"].replace("Z", "+00:00")) <= service.indexedAt:
                 continue  # No changes since last sync
 
             # updated_files should be used, when we want to index the updated files
