@@ -51,3 +51,14 @@ def save_file(
         serviceFileId=service_file_id,
         defaults=defaults,
     )
+
+def get_files_by_service(service):
+    """Retrieves all files associated with a given service.
+    
+    params:
+        service: The service object for which to retrieve files.
+    
+    returns:
+        A list of File objects associated with the service.
+    """
+    return list(File.objects.filter(serviceId=service.id))

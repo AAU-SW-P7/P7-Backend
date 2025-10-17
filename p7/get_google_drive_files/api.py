@@ -153,6 +153,8 @@ def sync_google_drive_files(
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 
+        return updated_files
+
     except (ValueError,TypeError,KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
 

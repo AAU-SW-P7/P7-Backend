@@ -7,7 +7,7 @@ from ninja import Router, Header
 from django.http import JsonResponse
 from p7.helpers import validate_internal_auth, fetch_api
 from repository.service import get_tokens, get_service
-from repository.file import save_file
+from repository.file import save_file, get_files_by_service
 
 fetch_dropbox_files_router = Router()
 
@@ -124,7 +124,14 @@ def sync_dropbox_files(
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 
-        return JsonResponse({"status": "success"}, status=200)
+        dropbox_files = get_files_by_service(service)
+
+        for dropbox_file in dropbox_files:
+            if not any(file["id"] == dropbox_file.serviceFileId for file in files):
+                # File has been deleted in Dropbox
+                dropbox_file.delete()
+
+        return updated_files
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
         return response
