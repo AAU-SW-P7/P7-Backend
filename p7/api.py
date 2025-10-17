@@ -7,6 +7,8 @@ from p7.create_user.api import create_user_router
 from p7.find_services.api import find_services_router
 from p7.create_service.api import create_service_router
 from p7.find_user_by_email.api import find_user_by_email_router
+from p7.search_files_by_filename.api import fetch_database_files_by_filename_router
+
 api = NinjaAPI()
 
 api.add_router("/fetch_dropbox_files/", fetch_dropbox_files_router)
@@ -17,3 +19,4 @@ api.add_router("/find_user_by_email/", find_user_by_email_router)
 api.add_router("/create_user/", create_user_router)
 api.add_router("/create_service/", create_service_router)
 api.add_router("/find_service/", find_services_router)
+api.add_router("/search_files_by_filename/", fetch_database_files_by_filename_router)

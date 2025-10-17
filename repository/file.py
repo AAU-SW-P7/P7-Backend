@@ -1,5 +1,6 @@
 """Saves file metadata and content to the database."""
 from repository.models import File
+from django.db.models import Q
 
 def save_file(
     service_id,
@@ -48,3 +49,29 @@ def save_file(
         snippet=snippet,
         content=content,
     )
+    
+def search_files_by_name(name_query, user_id):
+    """Searches for files by name containing the given query string and user id.
+
+    params:
+        name_query: Substring or list/tuple of substrings to search for in file names.
+                    If a list/tuple is provided, tokens are combined with OR.
+        user_id: User id to restrict results to. (applies as an AND).
+    returns:
+        QuerySet of File objects matching the search criteria.
+    """
+    if isinstance(name_query, (list, tuple)):
+        q = Q()
+        for token in name_query:
+            q |= Q(name__icontains=token)
+        if not q.children:
+            return File.objects.none()
+        if user_id is not None:
+            q &= Q(serviceId__userId=user_id)
+        return File.objects.filter(q)
+
+    # Single string
+    q = Q(name__icontains=name_query)
+    if user_id is not None:
+        q &= Q(serviceId__userId=user_id)
+    return File.objects.filter(q)
