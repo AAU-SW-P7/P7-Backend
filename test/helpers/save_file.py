@@ -73,16 +73,16 @@ def assert_save_file_success(client, user_id, service_name):
             file_count = db_file.count()
             check.equal(file_count, 1)
 
+            # Get produced ts vector for the file
             ts = db_file.get().ts
 
             # Check that each token in the name appears as a term in our tsvector
+            # To produce the tokens we call PostgreSQL's tsvector parser
+            # We check that the lexized tokens are the same as stored in the DB
             name_tokens = ts_tokenize(file.get("name"))
-            print(f"THESE ARE THE TOKENS: {name_tokens}")
-            name_tokens = [ts_lexize(token) for token in name_tokens]
-            print(f"THESE ARE THE TOKENS: {name_tokens}")
+            name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
             for token in name_tokens:
                 check.equal(token in ts, True)
-            print(f"TS IS THIS{ts}")
 
         elif service_name == "google":
             file_by_id = {file["id"]: file for file in data}
@@ -232,6 +232,7 @@ def ts_tokenize(text):
             "SELECT unnest(tsvector_to_array(to_tsvector('english', %s)))", [text]
         )
         return [row[0] for row in cursor.fetchall()]
+
 
 def ts_lexize(token):
     "Lexizes (stems) a token"

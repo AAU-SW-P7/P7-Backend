@@ -43,7 +43,7 @@ def save_file(
     with transaction.atomic():
         # Insert the file
         f = File.objects.create(
-            serviceId=service_id,              # note: ForeignKey expects an instance
+            serviceId=service_id,
             serviceFileId=service_file_id,
             name=name,
             extension=extension,
