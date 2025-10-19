@@ -72,26 +72,15 @@ def assert_save_file_success(client, user_id, service_name):
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
-
-            # Get produced ts vector for the file
-            ts = db_file.get().ts
-
-            # Check that each token in the name appears as a term in our tsvector
-            # To produce the tokens we call PostgreSQL's tsvector parser
-            # We check that the lexized tokens are the same as stored in the DB
-            name_tokens = ts_tokenize(file.get("name"))
-            name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
-            for token in name_tokens:
-                check.equal(token in ts, True)
+            check_tokens_against_ts_vector(db_file)
 
         elif service_name == "google":
             file_by_id = {file["id"]: file for file in data}
-
             extension = os.path.splitext(file.get("name", ""))[1]
             downloadable = file.get("capabilities", {}).get("canDownload")
             path = build_google_drive_path(file, file_by_id)
 
-            get_file = File.objects.filter(
+            db_file = File.objects.filter(
                 serviceId__userId=user_id,
                 serviceId__name=service_name,
                 serviceFileId=file.get("id"),
@@ -106,8 +95,10 @@ def assert_save_file_success(client, user_id, service_name):
                 lastIndexed=None,
                 snippet=None,
                 content=None,
-            ).count()
-            check.equal(get_file, 1)
+            )
+            file_count = db_file.count()
+            check.equal(file_count, 1)
+            check_tokens_against_ts_vector(db_file)
 
         elif service_name == "microsoft-entra-id":
             extension = os.path.splitext(file["name"])[1]
@@ -119,7 +110,7 @@ def assert_save_file_success(client, user_id, service_name):
                 + file["name"]
             )
 
-            get_file = File.objects.filter(
+            db_file = File.objects.filter(
                 serviceId__userId=user_id,
                 serviceId__name=service_name,
                 serviceFileId=file.get("id"),
@@ -134,8 +125,10 @@ def assert_save_file_success(client, user_id, service_name):
                 lastIndexed=None,
                 snippet=None,
                 content=None,
-            ).count()
-            check.equal(get_file, 1)
+            )
+            file_count = db_file.count()
+            check.equal(file_count, 1)
+            check_tokens_against_ts_vector(db_file)
 
 
 def assert_save_file_invalid_auth(client, user_id):
@@ -223,6 +216,22 @@ def assert_save_file_missing_user_id(client):
             ]
         },
     )
+
+
+def check_tokens_against_ts_vector(file: File):
+    """
+    Checks tokenized file name against the tsvector stored in the database
+    """
+    # Get produced ts vector for the file
+    ts = file.get().ts
+    file_name = file.get().name
+    # Check that each token in the name appears as a term in our tsvector
+    # To produce the tokens PostgreSQL's tsvector parser is used
+    # NOTE: this currently only takes into account the file name
+    name_tokens = ts_tokenize(file_name)
+    name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
+    for token in name_tokens:
+        check.equal(token in ts, True)
 
 
 def ts_tokenize(text):
