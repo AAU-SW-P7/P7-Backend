@@ -53,7 +53,10 @@ def assert_find_user_by_email_invalid_auth(client, email):
     check.equal(response.status_code, 401)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+    check.equal(response.json(), {
+            "error": "Unauthorized - invalid x-internal-auth"
+        }
+    )
 
 def assert_find_user_by_email_missing_header(client, email):
     """Helper function to assert finding a user by email with missing auth header.
@@ -72,14 +75,12 @@ def assert_find_user_by_email_missing_header(client, email):
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json(), {
-        'detail': [
-            {
-                'loc': ['header', 'x-internal-auth'], 
-                'msg': 'Input should be a valid string', 
-                'type': 'string_type'
-            }
-        ]
-    })
+        'detail':
+            [
+                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            ]
+        }
+    )
 
 def assert_find_user_by_email_missing_email(client):
     """Helper function to assert finding a user by email with missing email.
@@ -99,16 +100,10 @@ def assert_find_user_by_email_missing_email(client):
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json(), {
-        'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['query', 'email'],
-                'msg': 'Input should be a valid string'
-            },
-            {
-                'type': 'string_type', 
-                'loc': ['header', 'x-internal-auth'], 
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    })
+        'detail':
+            [
+                {'type': 'missing', 'loc': ['query', 'email'], 'msg': 'Field required'},
+                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            ]
+        }
+    )

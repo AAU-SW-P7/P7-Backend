@@ -42,7 +42,10 @@ def assert_create_user_invalid_auth(client):
     response = client.post("/", headers={"x-internal-auth": "invalid_token"})
 
     check.equal(response.status_code, 401)
-    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+    check.equal(response.json(), {
+            "error": "Unauthorized - invalid x-internal-auth"
+        }
+    )
 
 def assert_create_user_missing_header(client):
     """Test the creation of a user with a missing authentication header.
@@ -54,8 +57,9 @@ def assert_create_user_missing_header(client):
 
     check.equal(response.status_code, 422)
     check.equal(response.json(), {
-        'detail': [{'loc': ['header', 'x-internal-auth'], 
-                    'msg': 'Input should be a valid string', 
-                    'type': 'string_type'
-                }]
-        })
+        'detail':
+            [
+                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            ]
+        }
+    )

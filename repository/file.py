@@ -44,7 +44,7 @@ def save_file(
 
     with transaction.atomic():
         # Insert the file
-        f = File.objects.create(
+        file = File.objects.create(
             serviceId=service_id,
             serviceFileId=service_file_id,
             name=name,
@@ -61,7 +61,7 @@ def save_file(
         )
 
         # 2) Compute & store the tsvector (use Coalesce to avoid NULLs)
-        File.objects.filter(pk=f.pk).update(
+        File.objects.filter(pk=file.pk).update(
             ts=(
                 SearchVector(Coalesce("name", Value("")), weight="A", config=ts_config)
                 + SearchVector(
@@ -71,5 +71,6 @@ def save_file(
         )
 
         # 3) Load the computed ts on the instance
-        f.refresh_from_db(fields=["ts"])
-    return f
+        file.refresh_from_db(fields=["ts"])
+
+    return file
