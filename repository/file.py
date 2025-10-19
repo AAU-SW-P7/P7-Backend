@@ -1,12 +1,14 @@
 """Saves file metadata and content to the database."""
-from repository.models import File
+
 from django.db import transaction
 from django.db.models import Value
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
+from repository.models import File
+
 
 def save_file(
-    service_id,            # may be an int (Service.pk) or a Service instance
+    service_id,  # may be an int (Service.pk) or a Service instance
     service_file_id,
     name,
     extension,
@@ -20,10 +22,10 @@ def save_file(
     snippet,
     content,
     *,
-    ts_config="english"    # allow overriding the FTS config if needed
+    ts_config="english"  # allow overriding the FTS config if needed
 ):
     """Saves file metadata and content to the database.
-    
+
     params:
         sericeId: ID of the service the file belongs to.
         serviceFileId: ID of the file in the external service.
@@ -38,7 +40,7 @@ def save_file(
         lastIndexed: Timestamp when the file was last indexed.
         snippet: Text snippet or preview of the file content.
         content: Full text content of the file.
-        """
+    """
 
     with transaction.atomic():
         # Insert the file
@@ -61,8 +63,10 @@ def save_file(
         # 2) Compute & store the tsvector (use Coalesce to avoid NULLs)
         File.objects.filter(pk=f.pk).update(
             ts=(
-                SearchVector(Coalesce("name",    Value("")), weight="A", config=ts_config) +
-                SearchVector(Coalesce("content", Value("")), weight="B", config=ts_config)
+                SearchVector(Coalesce("name", Value("")), weight="A", config=ts_config)
+                + SearchVector(
+                    Coalesce("content", Value("")), weight="B", config=ts_config
+                )
             )
         )
 
