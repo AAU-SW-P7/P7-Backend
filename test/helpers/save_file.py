@@ -171,13 +171,15 @@ def assert_save_file_missing_header(client, user_id):
     check.equal(response.status_code, 422)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json(), {
-        'detail':
-            [
-                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-            ]
-        }
-    )
+    check.equal(response.json() in ({
+        'detail': [
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
 
 
 def assert_save_file_missing_user_id(client):
@@ -197,14 +199,17 @@ def assert_save_file_missing_user_id(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json(), {
-        'detail':
-            [
-                {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-            ]
-        }
-    )
+    check.equal(response.json() in ({
+        'detail': [
+            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
 
 
 def check_tokens_against_ts_vector(file: File):

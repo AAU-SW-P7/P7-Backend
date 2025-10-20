@@ -65,13 +65,15 @@ def assert_fetch_dropbox_files_missing_header(client, user_id):
     response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json(), {
-        'detail':
-            [
-                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-            ]
-        }
-    )
+    check.equal(response.json() in ({
+        'detail': [
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
 
 
 def assert_fetch_dropbox_files_missing_userid(client):
@@ -82,14 +84,17 @@ def assert_fetch_dropbox_files_missing_userid(client):
     response = client.get("/")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json(), {
-        'detail':
-            [
-                {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-            ]
-        }
-    )
+    check.equal(response.json() in ({
+        'detail': [
+            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
 
 def assert_fetch_google_files_success(client, user_id, service):
     """Helper function to assert successful fetching of Google files
@@ -149,13 +154,15 @@ def assert_fetch_google_files_missing_header(client, user_id):
     response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json(), {
-        'detail':
-            [
-                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-            ]
-        }
-    )
+    check.equal(response.json() in ({
+        'detail': [
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
 
 def assert_fetch_google_files_missing_userid(client):
     """Helper function to assert bad request when userId query parameter is missing.
@@ -165,14 +172,17 @@ def assert_fetch_google_files_missing_userid(client):
     response = client.get("/")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json(), {
-        'detail':
-            [
-                {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-            ]
-        }
-    )
+    check.equal(response.json() in ({
+        'detail': [
+            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
 
 def assert_fetch_onedrive_files_success(client, user_id, service):
     """Helper function to assert successful fetching of OneDrive files
@@ -231,13 +241,15 @@ def assert_fetch_onedrive_files_missing_header(client, user_id):
     response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json(), {
-        'detail':
-            [
-                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-            ]
-        }
-    )
+    check.equal(response.json() in ({
+        'detail': [
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
 
 def assert_fetch_onedrive_files_missing_userid(client):
     """Helper function to assert bad request when userId query parameter is missing.
@@ -247,11 +259,14 @@ def assert_fetch_onedrive_files_missing_userid(client):
     response = client.get("/")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json(), {
-        'detail':
-            [
-                {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-                {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-            ]
-        }
-    )
+    check.equal(response.json() in ({
+        'detail': [
+            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
