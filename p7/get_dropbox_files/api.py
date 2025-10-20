@@ -77,7 +77,6 @@ def fetch_dropbox_files(
 
 
 def sync_dropbox_files(
-    x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
@@ -85,13 +84,8 @@ def sync_dropbox_files(
         x_internal_auth: Internal auth token for validating the request.
         user_id: The id of the user whose files are to be synced.
     """
-    auth_resp = validate_internal_auth(x_internal_auth)
-    if auth_resp:
-        return auth_resp
-
     if not user_id:
-        response = JsonResponse({"error": "user_id required"}, status=400)
-        return response
+        return JsonResponse({"error": "user_id required"}, status=400)
 
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
     service = get_service(user_id, "dropbox")
@@ -128,8 +122,9 @@ def sync_dropbox_files(
         dropbox_files = get_files_by_service(service)
 
         for dropbox_file in dropbox_files:
+            # Checks if any of the fetched files match the serviceFileId of the stored file
+            # If not, it means the file has been deleted in Dropbox
             if not any(file["id"] == dropbox_file.serviceFileId for file in files):
-                # File has been deleted in Dropbox
                 dropbox_file.delete()
 
         return updated_files
