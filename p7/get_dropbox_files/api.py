@@ -1,10 +1,8 @@
 """API endpoint for fetching and saving Dropbox files."""
-from datetime import datetime, timezone
 
 from ninja import Router, Header
 from django.http import JsonResponse
 from repository.service import get_tokens, get_service
-from repository.file import get_files_by_service
 from p7.helpers import validate_internal_auth
 from p7.get_dropbox_files.helper import (
     update_or_create_file, fetch_recursive_files, get_new_access_token
@@ -57,78 +55,6 @@ def fetch_dropbox_files(
             update_or_create_file(file, service)
 
         return JsonResponse(files, safe=False, status=200)
-    except KeyError as e:
-        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
-        return response
-    except ValueError as e:
-        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
-        return response
-    except ConnectionError as e:
-        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
-        return response
-    except RuntimeError as e:
-        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
-        return response
-    except TypeError as e:
-        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
-        return response
-    except OSError as e:
-        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
-        return response
-
-
-def sync_dropbox_files(
-    user_id: str = None,
-):
-    """Fetches file metadata and updates files that have been modified since the last sync.
-        params: 
-        x_internal_auth: Internal auth token for validating the request.
-        user_id: The id of the user whose files are to be synced.
-    """
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
-
-    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
-    service = get_service(user_id, "dropbox")
-
-    try:
-        access_token, access_token_expiration = get_new_access_token(
-            service,
-            access_token,
-            access_token_expiration,
-            refresh_token,
-        )
-
-        indexing_time = datetime.now(timezone.utc)
-        files = fetch_recursive_files(
-            service,
-            access_token,
-            access_token_expiration,
-            refresh_token,
-        )
-        updated_files = []
-        for file in files:
-            if file[".tag"] != "file":
-                continue
-            if datetime.fromisoformat(
-                file["server_modified"].replace("Z", "+00:00")) <= service.indexedAt:
-                continue  # No changes since last sync
-
-            # updated_files should be used, when we want to index the updated files
-            updated_files.append(file)
-            update_or_create_file(file, service)
-        service.indexedAt = indexing_time
-        service.save(update_fields=["indexedAt"])
-
-        dropbox_files = get_files_by_service(service)
-
-        for dropbox_file in dropbox_files:
-            # Checks if any of the fetched files match the serviceFileId of the stored file
-            # If not, it means the file has been deleted in Dropbox
-            if not any(file["id"] == dropbox_file.serviceFileId for file in files):
-                dropbox_file.delete()
-
-        return updated_files
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
         return response
