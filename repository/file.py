@@ -1,12 +1,10 @@
 """Saves file metadata and content to the database."""
 
 from django.db import transaction
-from django.db.models import Value
+from django.db.models import Value, Q
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
 from repository.models import File
-
-from django.db.models import Q
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -75,7 +73,7 @@ def save_file(
         file.refresh_from_db(fields=["ts"])
 
     return file
-    
+
 def search_files_by_name(name_query, user_id):
     """Searches for files by name containing the given query string and user id.
 

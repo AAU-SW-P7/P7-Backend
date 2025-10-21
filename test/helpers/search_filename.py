@@ -2,7 +2,7 @@
 """Helper functions for testing search_files_by_name function."""
 import pytest_check as check
 from repository.models import File
-from p7.search_files_by_filename.api import search_files_by_name
+from p7.search_files_by_filename.api import sanitize_user_search, search_files_by_name
 
 
 def assert_search_filename_success(user_id, query, expected_name):
@@ -21,11 +21,14 @@ def assert_search_filename_success(user_id, query, expected_name):
 
     check.equal(results.count(), expected_name_len)
 
-def assert_search_filename_multiple_results(user_id, queries, expected_count):
+def assert_search_filename_multiple_results(user_id, queries, expected_name):
     """Assert that multiple substrings return the correct number of files."""
     results = search_files_by_name(queries, user_id)
-
-    check.equal(results.count(), expected_count)
+    expected_name_len = len(expected_name)
+    for file in results:
+        check.equal(file.name, expected_name.pop(0))
+        check.equal(file.serviceId.userId.id, user_id)
+    check.equal(results.count(), expected_name_len)
 
 
 def assert_search_filename_no_results(user_id, query, expected_count):
@@ -98,3 +101,55 @@ def assert_search_filename_missing_userid(client):
             }
         ]
     })
+
+def assert_search_filename_sanitization(input_str):
+    """Helper function to assert the sanitization of user search input."""
+    sanitized = sanitize_user_search(input_str)
+    assert isinstance(sanitized, str)
+    assert sanitized == sanitized.lower()
+    assert all(c.isalnum() or c.isspace() or c in "'-_" for c in sanitized)  # Check allowed chars
+
+def assert_search_filename_basic_sanitization():
+    """Helper function to assert basic sanitization cases."""
+    assert sanitize_user_search("Aalborg's Bedste <script>") == "aalborg's bedste script"
+    assert sanitize_user_search('Hello "World" / Test') == 'hello world test'
+    assert sanitize_user_search("NoSpecialChars") == "nospecialchars"
+    assert sanitize_user_search("<>'\"/|:;?") == "'"
+    assert sanitize_user_search("") == ""
+    assert sanitize_user_search("   Leading and trailing   ") == "leading and trailing"
+    assert sanitize_user_search("Multiple   spaces") == "multiple spaces"
+    assert sanitize_user_search("Café-Del'Mar -  “Best of ’98”!!! ") == "café del'mar best of 98"
+
+def assert_tokenize_basic(input_str, expected_tokens):
+    """Helper function to assert basic tokenization cases.
+    params:
+        input_str (str): Input string to be tokenized.
+        expected_tokens (list): Expected list of tokens.
+    """
+    tokens = search_files_by_name.tokenize(input_str)
+    assert tokens == expected_tokens
+
+def assert_tokenize_empty(input_str, expected_tokens=[]):
+    """Helper function to assert tokenization of an empty string.
+    params:
+        input_str (str): Input string to be tokenized.
+    """
+    tokens = search_files_by_name.tokenize(input_str)
+    assert tokens == expected_tokens
+
+def assert_tokenize_numbers(input_str, expected_tokens):
+    """Helper function to assert tokenization with numbers in the string.
+    params:
+        input_str (str): Input string to be tokenized.
+        expected_tokens (list): Expected list of tokens.
+    """
+    tokens = search_files_by_name.tokenize(input_str)
+    assert tokens == expected_tokens
+
+def assert_tokenize_hypothesis(input_str):
+    """Helper function to assert tokenization with various inputs using Hypothesis.
+    params:
+        input_str (str): Randomly generated input string.
+    """
+    tokens = search_files_by_name.tokenize(input_str)
+    assert all(isinstance(token, str) for token in tokens)
