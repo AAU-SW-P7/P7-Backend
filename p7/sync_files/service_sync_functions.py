@@ -5,12 +5,17 @@ from datetime import datetime, timezone
 
 from django.http import JsonResponse
 from p7.get_dropbox_files.helper import (
-    update_or_create_file, fetch_recursive_files, get_new_access_token
+    update_or_create_file as update_or_create_file_dropbox,
+    fetch_recursive_files as fetch_recursive_files_dropbox,
+    get_new_access_token as get_new_access_token_dropbox
     )
 from p7.get_google_drive_files.helper import (
-    update_or_create_file, fetch_recursive_files, get_new_access_token)
+    update_or_create_file as update_or_create_file_google_drive,
+    fetch_recursive_files as fetch_recursive_files_google_drive,
+    get_new_access_token as get_new_access_token_google_drive)
 from p7.get_onedrive_files.helper import (
-    update_or_create_file, fetch_recursive_files
+    update_or_create_file as update_or_create_file_onedrive,
+    fetch_recursive_files as fetch_recursive_files_onedrive
     )
 from repository.service import get_tokens, get_service
 from repository.file import get_files_by_service
@@ -36,7 +41,7 @@ def sync_dropbox_files(
     service = get_service(user_id, "dropbox")
 
     try:
-        access_token, access_token_expiration = get_new_access_token(
+        access_token, access_token_expiration = get_new_access_token_dropbox(
             service,
             access_token,
             access_token_expiration,
@@ -44,7 +49,7 @@ def sync_dropbox_files(
         )
 
         indexing_time = datetime.now(timezone.utc)
-        files = fetch_recursive_files(
+        files = fetch_recursive_files_dropbox(
             service,
             access_token,
             access_token_expiration,
@@ -60,7 +65,7 @@ def sync_dropbox_files(
 
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
-            update_or_create_file(file, service)
+            update_or_create_file_dropbox(file, service)
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 
@@ -100,7 +105,7 @@ def sync_google_drive_files(
             scopes=["https://www.googleapis.com/auth/drive.readonly"],
         )
 
-        access_token = get_new_access_token(
+        access_token = get_new_access_token_google_drive(
             service,
             creds,
             access_token,
@@ -111,7 +116,7 @@ def sync_google_drive_files(
         # Build Drive service and list files
         drive_api = build("drive", "v3", credentials=creds)
         # Request all file fields and paginate through results
-        files = fetch_recursive_files(
+        files = fetch_recursive_files_google_drive(
             drive_api,
             access_token,
             creds,
@@ -136,7 +141,7 @@ def sync_google_drive_files(
                 continue  # No changes since last sync
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
-            update_or_create_file(file, service, file_by_id)
+            update_or_create_file_google_drive(file, service, file_by_id)
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 
@@ -174,7 +179,7 @@ def sync_onedrive_files(
             client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
         )
 
-        files = fetch_recursive_files(
+        files = fetch_recursive_files_onedrive(
             app,
             service,
             access_token,
@@ -191,7 +196,7 @@ def sync_onedrive_files(
                 continue  # No changes since last sync
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
-            update_or_create_file(file, service)
+            update_or_create_file_onedrive(file, service)
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 
