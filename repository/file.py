@@ -1,9 +1,15 @@
 """Saves file metadata and content to the database."""
+
+from django.db import transaction
+from django.db.models import Value
+from django.db.models.functions import Coalesce
+from django.contrib.postgres.search import SearchVector
 from repository.models import File
+
 from django.db.models import Q
 
 def save_file(
-    service_id,
+    service_id,  # may be an int (Service.pk) or a Service instance
     service_file_id,
     name,
     extension,
@@ -16,9 +22,11 @@ def save_file(
     last_indexed,
     snippet,
     content,
+    *,
+    ts_config="english"  # allow overriding the FTS config if needed
 ):
     """Saves file metadata and content to the database.
-    
+
     params:
         sericeId: ID of the service the file belongs to.
         serviceFileId: ID of the file in the external service.
@@ -33,22 +41,40 @@ def save_file(
         lastIndexed: Timestamp when the file was last indexed.
         snippet: Text snippet or preview of the file content.
         content: Full text content of the file.
-        """
-    File.objects.create(
-        serviceId=service_id,
-        serviceFileId=service_file_id,
-        name=name,
-        extension=extension,
-        downloadable=downloadable,
-        path=path,
-        link=link,
-        size=size,
-        createdAt=created_at,
-        modifiedAt=modified_at,
-        lastIndexed=last_indexed,
-        snippet=snippet,
-        content=content,
-    )
+    """
+
+    with transaction.atomic():
+        # Insert the file
+        file = File.objects.create(
+            serviceId=service_id,
+            serviceFileId=service_file_id,
+            name=name,
+            extension=extension,
+            downloadable=downloadable,
+            path=path,
+            link=link,
+            size=size,
+            createdAt=created_at,
+            modifiedAt=modified_at,
+            lastIndexed=last_indexed,
+            snippet=snippet,
+            content=content,
+        )
+
+        # 2) Compute & store the tsvector (use Coalesce to avoid NULLs)
+        File.objects.filter(pk=file.pk).update(
+            ts=(
+                SearchVector(Coalesce("name", Value("")), weight="A", config=ts_config)
+                + SearchVector(
+                    Coalesce("content", Value("")), weight="B", config=ts_config
+                )
+            )
+        )
+
+        # 3) Load the computed ts on the instance
+        file.refresh_from_db(fields=["ts"])
+
+    return file
     
 def search_files_by_name(name_query, user_id):
     """Searches for files by name containing the given query string and user id.

@@ -14,11 +14,12 @@ def assert_search_filename_success(user_id, query, expected_name):
         expected_name (list): The expected filename in results
     """
     results = search_files_by_name(query, user_id)
+    expected_name_len = len(expected_name)
     for file in results:
         check.equal(file.name, expected_name.pop(0))
         check.equal(file.serviceId.userId.id, user_id)
-        
-    check.equal(results.count(), 2)
+
+    check.equal(results.count(), expected_name_len)
 
 def assert_search_filename_multiple_results(user_id, queries, expected_count):
     """Assert that multiple substrings return the correct number of files."""
@@ -44,3 +45,56 @@ def assert_search_filename_orm_injection_resistance(user_id, query, expected_cou
     results = search_files_by_name(query, user_id)
 
     check.equal(results.count(), expected_count)
+    
+def assert_search_filename_invalid_auth(client, user_id):
+    """Helper function to assert unauthorized access when invalid auth token is provided.
+
+    params:
+        client: Test client to make requests.
+        user_id: ID of the user whose files are to be fetched.
+    """
+    print(f"Fetching Dropbox files for user_id: {user_id}")
+    response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"})
+
+    check.equal(response.status_code, 401)
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
+def assert_search_filename_missing_header(client, user_id):
+    """Helper function to assert bad request when auth header is missing.
+    params:
+        client: Test client to make requests.
+        user_id: ID of the user whose files are to be fetched.
+    """
+    response = client.get(f"/?user_id={user_id}")
+
+    check.equal(response.status_code, 422)
+    check.equal(response.json(), {
+        'detail': [{
+            'loc': ['header', 'x-internal-auth'],
+            'msg': 'Input should be a valid string',
+            'type': 'string_type'
+                    }]})
+
+
+def assert_search_filename_missing_userid(client):
+    """Helper function to assert bad request when userId query parameter is missing.
+    params:
+        client: Test client to make requests.
+    """
+    response = client.get("/")
+
+    check.equal(response.status_code, 422)
+    check.equal(response.json(), {
+        'detail': [
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
+        ]
+    })
