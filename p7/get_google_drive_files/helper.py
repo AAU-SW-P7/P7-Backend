@@ -73,13 +73,7 @@ def fetch_recursive_files(
         if not page_token:
             break
 
-    return [
-        file for file in files if not (
-            file.get("mimeType") == "application/vnd.google-apps.folder"
-            or file.get("mimeType") == "application/vnd.google-apps.shortcut"
-            or file.get("mimeType") == "application/vnd.google-apps.drive-sdk"
-        ) # https://developers.google.com/workspace/drive/api/guides/mime-types
-    ]
+    return files
 
 def get_new_access_token(
     service,

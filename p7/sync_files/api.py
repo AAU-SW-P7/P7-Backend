@@ -12,8 +12,8 @@ sync_files_router = Router()
 @sync_files_router.get("/")
 def sync_files(
     request,
-    x_internal_auth: str = Header(..., alias="x-internal-auth"),
     user_id: str = None,
+    x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ):
     """Sync files from all available services for a given user.
         params:

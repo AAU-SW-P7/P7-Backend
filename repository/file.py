@@ -26,7 +26,7 @@ def save_file(
     """Saves or updates file metadata and content to the database.
 
     params:
-        sericeId: ID of the service the file belongs to.
+        service_id: ID of the service the file belongs to.
         serviceFileId: ID of the file in the external service.
         name: Name of the file.
         extension: File extension.
