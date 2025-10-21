@@ -5,20 +5,20 @@ import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
-
-import django
-django.setup()
-
-from hypothesis import given, strategies as st
-
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
 sys.path.insert(0, str(repo_backend))
 # Make the backend/test dir importable so you can use test_settings.py directly
 sys.path.insert(0, str(repo_backend / "test"))
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
+
+import django
+django.setup()
+
 import pytest
+from hypothesis import given, strategies as st
+
 from helpers.search_filename import (
     assert_search_filename_basic_sanitization,
     assert_search_filename_sanitization,
@@ -32,13 +32,13 @@ from helpers.search_filename import (
     assert_tokenize_hypothesis,
     assert_tokenize_numbers,
 )
-from p7.search_files_by_filename.api import sanitize_user_search, tokenize
 from repository.models import File, Service, User
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 
-def test_search_filename():
-    """Test searching files by filename for different users and scenarios."""
+@pytest.fixture(name="test_data", scope='function', autouse=True)
+def test_data_fixture():
+    """Fixture to create test users, services, and files."""
     user1 = User.objects.create()
     service1 = Service.objects.create(
         userId=user1,
@@ -90,7 +90,6 @@ def test_search_filename():
         email="user2@example.com",
         scopeName="files.read",
     )
-
     file2 = File.objects.create(
         serviceId=service2,
         serviceFileId="file-2",
@@ -110,45 +109,79 @@ def test_search_filename():
         extension="pdf",
         downloadable=True,
         path="/report-user2.pdf",
-        link="http://google/link2",
+        link="http://google/link22",
         size=2048,
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
     )
 
-    # user1 has "report-user1.docx" and "user1-file-report-11.docx"
+    return {
+        "user1": user1, "service1": service1, "file1": file1, "file11": file11,
+        "user2": user2, "service2": service2, "file2": file2, "file22": file22
+    }
+
+def test_user1_search_report(test_data):
+    """Test user1 searching for 'report' returns only their files.
+    params:
+        test_data: Fixture containing test users and files.
+    """
     assert_search_filename_success(
-        user_id=user1.id,
+        user_id=test_data["user1"].id,
         query="report",
-        expected_name=[file1.name]
+        expected_name=[test_data["file1"].name]
     )
 
+def test_user2_search_report(test_data):
+    """Test user2 searching for 'report' returns only their files.
+    params:
+        test_data: Fixture containing test users and files.
+    """
     assert_search_filename_success(
-        user_id=user2.id,
+        user_id=test_data["user2"].id,
         query="report",
-        expected_name=[file2.name, file22.name]
+        expected_name=[test_data["file2"].name, test_data["file22"].name]
     )
 
+def test_user1_search_other_user_file(test_data):
+    """Test user1 searching for user2's file returns no results.
+    params:
+        test_data: Fixture containing test users and files.
+    """
     assert_search_filename_no_results(
-        user_id=user1.id,
+        user_id=test_data["user1"].id,
         query="report-user2",
         expected_count=0,
     )
 
+def test_user1_multiple_results(test_data):
+    """Test user1 searching with multiple substrings applying OR in query returns correct files.
+    params:
+        test_data: Fixture containing test users and files.
+    """
     assert_search_filename_multiple_results(
-        user_id=user1.id,
+        user_id=test_data["user1"].id,
         queries=["report", "other"],
-        expected_name=[file1.name, file11.name],
+        expected_name=[test_data["file1"].name, test_data["file11"].name],
     )
 
+def test_user1_empty_string(test_data):
+    """Test that searching with an empty string returns no results.
+    params:
+        test_data: Fixture containing test users and files.
+    """
     assert_search_filename_empty_string(
-        user_id=user1.id,
+        user_id=test_data["user1"].id,
         query="''",
         expected_count=0,
     )
 
+def test_user1_sql_injection_resistance(test_data):
+    """Test that the search function is resistant to SQL injection attacks.
+    params:
+        test_data: Fixture containing test users and files.
+    """
     assert_search_filename_orm_injection_resistance(
-        user_id=user1.id,
+        user_id=test_data["user1"].id,
         query="'; SELECT * FROM files WHERE userId = 2; --",
         expected_count=0,
     )
@@ -179,5 +212,8 @@ def test_tokenize_search_numbers():
 
 @given(st.text())
 def test_tokenize_search_hypothesis(input_str):
-    """Test tokenize with various inputs using Hypothesis."""
+    """Test tokenize with various inputs using Hypothesis.
+    params:
+        input_str (str): Randomly generated input string.
+    """
     assert_tokenize_hypothesis(input_str)

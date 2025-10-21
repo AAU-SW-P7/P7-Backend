@@ -46,8 +46,8 @@ def tokenize(input_str: str) -> list[str]:
 @fetch_database_files_by_filename_router.get("/")
 def search_files_by_filename(
     request,
-    filename: str,
     user_id: str,
+    search_string: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ):
     """Search files in the database by filename.
@@ -60,11 +60,11 @@ def search_files_by_filename(
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
-    
-    if not filename:
-        return JsonResponse({"error": "filename required"}, status=400)
 
-    sanitized_input = sanitize_user_search(filename)
+    if not search_string:
+        return JsonResponse({"error": "search_string required"}, status=400)
+
+    sanitized_input = sanitize_user_search(search_string)
     tokens = tokenize(sanitized_input)
     results = search_files_by_name(tokens, user_id)
 
