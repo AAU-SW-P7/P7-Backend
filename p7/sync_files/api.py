@@ -37,10 +37,13 @@ def sync_files(
 
     # Check if services exist before syncing
     if dropbox_service and not isinstance(dropbox_service, JsonResponse):
+        print("Syncing Dropbox files...")
         dropbox_updated_files = sync_dropbox_files(user_id)
     if google_drive_service and not isinstance(google_drive_service, JsonResponse):
+        print("Syncing Google Drive files...")
         google_drive_updated_files = sync_google_drive_files(user_id)
     if onedrive_service and not isinstance(onedrive_service, JsonResponse):
+        print("Syncing OneDrive files...")
         onedrive_updated_files = sync_onedrive_files(user_id)
 
     if isinstance(dropbox_updated_files, JsonResponse) or isinstance(

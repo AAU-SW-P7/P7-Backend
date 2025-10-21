@@ -56,7 +56,7 @@ def save_file(
         "snippet": snippet,
         "content": content,
         }
-        file = File.objects.update_or_create(
+        file, _ = File.objects.update_or_create(
             serviceId=service_id,
             serviceFileId=service_file_id,
             defaults=defaults,
