@@ -27,7 +27,6 @@ def sync_dropbox_files(
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
         params: 
-        x_internal_auth: Internal auth token for validating the request.
         user_id: The id of the user whose files are to be synced.
     """
     if not user_id:
@@ -74,31 +73,14 @@ def sync_dropbox_files(
                 dropbox_file.delete()
 
         return updated_files
-    except KeyError as e:
-        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
-        return response
-    except ValueError as e:
-        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
-        return response
-    except ConnectionError as e:
-        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
-        return response
-    except RuntimeError as e:
-        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
-        return response
-    except TypeError as e:
-        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
-        return response
-    except OSError as e:
-        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
-        return response
+    except (ValueError, TypeError, RuntimeError, KeyError, ConnectionError, OSError) as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 def sync_google_drive_files(
     user_id: str = None,
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
         params:
-        x_internal_auth: Internal auth token for validating the request.
         user_id: The id of the user whose files are to be synced.
     """
     if not user_id:
@@ -175,8 +157,6 @@ def sync_onedrive_files(
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
         params:
-        request: The HTTP request object.
-        x_internal_auth: Internal auth token for validating the request.
         user_id: The id of the user whose files are to be synced.
     """
     if not user_id:

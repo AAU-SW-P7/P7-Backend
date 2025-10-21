@@ -4,7 +4,7 @@ import os
 import pytest_check as check
 from django.db import connection
 
-from p7.get_google_drive_files.api import build_google_drive_path
+from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
 
 

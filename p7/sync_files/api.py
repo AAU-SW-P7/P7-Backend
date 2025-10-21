@@ -43,6 +43,16 @@ def sync_files(
     if onedrive_service and not isinstance(onedrive_service, JsonResponse):
         onedrive_updated_files = sync_onedrive_files(user_id)
 
+    if isinstance(dropbox_updated_files, JsonResponse) or isinstance(
+        google_drive_updated_files, JsonResponse
+    ) or isinstance(onedrive_updated_files, JsonResponse):
+        print(dropbox_updated_files)
+        print(google_drive_updated_files)
+        print(onedrive_updated_files)
+        return JsonResponse(
+            {"error": "Error syncing files from one or more services."}, status=500
+        )
+
     # This array is for when we want to download all updated files from all services to index them
     combined_updated_files = (
         dropbox_updated_files + google_drive_updated_files + onedrive_updated_files
