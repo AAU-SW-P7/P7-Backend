@@ -3,8 +3,16 @@ import os
 import sys
 from pathlib import Path
 
-import django
+# Make the local backend package importable so `from p7...` works under pytest
+repo_backend = Path(__file__).resolve().parents[1]  # backend/
+sys.path.insert(0, str(repo_backend))
+# Make the backend/test dir importable so you can use test_settings.py directly
+sys.path.insert(0, str(repo_backend / "test"))
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
+
+import django
+django.setup()
 from django.utils import timezone
 
 import pytest
@@ -16,19 +24,6 @@ from helpers.create_service import (
     assert_create_service_success
 )
 
-django.setup()
-
-# Make the local backend package importable so `from p7...` works under pytest
-repo_backend = Path(__file__).resolve().parents[1]  # backend/
-sys.path.insert(0, str(repo_backend))
-# Make the backend/test dir importable so you can use test_settings.py directly
-sys.path.insert(0, str(repo_backend / "test"))
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
-
-from p7.get_dropbox_files.api import fetch_dropbox_files_router
-from p7.get_google_drive_files.api import fetch_google_drive_files_router
-from p7.get_onedrive_files.api import fetch_onedrive_files_router
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
 from repository.service import get_service
@@ -52,15 +47,8 @@ def create_service_client():
     """
     return TestClient(create_service_router)
 
-    """Fixture for creating a test client for the save_file endpoint.
-    Returns:
-        TestClient: A test client for the save_file endpoint.
-    """
-    return TestClient(fetch_onedrive_files_router)
 
-
-def test_get_files_by_service(
-    django_db_setup,
+def test_get_files_by_service_success(
     user_client: TestClient,
     service_client: TestClient,
 ):
