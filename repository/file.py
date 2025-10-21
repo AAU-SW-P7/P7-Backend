@@ -4,7 +4,9 @@ from django.db import transaction
 from django.db.models import Value
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
-from repository.models import File
+from django.http import JsonResponse
+from repository.models import File, Service
+
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -86,4 +88,8 @@ def get_files_by_service(service):
     returns:
         A list of File objects associated with the service.
     """
-    return list(File.objects.filter(serviceId=service.id))
+    if isinstance(service, Service):
+        return list(File.objects.filter(serviceId=service.id))
+    else:
+        return JsonResponse({"error": "Invalid service parameter"}, status=400)
+    

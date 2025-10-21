@@ -14,6 +14,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 import django
 django.setup()
 from django.utils import timezone
+from django.http import JsonResponse
 
 import pytest
 from ninja.testing import TestClient
@@ -113,8 +114,6 @@ def test_get_files_by_service_success(
     service_list.append(get_service(3, "dropbox"))
     service_list.append(get_service(3, "microsoft-entra-id"))
 
-    print(service_list)
-
     #Check that we can get the correct files for each service
     for service in service_list:
         files = get_files_by_service(service)
@@ -127,3 +126,50 @@ def test_get_files_by_service_success(
             assert file.size == 1024 * (service.id + service_count * i)
             assert file.snippet == f"Snippet for document {service.id + service_count * i}"
             assert file.content == f"Full content for document {service.id + service_count * i}"
+
+def test_get_files_by_service_no_files(
+    user_client: TestClient,
+    service_client: TestClient,
+):
+    """Test getting files by service when no files exist for the service."""
+    # Create a user
+    user_id = 4
+    assert_create_user_success(user_client, user_id)
+
+    # Create a service for the user
+    payload = {
+        "userId": user_id,
+        "oauthType": "Test 4",
+        "oauthToken": "Test 4",
+        "accessToken": "Test 4",
+        "accessTokenExpiration": "2025-10-21 09:26:06+00",
+        "refreshToken": "Test 4",
+        "name": "dropbox",
+        "accountId": "Test 4",
+        "email": "Test 4",
+        "scopeName": "Test 4",
+    }
+
+    service_client.post(
+        "/",
+        json=payload, headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
+    )
+
+    service = get_service(user_id, "dropbox")
+    # Ensure no files exist for the service
+    files = get_files_by_service(service)
+    assert len(files) == 0
+
+def test_get_files_by_service_no_service(
+    user_client: TestClient,
+):
+    """Test getting files by service when the service does not exist."""
+    # Create a user
+    user_id = 5
+    assert_create_user_success(user_client, user_id)
+
+    # Attempt to get files for a non-existent service
+    service = get_service(user_id, "non_existent_service")
+    files = get_files_by_service(service)
+    assert isinstance(files, JsonResponse)
+    assert files.status_code == 400
