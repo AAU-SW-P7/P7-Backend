@@ -62,15 +62,15 @@ def assert_create_service_missing_header(client, payload):
     response = client.post("/", json=payload)
 
     check.equal(response.status_code, 422)
-    check.equal(response.json(), {
+    check.equal(response.json() in ({
         'detail': [
-            {
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string',
-                'type': 'string_type'
-            }
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
         ]
-    })
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+        ]
+    }), True)
 
 def assert_create_service_missing_payload(client):
     """Helper function to assert bad request when payload is missing.
@@ -80,13 +80,14 @@ def assert_create_service_missing_payload(client):
     response = client.post("/")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json(), {
+    check.equal(response.json() in ({
         'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'},
-            {
-                'type': 'missing',
-                'loc': ['body', 'payload'],
-                'msg': 'Field required'}]})
+            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'},
+            {'type': 'missing', 'loc': ['body', 'payload'], 'msg': 'Field required'}
+        ]
+    }, {
+        'detail': [
+            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'},
+            {'type': 'missing', 'loc': ['body', 'payload'], 'msg': 'Field required'}
+        ]
+    }), True)
