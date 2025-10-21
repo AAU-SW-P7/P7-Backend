@@ -2,9 +2,9 @@
 from ninja import Router, Header
 from django.http import JsonResponse
 
-from p7.get_dropbox_files.api import sync_dropbox_files
-from p7.get_google_drive_files.api import sync_google_drive_files
-from p7.get_onedrive_files.api import sync_onedrive_files
+from p7.sync_files.service_sync_functions import (
+    sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
+    )
 from repository.service import get_service
 from p7.helpers import validate_internal_auth
 
