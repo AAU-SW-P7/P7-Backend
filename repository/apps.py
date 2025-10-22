@@ -1,7 +1,8 @@
 """Configuration for the repository app."""
+import sys
 from django.apps import AppConfig
 from django.db import connection, OperationalError
-import sys
+
 
 class RepositoryConfig(AppConfig):
     """Configuration for the repository app.
@@ -47,6 +48,6 @@ class RepositoryConfig(AppConfig):
                     return
                 cur.execute(sql)
                 cur.execute("SELECT pg_advisory_unlock(%s);", [123456789])
-        except (OperationalError, Exception):
+        except (OperationalError, RuntimeError):
             # DB might not be available yet (startup/migration). Ignore failures.
             return
