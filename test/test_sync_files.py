@@ -151,24 +151,24 @@ def test_sync_dropbox_files(
 
     for file in test_files:
         extension = os.path.splitext(file["name"])[1]
-    path = file["path_display"]
-    link = "https://www.dropbox.com/preview" + path
+        path = file["path_display"]
+        link = "https://www.dropbox.com/preview" + path
 
-    save_file(
-        service,
-        file["id"],
-        file["name"],
-        extension,
-        file["is_downloadable"],
-        path,
-        link,
-        file["size"],
-        file["client_modified"],
-        file["server_modified"],
-        None,
-        None,
-        None,
-    )
+        save_file(
+            service,
+            file["id"],
+            file["name"],
+            extension,
+            file["is_downloadable"],
+            path,
+            link,
+            file["size"],
+            file["client_modified"],
+            file["server_modified"],
+            None,
+            None,
+            None,
+        )
     response = sync_files_client_fixture.get(
                 f"/?user_id={user_id}",
                 headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
@@ -180,6 +180,11 @@ def test_sync_dropbox_files(
 
     #Check that file has been deleted
     check.equal(any(file.serviceFileId == test_files[2]["id"] for file in files), False)
+
+    #Check that the 3 other files still exists
+    check.equal(any(file.serviceFileId == test_files[0]["id"] for file in files), True)
+    check.equal(any(file.serviceFileId == test_files[1]["id"] for file in files), True)
+    check.equal(any(file.serviceFileId == test_files[3]["id"] for file in files), True)
 
     #Check that name has been updated from simple.hs to simple2.hs
     for file in files:
