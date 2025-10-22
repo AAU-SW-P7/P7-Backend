@@ -5,7 +5,6 @@ from p7.helpers import validate_internal_auth
 from p7.get_google_drive_files.helper import (
     update_or_create_file, fetch_recursive_files, get_new_access_token)
 from repository.service import get_tokens, get_service
-from repository.file import get_files_by_service
 
 from ninja import Router, Header
 from django.http import JsonResponse
