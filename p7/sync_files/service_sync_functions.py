@@ -66,6 +66,8 @@ def sync_dropbox_files(
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file_dropbox(file, service)
+        # Updating indexedAt may have to be moved
+        # Such that it only updates if all files are processed successfully
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 
@@ -142,6 +144,8 @@ def sync_google_drive_files(
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file_google_drive(file, service, file_by_id)
+        # Updating indexedAt may have to be moved
+        # Such that it only updates if all files are processed successfully
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 
@@ -197,6 +201,8 @@ def sync_onedrive_files(
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file_onedrive(file, service)
+        # Updating indexedAt may have to be moved
+        # Such that it only updates if all files are processed successfully
         service.indexedAt = indexing_time
         service.save(update_fields=["indexedAt"])
 

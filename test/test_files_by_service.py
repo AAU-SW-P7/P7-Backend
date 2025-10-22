@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 
 import pytest
+import pytest_check as check
 from ninja.testing import TestClient
 from helpers.create_user import (
     assert_create_user_success
@@ -118,14 +119,14 @@ def test_get_files_by_service_success(
     for service in service_list:
         files = get_files_by_service(service)
         for i, file in enumerate(files):
-            assert file.serviceId.id == service.id
-            assert file.serviceFileId == f"file_{service.id + service_count * i}"
-            assert file.name == f"Document {service.id + service_count * i}.txt"
-            assert file.path == f"/docs/doc{service.id + service_count * i}.txt"
-            assert file.link == f"https://example.com/files/{service.id + service_count * i}"
-            assert file.size == 1024 * (service.id + service_count * i)
-            assert file.snippet == f"Snippet for document {service.id + service_count * i}"
-            assert file.content == f"Full content for document {service.id + service_count * i}"
+            check.equal(file.serviceId.id, service.id)
+            check.equal(file.serviceFileId, f"file_{service.id + service_count * i}")
+            check.equal(file.name, f"Document {service.id + service_count * i}.txt")
+            check.equal(file.path, f"/docs/doc{service.id + service_count * i}.txt")
+            check.equal(file.link, f"https://example.com/files/{service.id + service_count * i}")
+            check.equal(file.size, 1024 * (service.id + service_count * i))
+            check.equal(file.snippet, f"Snippet for document {service.id + service_count * i}")
+            check.equal(file.content, f"Full content for document {service.id + service_count * i}")
 
 def test_get_files_by_service_no_files(
     user_client: TestClient,
@@ -158,7 +159,7 @@ def test_get_files_by_service_no_files(
     service = get_service(user_id, "dropbox")
     # Ensure no files exist for the service
     files = get_files_by_service(service)
-    assert len(files) == 0
+    check.equal(len(files), 0)
 
 def test_get_files_by_service_no_service(
     user_client: TestClient,
@@ -171,5 +172,5 @@ def test_get_files_by_service_no_service(
     # Attempt to get files for a non-existent service
     service = get_service(user_id, "non_existent_service")
     files = get_files_by_service(service)
-    assert isinstance(files, JsonResponse)
-    assert files.status_code == 400
+    check.equal(isinstance(files, JsonResponse), True)
+    check.equal(files.status_code, 400)

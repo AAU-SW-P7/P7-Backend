@@ -23,8 +23,8 @@ def assert_save_file_success(client, user_id, service_name):
     ).count()
 
     # Assuming 3 users are already created for service creation
-    check.equal(initial_user_count == 3, True)
-    check.equal(initial_service_count == 1, True)
+    check.equal(initial_user_count, 3)
+    check.equal(initial_service_count, 1)
 
     response = client.get(
         f"/?user_id={user_id}",
