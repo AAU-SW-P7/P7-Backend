@@ -1,10 +1,14 @@
 """Saves file metadata and content to the database."""
 
 from django.db import transaction
-from django.db.models import Value, Q
+from django.db.models import Value, Q, F
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
 from repository.models import File
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+
+
+
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -21,7 +25,7 @@ def save_file(
     snippet,
     content,
     *,
-    ts_config="english"  # allow overriding the FTS config if needed
+    ts_config='simple'  # allow overriding the FTS config if needed
 ):
     """Saves file metadata and content to the database.
 
@@ -92,10 +96,31 @@ def search_files_by_name(name_query, user_id):
             return File.objects.none()
         if user_id is not None:
             q &= Q(serviceId__userId=user_id)
-        return File.objects.filter(q)
+        
+        query_text = " ".join(name_query)
+        results = File.objects.smart_search(query_text, base_filter=q)
+
+    
+
+        # Write ranks to a file
+        with open('rankings.txt', 'w') as f:  # Create or overwrite the file
+            for file in results:
+                f.write(f"File: {file.name}, Rank: {file.rank}\n")
+
+        return results
 
     # Single string
     q = Q(name__icontains=name_query)
     if user_id is not None:
         q &= Q(serviceId__userId=user_id)
-    return File.objects.filter(q)
+    
+    # ts vector ranking
+    query_text = " ".join(name_query)
+    results = File.objects.smart_search(query_text, base_filter=q)
+
+    # Write ranks to a file
+    with open('rankings.txt', 'w') as f:  # Create or overwrite the file
+        for file in results:
+            f.write(f"File: {file.name}, Rank: {file.rank}\n")
+
+    return results

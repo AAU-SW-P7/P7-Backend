@@ -4,6 +4,8 @@ from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector, SearchVectorField
 
+from repository.managers import FileManager
+
 
 class User(models.Model):
     """A class representing a user of the application.
@@ -58,7 +60,7 @@ class File(models.Model):
     params:
         models (django.db): Base class for all models in Django.
     """
-
+    objects = FileManager() 
     id = models.BigAutoField(primary_key=True)
     serviceId = models.ForeignKey(
         Service,
@@ -80,7 +82,7 @@ class File(models.Model):
     content = models.TextField(null=True, blank=True)
     ts = models.GeneratedField(
         expression=(
-            SearchVector('name',   weight='A', config='english') +
+            SearchVector('name',   weight='A', config='simple') +
             SearchVector('content', weight='B', config='english')
         ),
         output_field=SearchVectorField(),
