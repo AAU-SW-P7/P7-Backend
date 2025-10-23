@@ -18,11 +18,12 @@ django.setup()
 import pytest
 import pytest_check as check
 from ninja.testing import TestClient
-from helpers.create_user import (
-    assert_create_user_success,
-)
-from helpers.create_service import (
-    assert_create_service_success,
+from helpers.create_user import (assert_create_user_success)
+from helpers.create_service import (assert_create_service_success)
+from helpers.sync_files import (
+    assert_sync_files_invalid_auth,
+    assert_sync_files_missing_internal_auth,
+    assert_sync_files_missing_user_id
 )
 
 from p7.sync_files.api import sync_files_router
@@ -67,6 +68,18 @@ def test_create_user_success(user_client):
     """
     for user_number in range(1, 3+1):  # 3 users
         assert_create_user_success(user_client, user_number)
+
+def test_sync_files_missing_internal_auth(sync_files_client_fixture):
+    """Test for trying to call sync_files endpoint without auth header"""
+    assert_sync_files_missing_internal_auth(sync_files_client_fixture, 1)
+
+def test_sync_files_missing_user_id(sync_files_client_fixture):
+    """Test for calling sync_files endpoint without a user_id"""
+    assert_sync_files_missing_user_id(sync_files_client_fixture)
+
+def test_sync_files_invalid_internal_auth(sync_files_client_fixture):
+    """Test for calling the sync_files endpoint with invalid auth"""
+    assert_sync_files_invalid_auth(sync_files_client_fixture, 1)
 
 def test_sync_dropbox_files(
     service_client: TestClient,
