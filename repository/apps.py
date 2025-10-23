@@ -6,7 +6,6 @@ from django.apps import AppConfig
 
 class RepositoryConfig(AppConfig):
     """Configuration for the repository app.
-    
     params:
         AppConfig (django.apps): Base class for configuring a Django app.
     """
@@ -17,12 +16,9 @@ class RepositoryConfig(AppConfig):
     #     # Don't run on management commands like makemigrations/migrate/test
     #     if any(cmd in sys.argv for cmd in ("makemigrations", "migrate", "test", "collectstatic")):
     #         return
-
     #     sql = """
     #     CREATE OR REPLACE FUNCTION reset_users_id_seq() RETURNS trigger AS $$
     #     BEGIN
-    #       -- if table empty: set sequence value to 1 and mark NOT called so nextval() returns 1
-    #       -- if table non-empty: set sequence value to max(id) and mark called so nextval() returns max(id)+1
     #       PERFORM setval(
     #         pg_get_serial_sequence('"users"', 'id'),
     #         (SELECT COALESCE(MAX(id), 1) FROM "users"),
