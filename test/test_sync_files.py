@@ -24,7 +24,8 @@ from helpers.sync_files import (
     assert_sync_files_invalid_auth,
     assert_sync_files_missing_internal_auth,
     assert_sync_files_missing_user_id,
-    assert_sync_files_function_missing_user_id
+    assert_sync_files_function_missing_user_id,
+    create_service
 )
 
 from p7.sync_files.api import sync_files_router
@@ -103,22 +104,7 @@ def test_sync_dropbox_files(
     ):
     """Test syncing Dropbox files for a user."""
     user_id = 1
-    provider = "DROPBOX"
-    payload = {
-                "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
-                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
-                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}"),
-                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}"),
-                "accessTokenExpiration": os.getenv(
-                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
-                ),
-                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}"),
-                "name": os.getenv(f"TEST_USER_{provider}_NAME_{user_id}"),
-                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}"),
-                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}"),
-                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
-            }
-    assert_create_service_success(service_client, payload, 0)
+    create_service(service_client, "DROPBOX", user_id, 0)
 
     test_files = [
         {
@@ -214,22 +200,7 @@ def test_sync_google_drive_files(
     ):
     """Test syncing google Drive files for a user."""
     user_id = 2
-    provider = "GOOGLE"
-    payload = {
-                "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
-                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
-                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}"),
-                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}"),
-                "accessTokenExpiration": os.getenv(
-                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
-                ),
-                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}"),
-                "name": os.getenv(f"TEST_USER_{provider}_NAME_{user_id}"),
-                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}"),
-                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}"),
-                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
-            }
-    assert_create_service_success(service_client, payload, 1)
+    create_service(service_client, "GOOGLE", user_id, 1)
 
     test_files = [
         {
@@ -422,22 +393,7 @@ def test_sync_onedrive_files(
     ):
     """Test syncing onedrive files for a user."""
     user_id = 3
-    provider = "ONEDRIVE"
-    payload = {
-                "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
-                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
-                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}"),
-                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}"),
-                "accessTokenExpiration": os.getenv(
-                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
-                ),
-                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}"),
-                "name": os.getenv(f"TEST_USER_{provider}_NAME_{user_id}"),
-                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}"),
-                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}"),
-                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
-            }
-    assert_create_service_success(service_client, payload, 2)
+    create_service(service_client, "ONEDRIVE", 3, 2)
 
     test_files = [
         {

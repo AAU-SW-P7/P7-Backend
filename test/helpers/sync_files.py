@@ -1,8 +1,10 @@
 """Helper functions for test_sync_files.py"""
+import os
 import pytest_check as check
 
 from django.http import JsonResponse
 from p7.sync_files.service_sync_functions import sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
+from helpers.create_service import (assert_create_service_success)
 
 def assert_sync_files_invalid_auth(client, user_id):
     """Helper function to assert syncing with invalid auth.
@@ -93,3 +95,20 @@ def assert_sync_files_function_missing_user_id(provider):
     check.equal(response.status_code, 400)
     check.equal(response is not None, True)
     check.equal(isinstance(response, JsonResponse), True)
+
+def create_service(service_client, provider, user_id, service_count):
+    payload = {
+                "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
+                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
+                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}"),
+                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}"),
+                "accessTokenExpiration": os.getenv(
+                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
+                ),
+                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}"),
+                "name": os.getenv(f"TEST_USER_{provider}_NAME_{user_id}"),
+                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}"),
+                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}"),
+                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
+            }
+    assert_create_service_success(service_client, payload, service_count)
