@@ -30,6 +30,14 @@ from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
 from p7.get_google_drive_files.helper import build_google_drive_path
+from p7.get_dropbox_files.helper import (
+    update_or_create_file as update_or_create_file_dropbox
+    )
+from p7.get_google_drive_files.helper import (
+    update_or_create_file as update_or_create_file_google_drive)
+from p7.get_onedrive_files.helper import (
+    update_or_create_file as update_or_create_file_onedrive
+    )
 
 from repository.file import save_file, get_files_by_service
 from repository.service import get_service
@@ -164,25 +172,8 @@ def test_sync_dropbox_files(
     service.save(update_fields=["indexedAt"])
 
     for file in test_files:
-        extension = os.path.splitext(file["name"])[1]
-        path = file["path_display"]
-        link = "https://www.dropbox.com/preview" + path
+        update_or_create_file_dropbox(file, service)
 
-        save_file(
-            service,
-            file["id"],
-            file["name"],
-            extension,
-            file["is_downloadable"],
-            path,
-            link,
-            file["size"],
-            file["client_modified"],
-            file["server_modified"],
-            None,
-            None,
-            None,
-        )
     response = sync_files_client_fixture.get(
                 f"/?user_id={user_id}",
                 headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
@@ -200,13 +191,11 @@ def test_sync_dropbox_files(
     check.equal(any(file.serviceFileId == test_files[1]["id"] for file in files), True)
     check.equal(any(file.serviceFileId == test_files[3]["id"] for file in files), True)
 
-    #Check that name has been updated from simple.hs to simple2.hs
     for file in files:
+        #Check that name has been updated from simple.hs to simple2.hs
         if file.serviceFileId == test_files[3]["id"]:
             check.equal(file.name, "simple2.hs")
-
-    #Check that other files are unchanged
-    for file in files:
+        #Check that other files are unchanged
         if file.serviceFileId == test_files[0]["id"]:
             check.equal(file.name, test_files[0]["name"])
         if file.serviceFileId == test_files[1]["id"]:
@@ -392,25 +381,7 @@ def test_sync_google_drive_files(
             or mime_type == "application/vnd.google-apps.drive-sdk"
         ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
             continue
-        extension = os.path.splitext(file.get("name", ""))[1]
-        downloadable = file.get("capabilities", {}).get("canDownload")
-        path = build_google_drive_path(file, file_by_id)
-
-        save_file(
-            service,
-            file["id"],
-            file["name"],
-            extension,
-            downloadable,
-            path,
-            file["webViewLink"],
-            file.get("size", 0), # Can be empty
-            file["createdTime"],
-            file["modifiedTime"],
-            None,
-            None,
-            None,
-        )
+        update_or_create_file_google_drive(file, service, file_by_id)
 
     response = sync_files_client_fixture.get(
                 f"/?user_id={user_id}",
@@ -420,12 +391,7 @@ def test_sync_google_drive_files(
     check.equal(response.status_code, 200)
 
     files = get_files_by_service(service)
-    print("Test files:")
-    print(test_files)
-
-    print("Files:")
-    for file in files:
-        print(file.serviceFileId)
+    
     #Check that file has been deleted
     check.equal(any(file.serviceFileId == test_files[3]["id"] for file in files), False)
 
@@ -434,12 +400,204 @@ def test_sync_google_drive_files(
     check.equal(any(file.serviceFileId == test_files[1]["id"] for file in files), True)
     check.equal(any(file.serviceFileId == test_files[2]["id"] for file in files), True)
 
-    #Check that name has been updated from Test Document 1 to Test Document 2
-    #Check that other files are unchanged
     for file in files:
+        #Check that name has been updated from Test Document 1 to Test Document 2
         if file.serviceFileId == test_files[0]["id"]:
             check.equal(file.name, "Test Document 2")
+        #Check that other files are unchanged
         if file.serviceFileId == test_files[1]["id"]:
             check.equal(file.name, test_files[1]["name"])
+        if file.serviceFileId == test_files[2]["id"]:
+            check.equal(file.name, test_files[2]["name"])
+
+def test_sync_onedrive_files(
+    service_client: TestClient,
+    sync_files_client_fixture: TestClient,
+    ):
+    """Test syncing onedrive files for a user."""
+    user_id = 3
+    provider = "ONEDRIVE"
+    payload = {
+                "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
+                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
+                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}"),
+                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}"),
+                "accessTokenExpiration": os.getenv(
+                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
+                ),
+                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}"),
+                "name": os.getenv(f"TEST_USER_{provider}_NAME_{user_id}"),
+                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}"),
+                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}"),
+                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
+            }
+    assert_create_service_success(service_client, payload, 2)
+
+    test_files = [
+        {
+            "@microsoft.graph.downloadUrl": "https://my.microsoftpersonalcontent.com/personal/fea39108d8cadfbf/_layouts/15/download.aspx?UniqueId=3e5b5eab-6b34-4eca-89b1-30fe45a719c3&Translate=false&tempauth=v1e.eyJzaXRlaWQiOiIyM2RiYmFiYy04Mjg2LTRlYTktOWQ0OS1hNmNlMDY1N2MyZmQiLCJhcHBfZGlzcGxheW5hbWUiOiJQNyIsImFwcGlkIjoiOTE1NWYzZjQtOTE5NS00YWVkLWI4NWYtZTkzODNmNWE1YzI4IiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL215Lm1pY3Jvc29mdHBlcnNvbmFsY29udGVudC5jb21AOTE4ODA0MGQtNmM2Ny00YzViLWIxMTItMzZhMzA0YjY2ZGFkIiwiZXhwIjoiMTc2MTMwNDc4MSJ9.BNMTCGmauD3YwSqe2hhNiVkMlE4lQSne7cdGLG0Q6VHEtXCj50YP4fdz7EDgIHYPCtnc0NV3_t47q6mnnfPlO2leMcUFkHRYkbw9ho0i6B9qFlwbXnXPrcbb21p7XNRMCjWC-EjCts3fjBAVpflaNZhJUu6uVi-9b_eY9MmEMq1MnsFc7wOk41RL8Peopgp9ai3adgvsUd573s2wC9SQZIDqnU4FNBdfF7OQwgOW6dVprnn4uwwCTgsGM1m8u59NrrC6I2UpvTKFqPpfH3-Gr2yy4uVY8xhOYFo89jfjPwmO217LCxEDZHSPjZP6dRTvehDAKLTimDTiLYPAtrPizUN4Mzw-03dT0k91S7iXkrlkQi4y3UuLC4unL-FR1d5VO0hNQE3UChTWGis32tNKcOa0MjPPWnF7VAHqieFHShELBZzM307X9j5oeJjDYFAe.UYLUmO_ecKGeM4bbtod331i1ma5Y2AgvfIEaqqegRbA&ApiVersion=2.0",
+            "createdDateTime": "2025-10-24T10:14:02Z",
+            "eTag": "\"{3E5B5EAB-6B34-4ECA-89B1-30FE45A719C3},4\"",
+            "id": "FEA39108D8CADFBF!s3e5b5eab6b344eca89b130fe45a719c3",
+            "lastModifiedDateTime": "2025-10-24T10:14:21Z",
+            "name": "OneDrive 1.docx",
+            "webUrl": "https://onedrive.live.com/personal/fea39108d8cadfbf/_layouts/15/doc.aspx?resid=3e5b5eab-6b34-4eca-89b1-30fe45a719c3&cid=fea39108d8cadfbf",
+            "cTag": "\"c:{3E5B5EAB-6B34-4ECA-89B1-30FE45A719C3},3\"",
+            "size": 10561,
+            "createdBy": {
+            "user": {
+                "email": "p7swtest3@gmail.com",
+                "id": "fea39108d8cadfbf",
+                "displayName": "p7sw test3"
+            }
+            },
+            "lastModifiedBy": {
+            "user": {
+                "email": "p7swtest3@gmail.com",
+                "id": "fea39108d8cadfbf",
+                "displayName": "p7sw test3"
+            }
+            },
+            "parentReference": {
+            "driveType": "personal",
+            "driveId": "fea39108d8cadfbf",
+            "id": "FEA39108D8CADFBF!sea8cc6beffdb43d7976fbc7da445c639",
+            "name": "Documents",
+            "path": "/drive/root:",
+            "siteId": "23dbbabc-8286-4ea9-9d49-a6ce0657c2fd"
+            },
+            "file": {
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "hashes": {
+                "quickXorHash": "ecyxrbaLVM5b54rNafRED0Ne53s=",
+                "sha1Hash": "402099BD8E0FFA3F22B5BD328485BBE1DDB214D5",
+                "sha256Hash": "6AB643135E5A05692FDBEC7FF531F640AF84276D132C4B35BCB4C713E0772066"
+            }
+            },
+            "fileSystemInfo": {
+            "createdDateTime": "2025-10-24T10:14:02Z",
+            "lastModifiedDateTime": "2025-10-24T10:14:21Z"
+            }
+        },
+        {
+            "@microsoft.graph.downloadUrl": "https://my.microsoftpersonalcontent.com/personal/fea39108d8cadfbf/_layouts/15/download.aspx?UniqueId=3f1d91b5-e0f1-42b6-b4c3-e1a90d786dea&Translate=false&tempauth=v1e.eyJzaXRlaWQiOiIyM2RiYmFiYy04Mjg2LTRlYTktOWQ0OS1hNmNlMDY1N2MyZmQiLCJhcHBfZGlzcGxheW5hbWUiOiJQNyIsImFwcGlkIjoiOTE1NWYzZjQtOTE5NS00YWVkLWI4NWYtZTkzODNmNWE1YzI4IiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL215Lm1pY3Jvc29mdHBlcnNvbmFsY29udGVudC5jb21AOTE4ODA0MGQtNmM2Ny00YzViLWIxMTItMzZhMzA0YjY2ZGFkIiwiZXhwIjoiMTc2MTMwNDc4MSJ9.AeW51MsYNYhTjCjakhYGJocwb4tqUtQ5qmBnAJFnkHmZyqiqjdTTP-bgzEh0NLQ48D_IN3ZXrJMYUpnM7xene00zxXQo3ksDH2RFqrDLh9OnbPADqQg5GQ9OG_Rda8YK3l9i1G_mbLsPjBEJTwH-hzvtPuQCLP0FwcJwaY0Eh6H6jJkTn3FO5mq_JRvHpu6LDGD2pyLp0kdPDh-Wpeg43wd85F92HaSquqOPWrVQW5ddYWvBVL2Xc4B0COpIEHFGGBkRYuI0YtjES-BzCO8pPNvPFVx0TqhNsyzJa15zO0gHzwFHNopG8qOl6wCPXhkFbGAJc0LoUgORusoM1lD7eIx532LGNtFxaN8FNn_faF9xwCLfCszzJigqbVzzMXOn0q_bDo6KBtCqB-M_3XXnH1XuCDPOnui-EC7kSSHtIXmcdrRbTTZQxLE9wcyE_UF0.pM1YktAode58iHtOkhGqLKzX-O9N-KrfLGoAEQQ09-8&ApiVersion=2.0",
+            "createdDateTime": "2025-10-24T10:15:19Z",
+            "eTag": "\"{3F1D91B5-E0F1-42B6-B4C3-E1A90D786DEA},1\"",
+            "id": "FEA39108D8CADFBF!s3f1d91b5e0f142b6b4c3e1a90d786dea",
+            "lastModifiedDateTime": "2025-10-24T10:15:19Z",
+            "name": "Operating_Systems_three_easy_pieces.pdf",
+            "webUrl": "https://onedrive.live.com?cid=fea39108d8cadfbf&id=FEA39108D8CADFBF!s3f1d91b5e0f142b6b4c3e1a90d786dea",
+            "cTag": "\"c:{3F1D91B5-E0F1-42B6-B4C3-E1A90D786DEA},1\"",
+            "size": 5658674,
+            "createdBy": {
+            "user": {
+                "email": "p7swtest3@gmail.com",
+                "id": "fea39108d8cadfbf",
+                "displayName": "p7sw test3"
+            }
+            },
+            "lastModifiedBy": {
+            "user": {
+                "email": "p7swtest3@gmail.com",
+                "id": "fea39108d8cadfbf",
+                "displayName": "p7sw test3"
+            }
+            },
+            "parentReference": {
+            "driveType": "personal",
+            "driveId": "fea39108d8cadfbf",
+            "id": "FEA39108D8CADFBF!sea8cc6beffdb43d7976fbc7da445c639",
+            "name": "Documents",
+            "path": "/drive/root:",
+            "siteId": "23dbbabc-8286-4ea9-9d49-a6ce0657c2fd"
+            },
+            "file": {
+            "mimeType": "application/pdf",
+            "hashes": {
+                "quickXorHash": "26eYa+eLOZsTePXPRVok27HPdnQ="
+            }
+            },
+            "fileSystemInfo": {
+            "createdDateTime": "2025-10-24T10:15:19Z",
+            "lastModifiedDateTime": "2025-10-24T10:15:19Z"
+            }
+        },
+        {
+            "@microsoft.graph.downloadUrl": "https://my.microsoftpersonalcontent.com/personal/fea39108d8cadfbf/_layouts/15/download.aspx?UniqueId=b55e9505-f11a-44c2-9a63-e99e5bceeb5e&Translate=false&tempauth=v1e.eyJzaXRlaWQiOiIyM2RiYmFiYy04Mjg2LTRlYTktOWQ0OS1hNmNlMDY1N2MyZmQiLCJhcHBfZGlzcGxheW5hbWUiOiJQNyIsImFwcGlkIjoiOTE1NWYzZjQtOTE5NS00YWVkLWI4NWYtZTkzODNmNWE1YzI4IiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL215Lm1pY3Jvc29mdHBlcnNvbmFsY29udGVudC5jb21AOTE4ODA0MGQtNmM2Ny00YzViLWIxMTItMzZhMzA0YjY2ZGFkIiwiZXhwIjoiMTc2MTMwNDc4MiJ9.bjw-UoPCW6dUoyYw0KHIqCXDTMOksXPU9FkoXtkT6apMvTTLtn4LDKdDuACDCgzGmHfgolqxm2NYg0zsAq9T5lvamREG4OLE6MmBEtFNemh1bOaTp3PPm2daBhpw7HjrybiXFCv0hEjRbVGLJKj7hjBfdv_b3kt7pDV0z4bAmPRHRsUDr_PYT4c9EO9IjVVrwhNQvZ7OoKHyf84S2QGCfInxNQbggl4pV1VPlMWj86voKFJGGrzpyN0Pbuea9wuMJZyHdZ2BrTNu28VzJZi9MOosXdoHTA5fi7HLGyrUr50lHQbftYmK7p2ZTwj9bxBl0cmrVHdjjZaiy0cPrKekuclvCKLvyhKhJIba26tL6YEFKd9XSr-s28DyKDSvv6bBYSFYnh_7TLNeybyjlS47ozRVUSB3vpIVjymBiQ718zu8hdlJCePtLQfz6sk8Swpg.NxjcQs7fo3HUMcbqkMTeW75uviMLC3fhGT6GWCQq_o8&ApiVersion=2.0",
+            "createdDateTime": "2025-10-24T10:14:25Z",
+            "eTag": "\"{B55E9505-F11A-44C2-9A63-E99E5BCEEB5E},4\"",
+            "id": "FEA39108D8CADFBF!sb55e9505f11a44c29a63e99e5bceeb5e",
+            "lastModifiedDateTime": "2025-10-24T10:14:46Z",
+            "name": "Test Onedrive 1.docx",
+            "webUrl": "https://onedrive.live.com/personal/fea39108d8cadfbf/_layouts/15/doc.aspx?resid=b55e9505-f11a-44c2-9a63-e99e5bceeb5e&cid=fea39108d8cadfbf",
+            "cTag": "\"c:{B55E9505-F11A-44C2-9A63-E99E5BCEEB5E},3\"",
+            "size": 10564,
+            "createdBy": {
+            "user": {
+                "email": "p7swtest3@gmail.com",
+                "id": "fea39108d8cadfbf",
+                "displayName": "p7sw test3"
+            }
+            },
+            "lastModifiedBy": {
+            "user": {
+                "email": "p7swtest3@gmail.com",
+                "id": "fea39108d8cadfbf",
+                "displayName": "p7sw test3"
+            }
+            },
+            "parentReference": {
+            "driveType": "personal",
+            "driveId": "fea39108d8cadfbf",
+            "id": "FEA39108D8CADFBF!sea8cc6beffdb43d7976fbc7da445c639",
+            "name": "Documents",
+            "path": "/drive/root:",
+            "siteId": "23dbbabc-8286-4ea9-9d49-a6ce0657c2fd"
+            },
+            "file": {
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "hashes": {
+                "quickXorHash": "FH1nVGDGf6m7ajtBebtJESJ8tU8=",
+                "sha1Hash": "704531D9DF430B130A5276E3CA1036439882E109",
+                "sha256Hash": "6592475FC94F3FE54851EA087B50AF64F8FA1B34F80A188BBF1D5D8AE40AAB8E"
+            }
+            },
+            "fileSystemInfo": {
+            "createdDateTime": "2025-10-24T10:14:25Z",
+            "lastModifiedDateTime": "2025-10-24T10:14:46Z"
+            }
+        }
+    ]
+
+    service = get_service(user_id, "microsoft-entra-id")
+    service.indexedAt = datetime.fromisoformat("2025-10-24T08:46:32.234+00:00")
+    service.save(update_fields=["indexedAt"])
+
+
+
+    for file in test_files:
+        update_or_create_file_onedrive(file, service)
+
+    response = sync_files_client_fixture.get(
+                f"/?user_id={user_id}",
+                headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
+                )
+
+    check.equal(response.status_code, 200)
+
+    files = get_files_by_service(service)
+    
+    #Check that file has been deleted
+    check.equal(any(file.serviceFileId == test_files[1]["id"] for file in files), False)
+
+    #Check that the 3 other files still exists
+    check.equal(any(file.serviceFileId == test_files[0]["id"] for file in files), True)
+    check.equal(any(file.serviceFileId == test_files[2]["id"] for file in files), True)
+
+    for file in files:
+        #Check that name has been updated from OneDrive 1.docx to OneDrive 2.docx
+        if file.serviceFileId == test_files[0]["id"]:
+            check.equal(file.name, "OneDrive 2.docx")
+        #Check that other files are unchanged
         if file.serviceFileId == test_files[2]["id"]:
             check.equal(file.name, test_files[2]["name"])
