@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import Value, Q
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
-from repository.models import File
+from repository.models import File, User
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -74,28 +74,25 @@ def save_file(
 
     return file
 
-def search_files_by_name(name_query, user_id):
-    """Searches for files by name containing the given query string and user id.
+def query_files_by_name(name_query, user_id):
+    """Query for files by name containing any of the given tokens and user id.
 
     params:
-        name_query: Substring or list/tuple of substrings to search for in file names.
-                    If a list/tuple is provided, tokens are combined with OR.
+        name_query: List or tuple of substrings to search for in file names.
         user_id: User id to restrict results to. (applies as an AND).
     returns:
         QuerySet of File objects matching the search criteria.
     """
-    if isinstance(name_query, (list, tuple)):
-        q = Q()
-        for token in name_query:
-            q |= Q(name__icontains=token)
-        if not q.children:
-            return File.objects.none()
-        if user_id is not None:
-            q &= Q(serviceId__userId=user_id)
-        return File.objects.filter(q)
+    user = User.objects.get(pk=user_id)  # Ensure user exists
 
-    # Single string
-    q = Q(name__icontains=name_query)
-    if user_id is not None:
-        q &= Q(serviceId__userId=user_id)
+    assert isinstance(name_query, (list, tuple)), "name_query must be a list or tuple of tokens"
+    assert user is not None, "User with given user_id does not exist"
+
+    # Q() object to combine queries
+    q = Q()
+    for token in name_query:
+        q |= Q(name__icontains=token)
+    if not q.children:
+        return File.objects.none()
+    q &= Q(serviceId__userId=user_id)
     return File.objects.filter(q)

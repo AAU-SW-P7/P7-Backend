@@ -20,17 +20,12 @@ import pytest
 from hypothesis import given, strategies as st
 
 from helpers.search_filename import (
+    assert_query_matches_count,
+    assert_query_file_by_name,
     assert_search_filename_basic_sanitization,
     assert_search_filename_sanitization,
-    assert_search_filename_success,
-    assert_search_filename_no_results,
-    assert_search_filename_multiple_results,
-    assert_search_filename_empty_string,
-    assert_search_filename_orm_injection_resistance,
-    assert_tokenize_basic,
-    assert_tokenize_empty,
     assert_tokenize_hypothesis,
-    assert_tokenize_numbers,
+    assert_tokenize_match,
 )
 from repository.models import File, Service, User
 
@@ -125,9 +120,9 @@ def test_user1_search_report(test_data):
     params:
         test_data: Fixture containing test users and files.
     """
-    assert_search_filename_success(
+    assert_query_file_by_name(
         user_id=test_data["user1"].id,
-        query="report",
+        query=["report"],
         expected_name=[test_data["file1"].name]
     )
 
@@ -136,9 +131,9 @@ def test_user2_search_report(test_data):
     params:
         test_data: Fixture containing test users and files.
     """
-    assert_search_filename_success(
+    assert_query_file_by_name(
         user_id=test_data["user2"].id,
-        query="report",
+        query=["report"],
         expected_name=[test_data["file2"].name, test_data["file22"].name]
     )
 
@@ -147,9 +142,9 @@ def test_user1_search_other_user_file(test_data):
     params:
         test_data: Fixture containing test users and files.
     """
-    assert_search_filename_no_results(
+    assert_query_matches_count(
         user_id=test_data["user1"].id,
-        query="report-user2",
+        query=["report-user2"],
         expected_count=0,
     )
 
@@ -158,9 +153,9 @@ def test_user1_multiple_results(test_data):
     params:
         test_data: Fixture containing test users and files.
     """
-    assert_search_filename_multiple_results(
+    assert_query_file_by_name(
         user_id=test_data["user1"].id,
-        queries=["report", "other"],
+        query=["report", "other"],
         expected_name=[test_data["file1"].name, test_data["file11"].name],
     )
 
@@ -169,9 +164,9 @@ def test_user1_empty_string(test_data):
     params:
         test_data: Fixture containing test users and files.
     """
-    assert_search_filename_empty_string(
+    assert_query_matches_count(
         user_id=test_data["user1"].id,
-        query="''",
+        query=["''"],
         expected_count=0,
     )
 
@@ -180,9 +175,9 @@ def test_user1_sql_injection_resistance(test_data):
     params:
         test_data: Fixture containing test users and files.
     """
-    assert_search_filename_orm_injection_resistance(
+    assert_query_matches_count(
         user_id=test_data["user1"].id,
-        query="'; SELECT * FROM files WHERE userId = 2; --",
+        query=["'; SELECT * FROM files WHERE userId = 2; --"],
         expected_count=0,
     )
 
@@ -200,15 +195,15 @@ def test_sanitize_user_search_basic():
 
 def test_tokenize_search_string():
     """Test tokenize basic functionality"""
-    assert_tokenize_basic("We should have five tokens", ["We", "should", "have", "five", "tokens"])
+    assert_tokenize_match("We should have five tokens", ["We", "should", "have", "five", "tokens"])
 
 def test_tokenize_search_empty():
     """Test tokenize with an empty string"""
-    assert_tokenize_empty("", [])
+    assert_tokenize_match("", [])
 
 def test_tokenize_search_numbers():
     """Test tokenize with numbers in the string"""
-    assert_tokenize_numbers("Project 2024 Plan", ["Project", "2024", "Plan"])
+    assert_tokenize_match("Project 2024 Plan", ["Project", "2024", "Plan"])
 
 @given(st.text())
 def test_tokenize_search_hypothesis(input_str):

@@ -3,6 +3,7 @@
 import os
 import sys
 from pathlib import Path
+from datetime import datetime, timedelta
 
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
@@ -25,29 +26,37 @@ from helpers.search_filename import (
     assert_search_filename_missing_search_string,
     assert_search_filename_missing_userid,
 )
+#ESlint: disable=C0411
 from helpers.create_user import assert_create_user_success
-from p7.search_files_by_filename.api import fetch_database_files_by_filename_router
+from repository.models import File, Service, User
+from p7.search_files_by_filename.api import search_files_by_filename_router
 from p7.create_user.api import create_user_router
-
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 
+@pytest.fixture(name="search_file", scope='module', autouse=True)
+def create_search_file_client():
+    """Fixture for creating a test client for the search_files_by_filename_router endpoint.
+     Returns:
+         TestClient: A test client for the search_files_by_filename_router endpoint.
+    """
+    return TestClient(search_files_by_filename_router)
 
 @pytest.fixture(name="user_client", scope='module', autouse=True)
 def create_user_client():
-    """Fixture for creating a test client for the fetch_database_files_by_filename endpoint.
+    """Fixture for creating a test client for the search_files_by_filename_router endpoint.
      Returns:
-         TestClient: A test client for the fetch_database_files_by_filenamer endpoint.
+         TestClient: A test client for the search_files_by_filename_router endpoint.
      """
     return TestClient(create_user_router)
 
 @pytest.fixture(name="test_client", scope='module', autouse=True)
 def create_test_client():
-    """Fixture for creating a test client for the fetch_database_files_by_filename endpoint.
+    """Fixture for creating a test client for the search_files_by_filename_router endpoint.
      Returns:
-         TestClient: A test client for the fetch_database_files_by_filenamer endpoint.
+         TestClient: A test client for the search_files_by_filename_router endpoint.
      """
-    return TestClient(fetch_database_files_by_filename_router)
+    return TestClient(search_files_by_filename_router)
 
 def test_create_user_success(user_client):
     """Test creating 3 users successfully.
@@ -87,3 +96,49 @@ def test_search_filename_missing_search_string(test_client):
     """
     for user_number in range(1, 3+1):  # 3 users
         assert_search_filename_missing_search_string(test_client, user_number)
+
+
+def test_search_filename_end_to_end(search_file):
+    """Test searching files by filename end-to-end.
+    params:
+        search_file: Fixture for creating a test client
+                     for the search_files_by_filename_router endpoint.
+    """
+    user1 = User.objects.create()
+    service1 = Service.objects.create(
+        userId=user1,
+        oauthType="GOOGLE",
+        oauthToken="fake-token-1",
+        accessToken="fake-access-1",
+        accessTokenExpiration=datetime.now() + timedelta(days=365),
+        refreshToken="fake-refresh-1",
+        name="google",
+        accountId="acc1",
+        email="user1@example.com",
+        scopeName="files.read",
+    )
+    File.objects.create(
+        serviceId=service1,
+        serviceFileId="file-1",
+        name="report-user1.docx",
+        extension="docx",
+        downloadable=True,
+        path="/report-user1.docx",
+        link="http://dropbox/link1",
+        size=1024,
+        createdAt=datetime.now(),
+        modifiedAt=datetime.now(),
+    )
+
+    # Perform a search
+    response = search_file.get(
+        f"/?user_id={user1.id}&search_string=report",
+        headers={"x-internal-auth": "p7"}
+    )
+
+    # Assert response
+    assert response.status_code == 200
+    data = response.json()
+    assert "files" in data
+    assert len(data["files"]) == 1
+    assert data["files"][0]["name"] == "report-user1.docx"
