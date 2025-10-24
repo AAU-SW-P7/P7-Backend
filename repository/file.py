@@ -91,7 +91,6 @@ def query_files_by_name(name_query, user_id):
             {"error": f"Service ({user_id}) not found for user"}, status=404
         )
 
-
     assert isinstance(name_query, (list, tuple)), "name_query must be a list or tuple of tokens"
 
     # Q() object to combine queries
