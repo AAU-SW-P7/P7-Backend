@@ -83,8 +83,8 @@ def test_sync_files_all(
     service_client: TestClient,
     sync_files_client_fixture: TestClient,
     ):
-    user_id = 1
     """Test syncing files for all services for a user."""
+    user_id = 1
     create_service(service_client, "DROPBOX", user_id, 0)
     create_service(service_client, "GOOGLE", user_id, 1)
     create_service(service_client, "ONEDRIVE", user_id, 2)
