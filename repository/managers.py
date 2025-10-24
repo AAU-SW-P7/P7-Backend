@@ -17,10 +17,10 @@ class FileQuerySet(models.QuerySet):
         phrase_q = SearchQuery(query_text, search_type="phrase", config="simple")
         plain_q = SearchQuery(query_text, search_type="plain", config="simple")
 
-        qs = self
+        query_set = self
         if base_filter is not None:
-            qs = qs.filter(base_filter)
-            
+            query_set = query_set.filter(base_filter)
+
         # Annotate how many tokens appear in the name
         token_match_expr = sum(
             models.Case(
@@ -37,7 +37,7 @@ class FileQuerySet(models.QuerySet):
         # - Trigram similarity (weighted x0.5)
         # - Token coverage ratio (matched tokens / total tokens)
         return (
-            qs.annotate(
+            query_set.annotate(
                 phrase_rank=SearchRank(models.F("ts"), phrase_q) * 1.5,
                 plain_rank=SearchRank(models.F("ts"), plain_q),
                 trigram_sim=TrigramSimilarity("name", query_text),

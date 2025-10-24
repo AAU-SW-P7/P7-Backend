@@ -100,13 +100,6 @@ def search_files_by_name(name_query, user_id):
         query_text = " ".join(name_query)
         results = File.objects.smart_search(query_text, base_filter=q)
 
-    
-
-        # Write ranks to a file
-        with open('rankings.txt', 'w') as f:  # Create or overwrite the file
-            for file in results:
-                f.write(f"File: {file.name}, Rank: {file.rank}\n")
-
         return results
 
     # Single string
