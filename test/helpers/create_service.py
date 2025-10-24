@@ -15,7 +15,6 @@ def assert_create_service_success(client, payload, service_count):
     initial_user_count = User.objects.count()
     initial_service_count = Service.objects.count()
 
-    # Assuming 3 users are already created for service creation
     check.equal(initial_service_count, service_count)
 
     response = client.post(

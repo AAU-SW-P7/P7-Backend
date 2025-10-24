@@ -29,6 +29,7 @@ from helpers.sync_files import (
 from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
+from p7.get_google_drive_files.helper import build_google_drive_path
 
 from repository.file import save_file, get_files_by_service
 from repository.service import get_service
@@ -210,3 +211,235 @@ def test_sync_dropbox_files(
             check.equal(file.name, test_files[0]["name"])
         if file.serviceFileId == test_files[1]["id"]:
             check.equal(file.name, test_files[1]["name"])
+
+
+def test_sync_google_drive_files(
+    service_client: TestClient,
+    sync_files_client_fixture: TestClient,
+    ):
+    """Test syncing google Drive files for a user."""
+    user_id = 2
+    provider = "GOOGLE"
+    payload = {
+                "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
+                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
+                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}"),
+                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}"),
+                "accessTokenExpiration": os.getenv(
+                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
+                ),
+                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}"),
+                "name": os.getenv(f"TEST_USER_{provider}_NAME_{user_id}"),
+                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}"),
+                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}"),
+                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
+            }
+    assert_create_service_success(service_client, payload, 1)
+
+    test_files = [
+        {
+            "parents": [
+            "0AL_qu-H6dCg9Uk9PVA"
+            ],
+            "capabilities": {
+            "canCopy": True,
+            "canDownload": True
+            },
+            "downloadRestrictions": {
+            "itemDownloadRestriction": {
+                "restrictedForReaders": False,
+                "restrictedForWriters": False
+            },
+            "effectiveDownloadRestrictionWithContext": {
+                "restrictedForReaders": False,
+                "restrictedForWriters": False
+            }
+            },
+            "kind": "drive#file",
+            "id": "1rc-a6RDDLbwSJjZwjgUv7Sxg4Wx-Xdut8FNv29IS8cc",
+            "name": "Test Document 1",
+            "mimeType": "application/vnd.google-apps.document",
+            "starred": False,
+            "trashed": False,
+            "webViewLink": "https://docs.google.com/document/d/1rc-a6RDDLbwSJjZwjgUv7Sxg4Wx-Xdut8FNv29IS8cc/edit?usp=drivesdk",
+            "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+            "hasThumbnail": False,
+            "viewedByMeTime": "2025-10-23T09:56:54.708Z",
+            "createdTime": "2025-10-23T08:35:56.013Z",
+            "modifiedTime": "2025-10-24T08:46:43.793Z",
+            "shared": False,
+            "ownedByMe": True,
+            "size": "1024"
+        },
+        {
+            "parents": [
+            "0AL_qu-H6dCg9Uk9PVA"
+            ],
+            "capabilities": {
+            "canCopy": True,
+            "canDownload": True
+            },
+            "downloadRestrictions": {
+            "itemDownloadRestriction": {
+                "restrictedForReaders": False,
+                "restrictedForWriters": False
+            },
+            "effectiveDownloadRestrictionWithContext": {
+                "restrictedForReaders": False,
+                "restrictedForWriters": False
+            }
+            },
+            "kind": "drive#file",
+            "id": "1X4UPbao_Y4gJzYmxAOHXDQiHHO5ip5p4EOaZP924iCU",
+            "name": "Random Document 2",
+            "mimeType": "application/vnd.google-apps.document",
+            "starred": False,
+            "trashed": False,
+            "webViewLink": "https://docs.google.com/document/d/1X4UPbao_Y4gJzYmxAOHXDQiHHO5ip5p4EOaZP924iCU/edit?usp=drivesdk",
+            "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+            "hasThumbnail": False,
+            "viewedByMeTime": "2025-10-17T12:19:47.832Z",
+            "createdTime": "2025-10-17T12:19:34.265Z",
+            "modifiedTime": "2025-10-17T12:19:47.832Z",
+            "shared": False,
+            "ownedByMe": True,
+            "size": "1024"
+        },
+        {
+            "parents": [
+            "0AL_qu-H6dCg9Uk9PVA"
+            ],
+            "capabilities": {
+            "canCopy": True,
+            "canDownload": True
+            },
+            "downloadRestrictions": {
+            "itemDownloadRestriction": {
+                "restrictedForReaders": False,
+                "restrictedForWriters": False
+            },
+            "effectiveDownloadRestrictionWithContext": {
+                "restrictedForReaders": False,
+                "restrictedForWriters": False
+            }
+            },
+            "kind": "drive#file",
+            "id": "1HNE6QHh7ZvFU1sc1XjPDlFleDQXExx0Ek2XpbZnpkSU",
+            "name": "Random document",
+            "mimeType": "application/vnd.google-apps.document",
+            "starred": False,
+            "trashed": False,
+            "webViewLink": "https://docs.google.com/document/d/1HNE6QHh7ZvFU1sc1XjPDlFleDQXExx0Ek2XpbZnpkSU/edit?usp=drivesdk",
+            "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+            "hasThumbnail": False,
+            "viewedByMeTime": "2025-10-17T12:16:47.092Z",
+            "createdTime": "2025-10-17T12:16:35.964Z",
+            "modifiedTime": "2025-10-17T12:16:47.092Z",
+            "shared": False,
+            "ownedByMe": True,
+            "size": "1024"
+        },
+        {
+            "parents": [
+            "0AL_qu-H6dCg9Uk9PVA"
+            ],
+            "capabilities": {
+            "canCopy": True,
+            "canDownload": True
+            },
+            "downloadRestrictions": {
+            "itemDownloadRestriction": {
+                "restrictedForReaders": False,
+                "restrictedForWriters": False
+            },
+            "effectiveDownloadRestrictionWithContext": {
+                "restrictedForReaders": False,
+                "restrictedForWriters": False
+            }
+            },
+            "kind": "drive#file",
+            "id": "1_0vL7bXnQK-sEIM9InL2pK0hEOlya8nN",
+            "name": "Introduction to Compiler Design.pdf",
+            "mimeType": "application/pdf",
+            "starred": False,
+            "trashed": False,
+            "webContentLink": "https://drive.google.com/uc?id=1_0vL7bXnQK-sEIM9InL2pK0hEOlya8nN&export=download",
+            "webViewLink": "https://drive.google.com/file/d/1_0vL7bXnQK-sEIM9InL2pK0hEOlya8nN/view?usp=drivesdk",
+            "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/pdf",
+            "hasThumbnail": True,
+            "viewedByMeTime": "2025-10-24T08:46:32.234Z",
+            "createdTime": "2025-10-24T08:46:32.234Z",
+            "modifiedTime": "2024-02-07T11:58:07.000Z",
+            "shared": False,
+            "ownedByMe": True,
+            "originalFilename": "Introduction to Compiler Design.pdf",
+            "size": "7933431"
+        }
+    ]
+
+    service = get_service(user_id, "google")
+    service.indexedAt = datetime.fromisoformat("2025-10-24T08:46:32.234+00:00")
+    service.save(update_fields=["indexedAt"])
+
+    file_by_id = {file["id"]: file for file in test_files}
+
+    for file in test_files:
+        # Skip non-files (folders, shortcuts, etc)
+        mime_type = file.get("mimeType", "")
+        if (
+            mime_type == "application/vnd.google-apps.folder"
+            or mime_type == "application/vnd.google-apps.shortcut"
+            or mime_type == "application/vnd.google-apps.drive-sdk"
+        ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
+            continue
+        extension = os.path.splitext(file.get("name", ""))[1]
+        downloadable = file.get("capabilities", {}).get("canDownload")
+        path = build_google_drive_path(file, file_by_id)
+
+        save_file(
+            service,
+            file["id"],
+            file["name"],
+            extension,
+            downloadable,
+            path,
+            file["webViewLink"],
+            file.get("size", 0), # Can be empty
+            file["createdTime"],
+            file["modifiedTime"],
+            None,
+            None,
+            None,
+        )
+
+    response = sync_files_client_fixture.get(
+                f"/?user_id={user_id}",
+                headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
+                )
+
+    check.equal(response.status_code, 200)
+
+    files = get_files_by_service(service)
+    print("Test files:")
+    print(test_files)
+
+    print("Files:")
+    for file in files:
+        print(file.serviceFileId)
+    #Check that file has been deleted
+    check.equal(any(file.serviceFileId == test_files[3]["id"] for file in files), False)
+
+    #Check that the 3 other files still exists
+    check.equal(any(file.serviceFileId == test_files[0]["id"] for file in files), True)
+    check.equal(any(file.serviceFileId == test_files[1]["id"] for file in files), True)
+    check.equal(any(file.serviceFileId == test_files[2]["id"] for file in files), True)
+
+    #Check that name has been updated from Test Document 1 to Test Document 2
+    #Check that other files are unchanged
+    for file in files:
+        if file.serviceFileId == test_files[0]["id"]:
+            check.equal(file.name, "Test Document 2")
+        if file.serviceFileId == test_files[1]["id"]:
+            check.equal(file.name, test_files[1]["name"])
+        if file.serviceFileId == test_files[2]["id"]:
+            check.equal(file.name, test_files[2]["name"])

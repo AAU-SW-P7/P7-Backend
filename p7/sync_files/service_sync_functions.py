@@ -59,8 +59,12 @@ def sync_dropbox_files(
         for file in files:
             if file[".tag"] != "file":
                 continue
-            if datetime.fromisoformat(
-                file["server_modified"].replace("Z", "+00:00")) <= service.indexedAt:
+            if (
+                datetime.fromisoformat(
+                    file.get("server_modified").replace("Z", "+00:00")) <= service.indexedAt
+                and datetime.fromisoformat(
+                    file.get("client_modified").replace("Z", "+00:00")) <= service.indexedAt
+                ):
                 continue  # No changes since last sync
 
             # updated_files should be used, when we want to index the updated files
@@ -129,6 +133,7 @@ def sync_google_drive_files(
         file_by_id = {file["id"]: file for file in files}
 
         updated_files = []
+        trashed_files = []
         for file in files:
             # Skip non-files (folders, shortcuts, etc)
             mime_type = file.get("mimeType", "")
@@ -138,9 +143,17 @@ def sync_google_drive_files(
                 or mime_type == "application/vnd.google-apps.drive-sdk"
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
-            if datetime.fromisoformat(
-                file.get("modifiedTime").replace("Z", "+00:00")) <= service.indexedAt:
+            if file.get("trashed"):
+                trashed_files.append(file)
+                continue
+            if (
+                datetime.fromisoformat(
+                    file.get("modifiedTime").replace("Z", "+00:00")) <= service.indexedAt
+                and datetime.fromisoformat(
+                    file.get("createdTime").replace("Z", "+00:00")) <= service.indexedAt
+                ):
                 continue  # No changes since last sync
+
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file_google_drive(file, service, file_by_id)
@@ -154,8 +167,13 @@ def sync_google_drive_files(
         for google_drive_file in google_drive_files:
             # Checks if any of the fetched files match the serviceFileId of the stored file
             # If not, it means the file has been deleted in Google Drive
-            if not any(file["id"] == google_drive_file.serviceFileId for file in files):
+            if  not any(file["id"] == google_drive_file.serviceFileId for file in files):
                 google_drive_file.delete()
+                continue
+            if  any(file["id"] == google_drive_file.serviceFileId for file in trashed_files):
+                google_drive_file.delete()
+                continue
+
         return updated_files
 
     except (ValueError,TypeError,KeyError, RuntimeError) as e:
@@ -198,6 +216,7 @@ def sync_onedrive_files(
             if datetime.fromisoformat(
                 file["lastModifiedDateTime"].replace("Z", "+00:00")) <= service.indexedAt:
                 continue  # No changes since last sync
+
             # updated_files should be used, when we want to index the updated files
             updated_files.append(file)
             update_or_create_file_onedrive(file, service)
