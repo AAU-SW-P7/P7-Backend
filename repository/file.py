@@ -4,6 +4,7 @@ from django.db import transaction
 from django.db.models import Value, Q
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
+from django.http import JsonResponse
 from repository.models import File, User
 
 def save_file(
@@ -83,10 +84,15 @@ def query_files_by_name(name_query, user_id):
     returns:
         QuerySet of File objects matching the search criteria.
     """
-    user = User.objects.get(pk=user_id)  # Ensure user exists
+    try:
+        User.objects.get(pk=user_id)  # Ensure user exists
+    except User.DoesNotExist:
+        return JsonResponse(
+            {"error": f"Service ({user_id}) not found for user"}, status=404
+        )
+
 
     assert isinstance(name_query, (list, tuple)), "name_query must be a list or tuple of tokens"
-    assert user is not None, "User with given user_id does not exist"
 
     # Q() object to combine queries
     q = Q()
