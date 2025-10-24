@@ -1,11 +1,11 @@
 """Repository functions for handling File model operations."""
 
 from django.db import transaction
-from django.db.models import Value
+from django.db.models import Value, Q
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
-from repository.models import File, Service
+from repository.models import File, Service, User
 
 
 def save_file(
@@ -78,6 +78,33 @@ def save_file(
         file.refresh_from_db(fields=["ts"])
 
     return file
+
+def query_files_by_name(name_query, user_id):
+    """Query for files by name containing any of the given tokens and user id.
+
+    params:
+        name_query: List or tuple of substrings to search for in file names.
+        user_id: User id to restrict results to. (applies as an AND).
+    returns:
+        QuerySet of File objects matching the search criteria.
+    """
+    try:
+        User.objects.get(pk=user_id)  # Ensure user exists
+    except User.DoesNotExist:
+        return JsonResponse(
+            {"error": f"Service ({user_id}) not found for user"}, status=404
+        )
+
+    assert isinstance(name_query, (list, tuple)), "name_query must be a list or tuple of tokens"
+
+    # Q() object to combine queries
+    q = Q()
+    for token in name_query:
+        q |= Q(name__icontains=token)
+    if not q.children:
+        return File.objects.none()
+    q &= Q(serviceId__userId=user_id)
+    return File.objects.filter(q)
 
 def get_files_by_service(service):
     """Retrieves all files associated with a given service.

@@ -208,7 +208,6 @@ def test_sync_dropbox_files(
         if file.serviceFileId == test_files[1]["id"]:
             check.equal(file.name, test_files[1]["name"])
 
-
 def test_sync_google_drive_files(
     service_client: TestClient,
     sync_files_client_fixture: TestClient,
