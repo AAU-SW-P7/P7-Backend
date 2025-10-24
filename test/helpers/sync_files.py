@@ -61,17 +61,10 @@ def assert_sync_files_missing_user_id(client):
     params:
         client: Test client to make requests.
     """
-    try:
-        response = client.get(
-            "/",
-        )
-    except Exception as e:
-        print(f"Exception during GET request: {e}")
-        raise
+    response = client.get("/")
 
+    print(response.json())
     check.equal(response.status_code, 422)
-    check.equal(response.json() is not None, True)
-    check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
             {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
