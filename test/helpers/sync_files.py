@@ -1,10 +1,8 @@
 """Helper functions for test_sync_files.py"""
-import os
 import pytest_check as check
-from django.db import connection
 
-from p7.get_google_drive_files.helper import build_google_drive_path
-from repository.models import Service, User, File
+from django.http import JsonResponse
+from p7.sync_files.service_sync_functions import sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
 
 def assert_sync_files_invalid_auth(client, user_id):
     """Helper function to assert syncing with invalid auth.
@@ -86,3 +84,19 @@ def assert_sync_files_missing_user_id(client):
         ]
     }), True)
 
+def assert_sync_files_function_missing_user_id(provider):
+    """Helper function to assert behavior when called without user_id"""
+    if provider == "dropbox":
+        response = sync_dropbox_files()
+    elif provider == "google":
+        response = sync_google_drive_files()
+    elif provider == "onedrive":
+        response = sync_onedrive_files()
+    else:
+        print("Wrong provider provided. Please use dropbox, google, or onedrive")
+        check.equal(True, False)
+        return
+
+    check.equal(response.status_code, 400)
+    check.equal(response is not None, True)
+    check.equal(isinstance(response, JsonResponse), True)

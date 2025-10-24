@@ -23,7 +23,8 @@ from helpers.create_service import (assert_create_service_success)
 from helpers.sync_files import (
     assert_sync_files_invalid_auth,
     assert_sync_files_missing_internal_auth,
-    assert_sync_files_missing_user_id
+    assert_sync_files_missing_user_id,
+    assert_sync_files_function_missing_user_id
 )
 
 from p7.sync_files.api import sync_files_router
@@ -89,6 +90,12 @@ def test_sync_files_missing_user_id(sync_files_client_fixture):
 def test_sync_files_invalid_internal_auth(sync_files_client_fixture):
     """Test for calling the sync_files endpoint with invalid auth"""
     assert_sync_files_invalid_auth(sync_files_client_fixture, 1)
+
+def test_sync_files_functions():
+    """Test for calling the sub functions of sync_files endpoint"""
+    assert_sync_files_function_missing_user_id("dropbox")
+    assert_sync_files_function_missing_user_id("google")
+    assert_sync_files_function_missing_user_id("onedrive")
 
 def test_sync_dropbox_files(
     service_client: TestClient,
