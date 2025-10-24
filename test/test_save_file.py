@@ -165,7 +165,7 @@ def test_create_service_missing_header(service_client):
         service_client: Fixture for creating a test client for the create_service endpoint.
     """
     for i in range(1, 3+1):  # 3 users
-        for provider in ["dropbox", "google", "microsoft-entra-id"]:
+        for provider in ["dropbox", "google", "onedrive"]:
             payload = {
                 "userId": os.getenv(f"TEST_USER_{provider}_ID_{i}"),
                 "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{i}"),
@@ -251,7 +251,7 @@ def test_save_onedrive_file_success(save_onedrive_file_client_fixture):
         assert_save_file_success(
             save_onedrive_file_client_fixture,
             user_number,
-            'microsoft-entra-id',
+            'onedrive',
         )
 
 def test_save_onedrive_file_invalid_auth(save_onedrive_file_client_fixture):

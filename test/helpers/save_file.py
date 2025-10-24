@@ -100,7 +100,7 @@ def assert_save_file_success(client, user_id, service_name):
             check.equal(file_count, 1)
             check_tokens_against_ts_vector(db_file)
 
-        elif service_name == "microsoft-entra-id":
+        elif service_name == "onedrive":
             extension = os.path.splitext(file["name"])[1]
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(

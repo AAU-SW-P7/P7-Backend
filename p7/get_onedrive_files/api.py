@@ -35,8 +35,8 @@ def fetch_onedrive_files(
     if not user_id:
         return JsonResponse({"error": "user_id required"}, status=400)
 
-    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "microsoft-entra-id")
-    service = get_service(user_id, "microsoft-entra-id")
+    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "onedrive")
+    service = get_service(user_id, "onedrive")
 
     try:
         # Build MSAL app instance
