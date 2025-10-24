@@ -1,12 +1,11 @@
 import re 
 from p7.helpers import validate_internal_auth
-from repository.file import search_files_by_name
+from repository.file import query_files_by_name
 
 from ninja import Router, Header
 from django.http import JsonResponse
 
-fetch_database_files_by_filename_router = Router()
-
+search_files_by_filename_router = Router()
 
 
 def sanitize_user_search(text: str) -> str:
@@ -43,7 +42,7 @@ def tokenize(input_str: str) -> list[str]:
     return [token for token in input_str.split()]
 
 
-@fetch_database_files_by_filename_router.get("/")
+@search_files_by_filename_router.get("/")
 def search_files_by_filename(
     request,
     user_id: str,
@@ -66,7 +65,7 @@ def search_files_by_filename(
 
     sanitized_input = sanitize_user_search(search_string)
     tokens = tokenize(sanitized_input)
-    results = search_files_by_name(tokens, user_id)
+    results = query_files_by_name(tokens, user_id)
 
     files_data = [
         {

@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import Value, Q, F
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
-from repository.models import File
+from repository.models import File, User
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 
 
@@ -78,36 +78,28 @@ def save_file(
 
     return file
 
-def search_files_by_name(name_query, user_id):
-    """Searches for files by name containing the given query string and user id.
+def query_files_by_name(name_query, user_id):
+    """Query for files by name containing any of the given tokens and user id.
 
     params:
-        name_query: Substring or list/tuple of substrings to search for in file names.
-                    If a list/tuple is provided, tokens are combined with OR.
+        name_query: List or tuple of substrings to search for in file names.
         user_id: User id to restrict results to. (applies as an AND).
     returns:
         QuerySet of File objects matching the search criteria.
     """
-    if isinstance(name_query, (list, tuple)):
-        q = Q()
-        for token in name_query:
-            q |= Q(name__icontains=token)
-        if not q.children:
-            return File.objects.none()
-        if user_id is not None:
-            q &= Q(serviceId__userId=user_id)
-        
-        query_text = " ".join(name_query)
-        results = File.objects.smart_search(query_text, base_filter=q)
+    user = User.objects.get(pk=user_id)  # Ensure user exists
 
-        return results
+    assert isinstance(name_query, (list, tuple)), "name_query must be a list or tuple of tokens"
+    assert user is not None, "User with given user_id does not exist"
 
-    # Single string
-    q = Q(name__icontains=name_query)
-    if user_id is not None:
-        q &= Q(serviceId__userId=user_id)
+    # Q() object to combine queries
+    q = Q()
+    for token in name_query:
+        q |= Q(name__icontains=token)
+    if not q.children:
+        return File.objects.none()
+    q &= Q(serviceId__userId=user_id)
     
-    # ts vector ranking
     query_text = " ".join(name_query)
     results = File.objects.smart_search(query_text, base_filter=q)
 
@@ -115,5 +107,5 @@ def search_files_by_name(name_query, user_id):
     with open('rankings.txt', 'w') as f:  # Create or overwrite the file
         for file in results:
             f.write(f"File: {file.name}, Rank: {file.rank}\n")
-
+    
     return results

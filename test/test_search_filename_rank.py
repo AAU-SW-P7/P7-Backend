@@ -50,10 +50,22 @@ def test_data_fixture():
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
     )
-    file1 = File.objects.create(
+    file2 = File.objects.create(
         serviceId=service1,
-        serviceFileId="file-1",
-        name="Token1 Token2 Token3.docx",
+        serviceFileId="file-2",
+        name="Token1 Token2",
+        extension="docx",
+        downloadable=True,
+        path="/report-user1.docx",
+        link="http://dropbox/link1",
+        size=1024,
+        createdAt=datetime.now(),
+        modifiedAt=datetime.now(),
+    )
+    file3 = File.objects.create(
+        serviceId=service1,
+        serviceFileId="file-3",
+        name="Token2 Token1",
         extension="docx",
         downloadable=True,
         path="/report-user1.docx",
@@ -63,9 +75,25 @@ def test_data_fixture():
         modifiedAt=datetime.now(),
     )
     
-    
+def test_exact_match():
+    """Test exact match ranking higher than partial matches."""
+    query = "Token1 Token2"
+    results = File.objects.smart_search(query)
+    query2 = "Token2 Token1"
+    results2 = File.objects.smart_search(query2)
+    assert results[0].name == "Token1 Token2"
+    assert results[1].name == "Token2 Token1"
+    print(f"Exact Match Rank: {results[0]}, Wrong Order Rank: {results[1].rank}")
+    assert results[0].rank > results[1].rank
+     
     # Test Exact Match
     # Test File Length
-    # Test Position of Tokens
-    # Test Wrong Order
+    # Test Wrong Order NOT IMPLEMENTED YET
+    # Test Tokens Position
     # Test Partial Matches
+    # Test overfitting to token count
+    # Trim Similarity
+    # Token1 Token2 Token3
+    # Token1 Token3 Token2 - results in same rank as above when searching for Token2 Token3
+    
+    

@@ -1,10 +1,9 @@
 
 """Helper functions for testing search_files_by_name function."""
 import pytest_check as check
-from repository.models import File
-from p7.search_files_by_filename.api import sanitize_user_search, search_files_by_name, tokenize
+from p7.search_files_by_filename.api import sanitize_user_search, query_files_by_name, tokenize
 
-def assert_search_filename_success(user_id, query, expected_name):
+def assert_query_file_by_name(user_id, query, expected_name):
     """Assert that searching by filename works correctly.
 
     params:
@@ -12,7 +11,7 @@ def assert_search_filename_success(user_id, query, expected_name):
         query (str): Search string
         expected_name (list): The expected filename in results
     """
-    results = search_files_by_name(query, user_id)
+    results = query_files_by_name(query, user_id)
     expected_name_len = len(expected_name)
     for file in results:
         check.equal(file.name, expected_name.pop(0))
@@ -20,34 +19,12 @@ def assert_search_filename_success(user_id, query, expected_name):
 
     check.equal(results.count(), expected_name_len)
 
-def assert_search_filename_multiple_results(user_id, queries, expected_name):
-    """Assert that multiple substrings return the correct number of files."""
-    results = search_files_by_name(queries, user_id)
-    expected_name_len = len(expected_name)
-    for file in results:
-        check.equal(file.name, expected_name.pop(0))
-        check.equal(file.serviceId.userId.id, user_id)
-    check.equal(results.count(), expected_name_len)
-
-
-def assert_search_filename_no_results(user_id, query, expected_count):
+def assert_query_matches_count(user_id, query, expected_count):
     """Assert that search returns no results for a missing query."""
-    results = search_files_by_name(query, user_id)
+    results = query_files_by_name(query, user_id)
 
-    check.equal(results.count(), expected_count)
-
-def assert_search_filename_empty_string(user_id, query, expected_count=0):
-    """Assert that searching with an empty string returns no results."""
-    results = search_files_by_name(query, user_id)
-
-    check.equal(results.count(), expected_count)
-
-def assert_search_filename_orm_injection_resistance(user_id, query, expected_count=0):
-    """Assert that the search function is resistant to ORM injection attacks."""
-    results = search_files_by_name(query, user_id)
-
-    check.equal(results.count(), expected_count)
-    
+    check.equal(results.count(), expected_count)   
+ 
 def assert_search_filename_invalid_auth(client, user_id, search_string):
     """Helper function to assert unauthorized access when invalid auth token is provided.
 
@@ -138,24 +115,7 @@ def assert_search_filename_basic_sanitization():
     assert sanitize_user_search("Multiple   spaces") == "multiple spaces"
     assert sanitize_user_search("Café-Del'Mar -  “Best of ’98”!!! ") == "café del'mar best of 98"
 
-def assert_tokenize_basic(input_str, expected_tokens):
-    """Helper function to assert basic tokenization cases.
-    params:
-        input_str (str): Input string to be tokenized.
-        expected_tokens (list): Expected list of tokens.
-    """
-    tokens = tokenize(input_str)
-    assert tokens == expected_tokens
-
-def assert_tokenize_empty(input_str, expected_tokens=[]):
-    """Helper function to assert tokenization of an empty string.
-    params:
-        input_str (str): Input string to be tokenized.
-    """
-    tokens = tokenize(input_str)
-    assert tokens == expected_tokens
-
-def assert_tokenize_numbers(input_str, expected_tokens):
+def assert_tokenize_match(input_str, expected_tokens):
     """Helper function to assert tokenization with numbers in the string.
     params:
         input_str (str): Input string to be tokenized.
@@ -171,3 +131,10 @@ def assert_tokenize_hypothesis(input_str):
     """
     tokens = tokenize(input_str)
     assert all(isinstance(token, str) for token in tokens)
+
+
+def assert_end_to_end(input_str):
+
+    assert result is not None
+    
+    
