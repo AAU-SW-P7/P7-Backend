@@ -25,7 +25,9 @@ from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
 from p7.get_dropbox_files.helper import (update_or_create_file as update_or_create_file_dropbox)
-from p7.get_google_drive_files.helper import (update_or_create_file as update_or_create_file_google_drive)
+from p7.get_google_drive_files.helper import (
+    update_or_create_file as update_or_create_file_google_drive
+    )
 from p7.get_onedrive_files.helper import (update_or_create_file as update_or_create_file_onedrive)
 
 from repository.file import get_files_by_service
@@ -160,18 +162,22 @@ def test_sync_files_all(
     #Check correct update Google Drive
     #Check that file has been deleted
     check.equal(
-        any(file.serviceFileId == google_drive_test_files[5]["id"] for file in google_drive_files), False
+        any(file.serviceFileId == google_drive_test_files[5]["id"] for file in google_drive_files),
+        False
         )
 
     #Check that the 3 other files still exists
     check.equal(
-        any(file.serviceFileId == google_drive_test_files[0]["id"] for file in google_drive_files), True
+        any(file.serviceFileId == google_drive_test_files[0]["id"] for file in google_drive_files),
+        True
         )
     check.equal(
-        any(file.serviceFileId == google_drive_test_files[3]["id"] for file in google_drive_files), True
+        any(file.serviceFileId == google_drive_test_files[3]["id"] for file in google_drive_files),
+        True
         )
     check.equal(any(
-        file.serviceFileId == google_drive_test_files[4]["id"] for file in google_drive_files), True
+        file.serviceFileId == google_drive_test_files[4]["id"] for file in google_drive_files),
+        True
         )
 
     for file in google_drive_files:

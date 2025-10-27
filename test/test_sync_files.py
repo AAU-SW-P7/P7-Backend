@@ -32,7 +32,9 @@ from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
 from p7.get_dropbox_files.helper import (update_or_create_file as update_or_create_file_dropbox)
-from p7.get_google_drive_files.helper import (update_or_create_file as update_or_create_file_google_drive)
+from p7.get_google_drive_files.helper import (
+    update_or_create_file as update_or_create_file_google_drive
+    )
 from p7.get_onedrive_files.helper import (update_or_create_file as update_or_create_file_onedrive)
 
 from repository.file import get_files_by_service

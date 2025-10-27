@@ -94,8 +94,6 @@ def fetch_recursive_files(
 
             if "has_more" in response_json and not response_json["has_more"]:
                 break
-
-    print(files)
     return files
 
 def get_new_access_token(
@@ -107,10 +105,15 @@ def get_new_access_token(
     """Helper function to get a new access token using the refresh token.
 
     params:
+        service (service obj): The service which may need a new access token.
+        access_token (str): The current access token.
+        access_token_expiration (datetime): The current expiration datetime.
         refresh_token (str): The refresh token to use for obtaining a new access token.
-    
+
     returns:
-        str: A string with the new access token.
+        A pair of an access token and an expiration datetime.
+        If the passed access token has run out, then a new access token and datetime is returned.
+        Otherwise, the passed access token and datetime is returned.
     """
     now = datetime.now(timezone.utc)
     if access_token_expiration.tzinfo is None:

@@ -62,8 +62,7 @@ def test_get_files_by_service_success(
     service_count = 0
     for user_id in range(1, 3+1):
         # Create a service for each provider for each user
-        #TODO: Expand with GOOGLE once the problem with access tokens is solved
-        for provider in ["DROPBOX", "ONEDRIVE"]:
+        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
             payload = {
                 "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
                 "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
@@ -84,11 +83,10 @@ def test_get_files_by_service_success(
             service_count += 1
 
     # Save files for users
-    # TODO: Update when Google Drive tests can be run properly
     now = timezone.now()
     files_payload = []
-    file_count = 9
-    service_count = 6  # 3 users * 2 services each
+    file_count = 18
+    service_count = 9  # 3 users * 3 services each
     for i in range(1, file_count+1):
         files_payload.append(
             {
@@ -109,10 +107,13 @@ def test_get_files_by_service_success(
         )
     service_list = []
     service_list.append(get_service(1, "dropbox"))
+    service_list.append(get_service(1, "google"))
     service_list.append(get_service(1, "microsoft-entra-id"))
     service_list.append(get_service(2, "dropbox"))
+    service_list.append(get_service(2, "google"))
     service_list.append(get_service(2, "microsoft-entra-id"))
     service_list.append(get_service(3, "dropbox"))
+    service_list.append(get_service(3, "google"))
     service_list.append(get_service(3, "microsoft-entra-id"))
 
     #Check that we can get the correct files for each service
