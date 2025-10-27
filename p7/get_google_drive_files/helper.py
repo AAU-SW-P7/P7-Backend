@@ -143,7 +143,7 @@ def google_drive_folder_path_parts(
     if not folder:  # ancestor not present in current listing
         return []  # return partial path instead of failing
 
-    parents = folder.get("parents") or []
+    parents = folder.get("parents")
     # Use the first parent if multiple
     prefix = google_drive_folder_path_parts(parents[0], file_by_id) if parents else []
     return prefix + [folder.get("name", folder_id)]

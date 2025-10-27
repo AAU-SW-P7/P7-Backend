@@ -2,6 +2,7 @@
 from datetime import datetime, timezone, timedelta
 import os
 import requests
+from django.http import JsonResponse
 
 from p7.helpers import fetch_api
 from repository.file import save_file
@@ -134,10 +135,10 @@ def get_new_access_token(
                 timeout=10
             )
         except requests.RequestException:
-            pass # do error handling here?
+            return JsonResponse({"error": "Refreshing access token failed"}, status=400)
 
         if token_resp.status_code != 200:
-            pass # do error handling here?
+            return JsonResponse({"error": "Token response not 200"}, status=token_resp.status_code)
 
         token_json = token_resp.json()
         new_access_token = token_json.get("access_token")
