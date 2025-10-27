@@ -1,6 +1,6 @@
 from django.db import models
-from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity, SearchVector
-from django.db.models import Func, F, Value, FloatField
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.db.models import F, Value, FloatField
 
 class FileQuerySet(models.QuerySet):
     def smart_search(self, query_text: str, base_filter: models.Q | None = None):
@@ -41,10 +41,8 @@ class FileQuerySet(models.QuerySet):
             query_set
             .annotate(
                 search=query_text_search_vector,
-                search_rank=SearchRank(query_text_search_vector, phrase_q),
                 phrase_rank=SearchRank(query_text_search_vector, phrase_q),
                 plain_rank=SearchRank(query_text_search_vector, plain_q),
-                trigram_sim=TrigramSimilarity("name", query_text),
                 matched_tokens=token_match_expr,
             )
             .annotate(
@@ -59,8 +57,6 @@ class FileQuerySet(models.QuerySet):
                 rank=(
                     # heavier weight for phrase matches
                     (F("phrase_rank") * 3.0 + F("plain_rank") * 1.0)
-                    + (F("trigram_sim") * 2.0)
-                    + (F("search_rank") * 0.2)
                     + (F("token_ratio") * 1.0)
                     + (F("exact_phrase_match") * 4.0)  # large boost for exact ordered phrase
                 )
@@ -69,19 +65,6 @@ class FileQuerySet(models.QuerySet):
             .filter(rank__gt=0.0)
             .order_by("-rank")
         )
-
-
-class SmartSearchQuery(SearchQuery):
-    def as_sql(self, compiler, connection, function=None, template=None):
-        if self.search_type == "phrase":
-            config_sql = "%s, " % connection.ops.quote_name(self.config) if self.config else ""
-            template = f"phraseto_tsquery({config_sql}%s)"
-        elif self.search_type == "raw":
-            template = "to_tsquery(%s, %s)"  # or other fallback
-        else:
-            template = f"{self.search_type}to_tsquery(%s, %s)"
-        params = [self.config, self.value] if self.config else [self.value]
-        return template, params
 
 class FileManager(models.Manager.from_queryset(FileQuerySet)):
     pass

@@ -19,10 +19,17 @@ django.setup()
 import pytest
 
 from repository.models import File, Service, User
+from helpers.search_filename_rank import (
+    assert_get_exact_match,
+    assert_file_length,
+    assert_token_position,
+    assert_overfitting_token_count,
+    assert_partial_token_match
+)
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 
-@pytest.fixture(name="test_data", scope='function', autouse=True)
+@pytest.fixture(name="test_data", scope='module', autouse=True)
 def test_data_fixture():
     """Fixture to create test users, services, and files."""
     user1 = User.objects.create()
@@ -74,26 +81,30 @@ def test_data_fixture():
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
     )
+    return {
+        "user1": user1,
+        "service1": service1,
+        "file1": file1,
+        "file2": file2,
+        "file3": file3,
+    }
     
-def test_exact_match():
+def test_exact_match(test_data):
     """Test exact match ranking higher than partial matches."""
-    query = "Token1 Token2"
-    results = File.objects.smart_search(query)
-    query2 = "Token2 Token1"
-    results2 = File.objects.smart_search(query2)
-    assert results[0].name == "Token1 Token2"
-    assert results[1].name == "Token2 Token1"
-    print(f"Exact Match Rank: {results[0]}, Wrong Order Rank: {results[1].rank}")
-    assert results[0].rank > results[1].rank
-     
-    # Test Exact Match
-    # Test File Length
-    # Test Wrong Order NOT IMPLEMENTED YET
-    # Test Tokens Position
-    # Test Partial Matches
-    # Test overfitting to token count
-    # Trim Similarity
-    # Token1 Token2 Token3
-    # Token1 Token3 Token2 - results in same rank as above when searching for Token2 Token3
+    assert_get_exact_match("Token1 Token2", test_data["file2"].name, test_data["file3"].name)
+
+def test_file_name_length(test_data):
+    """Test that shorter file names rank higher than longer ones."""
+    assert_file_length("Token1", test_data["file2"].name, test_data["file1"].name)
     
+def test_token_position(test_data):
+    """Test that files with tokens in the beginning rank higher."""
+    assert_token_position("Token1 Token2", "Token1 Token3", test_data["file1"].name)
     
+def test_overfitting_token_count(test_data):
+    """Test that overfitting penalizes the ranking score."""
+    assert_overfitting_token_count("Token1 Token2", "Token1 Token2 Token3", test_data["file3"].name)
+    
+def test_partial_token_match(test_data):
+    """Test that partial token matches rank lower than full token matches."""
+    assert_partial_token_match("Token1", "Token1 Token2", test_data["file1"].name)

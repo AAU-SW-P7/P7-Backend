@@ -131,10 +131,3 @@ def assert_tokenize_hypothesis(input_str):
     """
     tokens = tokenize(input_str)
     assert all(isinstance(token, str) for token in tokens)
-
-
-def assert_end_to_end(input_str):
-
-    assert result is not None
-    
-    
