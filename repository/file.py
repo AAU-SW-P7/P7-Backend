@@ -117,6 +117,4 @@ def get_files_by_service(service):
     """
     if isinstance(service, Service):
         return list(File.objects.filter(serviceId=service.id))
-    else:
-        return JsonResponse({"error": "Invalid service parameter"}, status=400)
-    
+    return JsonResponse({"error": "Invalid service parameter"}, status=400)

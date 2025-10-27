@@ -1,9 +1,13 @@
 """Helper functions for test_sync_files.py"""
 import os
 import pytest_check as check
+from pathlib import Path
+import json
 
 from django.http import JsonResponse
-from p7.sync_files.service_sync_functions import sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
+from p7.sync_files.service_sync_functions import (
+    sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
+    )
 from helpers.create_service import (assert_create_service_success)
 
 def assert_sync_files_invalid_auth(client, user_id):
@@ -29,7 +33,6 @@ def assert_sync_files_invalid_auth(client, user_id):
         }
     )
 
-
 def assert_sync_files_missing_internal_auth(client, user_id):
     """Helper function to assert syncing by user_id with missing auth header.
 
@@ -52,10 +55,12 @@ def assert_sync_files_missing_internal_auth(client, user_id):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             }
         ]
     }), True)
-
 
 def assert_sync_files_missing_user_id(client):
     """Helper function to assert syncing with missing user ID.
@@ -74,8 +79,14 @@ def assert_sync_files_missing_user_id(client):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {'type': 'string_type',
+             'loc': ['query', 'user_id'],
+             'msg': 'Input should be a valid string'
+             },
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             }
         ]
     }), True)
 
@@ -97,6 +108,7 @@ def assert_sync_files_function_missing_user_id(provider):
     check.equal(isinstance(response, JsonResponse), True)
 
 def create_service(service_client, provider, user_id, service_count):
+    """Helper function to create a service"""
     payload = {
                 "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
                 "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
@@ -112,3 +124,20 @@ def create_service(service_client, provider, user_id, service_count):
                 "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
             }
     assert_create_service_success(service_client, payload, service_count)
+
+def read_json_file(filePath):
+    """
+    Read and parse a list of JSON objects from a file.
+
+    Args:
+        path (str | pathlib.Path): Path to the JSON file containing an array of objects.
+
+    Returns:
+        list: List of JSON objects, or JsonResponse error if file cannot be loaded.
+    """
+    try:
+        with open(filePath, 'r') as f: 
+            text = f.read()
+        return json.loads(text)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return JsonResponse({"error": "Failed to load json"}, status=422)

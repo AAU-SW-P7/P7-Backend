@@ -66,7 +66,10 @@ def assert_create_service_missing_header(client, payload):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             }
         ]
     }), True)
 
@@ -80,12 +83,18 @@ def assert_create_service_missing_payload(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'},
+            {'type': 'missing',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Field required'
+             },
             {'type': 'missing', 'loc': ['body', 'payload'], 'msg': 'Field required'}
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'},
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             },
             {'type': 'missing', 'loc': ['body', 'payload'], 'msg': 'Field required'}
         ]
     }), True)

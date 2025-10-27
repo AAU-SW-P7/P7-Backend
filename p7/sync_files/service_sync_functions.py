@@ -137,10 +137,11 @@ def sync_google_drive_files(
         for file in files:
             # Skip non-files (folders, shortcuts, etc)
             mime_type = file.get("mimeType", "")
-            if (
-                mime_type == "application/vnd.google-apps.folder"
-                or mime_type == "application/vnd.google-apps.shortcut"
-                or mime_type == "application/vnd.google-apps.drive-sdk"
+            mime_type_set = {
+                "application/vnd.google-apps.folder",
+                "application/vnd.google-apps.shortcut",
+                "application/vnd.google-apps.drive-sdk"}
+            if (mime_type in mime_type_set
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
             if file.get("trashed"):
