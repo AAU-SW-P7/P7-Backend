@@ -111,7 +111,7 @@ def test_search_filename_end_to_end(search_file):
         oauthType="GOOGLE",
         oauthToken="fake-token-1",
         accessToken="fake-access-1",
-    accessTokenExpiration=timezone.now() + timedelta(days=365),
+    	accessTokenExpiration=timezone.now() + timedelta(days=365),
         refreshToken="fake-refresh-1",
         name="google",
         accountId="acc1",
@@ -127,8 +127,8 @@ def test_search_filename_end_to_end(search_file):
         path="/report-user1.docx",
         link="http://dropbox/link1",
         size=1024,
-    createdAt=timezone.now(),
-    modifiedAt=timezone.now(),
+    	createdAt=timezone.now(),
+    	modifiedAt=timezone.now(),
     )
     test_file_2 = File.objects.create(
         serviceId=service1,
@@ -139,8 +139,8 @@ def test_search_filename_end_to_end(search_file):
         path="/another-file-with-different-name.docx",
         link="http://dropbox/link2",
         size=1024,
-    createdAt=timezone.now(),
-    modifiedAt=timezone.now(),
+    	createdAt=timezone.now(),
+    	modifiedAt=timezone.now(),
     )
 
     # Perform a search for 'report'
@@ -152,7 +152,6 @@ def test_search_filename_end_to_end(search_file):
     # Assert we return all the required fields
     assert response.status_code == 200
     data = response.json()
-    print (data)
     assert "files" in data
     assert len(data["files"]) == 1 # Should only contain one files
     file = data["files"][0]
