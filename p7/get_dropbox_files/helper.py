@@ -16,7 +16,7 @@ def update_or_create_file(file, service):
     extension = os.path.splitext(file["name"])[1]
     path = file["path_display"]
     link = "https://www.dropbox.com/preview" + path
-    
+
     save_file(
         service,
         file["id"],
