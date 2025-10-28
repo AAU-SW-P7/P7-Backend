@@ -12,6 +12,7 @@ from p7.get_onedrive_files.helper import (
     update_or_create_file, fetch_recursive_files
     )
 from repository.service import get_tokens, get_service
+from repository.user import get_user
 
 fetch_onedrive_files_router = Router()
 @fetch_onedrive_files_router.get("/")
@@ -31,8 +32,9 @@ def fetch_onedrive_files(
     if auth_resp:
         return auth_resp
 
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "onedrive")
     service = get_service(user_id, "onedrive")

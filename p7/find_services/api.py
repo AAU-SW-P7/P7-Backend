@@ -1,15 +1,13 @@
 """API endpoint for finding services by user ID."""
-
 from typing import Any
 
 from ninja import Router, Header
 from django.http import JsonResponse
-from repository.service import get_all_user_services, serialize_service
 from p7.helpers import validate_internal_auth
+from repository.service import get_all_user_services, serialize_service
+from repository.user import get_user
 
 find_services_router = Router()
-
-
 @find_services_router.get("/")
 def find_services(
     request,
@@ -26,8 +24,9 @@ def find_services(
     if auth_resp:
         return auth_resp
 
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     qs = get_all_user_services(user_id)
     # get_all_user_services can return a JsonResponse on error

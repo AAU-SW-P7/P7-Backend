@@ -7,6 +7,7 @@ from p7.sync_files.service_sync_functions import (
     sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
 )
 from repository.service import get_service
+from repository.user import get_user
 
 sync_files_router = Router()
 @sync_files_router.get("/")
@@ -24,8 +25,9 @@ def sync_files(
     if auth_resp:
         return auth_resp
 
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     dropbox_service = get_service(user_id, "dropbox")
     google_drive_service = get_service(user_id, "google")

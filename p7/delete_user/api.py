@@ -1,7 +1,7 @@
 """API endpoint for deleting a user."""
 from ninja import Router, Header
-
-from repository.user import delete_user
+from django.http import JsonResponse
+from repository.user import get_user, delete_user
 from p7.helpers import validate_internal_auth
 
 delete_user_router = Router()
@@ -20,5 +20,9 @@ def delete_user_endpoint(
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
+
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     return delete_user(user_id)
