@@ -16,11 +16,7 @@ def update_or_create_file(file, service):
     extension = os.path.splitext(file["name"])[1]
     path = file["path_display"]
     link = "https://www.dropbox.com/preview" + path
-    # Behøves vi dette?
-    # Vi kunne jo tage "path" ("path" + "name")
-    # og smække "https://www.dropbox.com/preview" på frontenden
-
-    # Vi burde nok fjerne "name" fra path for at spare plads
+    
     save_file(
         service,
         file["id"],
