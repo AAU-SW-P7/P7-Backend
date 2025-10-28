@@ -1,8 +1,6 @@
 """API route to fetch and save Google Drive files for a user."""
 from datetime import datetime, timezone
 import os
-from pathlib import Path
-import mimetypes
 from typing import Dict
 from ninja import Router, Header
 from django.http import JsonResponse
@@ -11,7 +9,7 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-from p7.helpers import validate_internal_auth
+from p7.helpers import validate_internal_auth, smart_extension
 from repository.service import get_tokens, get_service
 from repository.file import save_file
 
@@ -70,7 +68,7 @@ def fetch_google_drive_files(
         file_by_id = {file["id"]: file for file in files}
 
         for file in files:
-            extension = _smart_extension(file["name"], file.get("mimeType"))
+            extension = smart_extension("google", file["name"], file.get("mimeType"))
             downloadable = file.get("capabilities", {}).get("canDownload")
             path = build_google_drive_path(file, file_by_id)
 
@@ -169,49 +167,6 @@ def _get_new_access_token(
         return new_token
 
     return access_token
-
-def _smart_extension(name: str, mime: str | None = None) -> str:
-    # known compression endings
-    compressed_file_extensions = {'.gz', '.bz2', '.xz', '.zst', '.lz', '.lzma', '.br'}
-     # known single extensions
-    known_file_extensions = set(mimetypes.types_map) | compressed_file_extensions
-    google_file_extensions = {
-        'application/vnd.google-apps.document': '.gdoc',
-        'application/vnd.google-apps.spreadsheet': '.gsheet',
-        'application/vnd.google-apps.presentation': '.gslides',
-        'application/vnd.google-apps.drawing': '.gdraw',
-        'application/vnd.google-apps.form': '.gform',
-        'application/vnd.google-apps.fusiontable': '.gtable',
-        'application/vnd.google-apps.map': '.gmap',
-        'application/vnd.google-apps.script': '.gscript',
-        'application/vnd.google-apps.site': '.gsite',
-        'application/vnd.google-apps.jam': '.gjam',
-    }
-
-    p = Path(name)
-    suffixes = [s.lower() for s in p.suffixes]
-
-    # dotfile like ".gitignore" -> no extension
-    if name.startswith(".") and len(suffixes) == 1 and not name.startswith(".."):
-        return ""
-
-    # keep only suffixes we recognize
-    recognized = [s for s in suffixes if s in known_file_extensions]
-
-    if recognized:
-        # preserve compression combos like ".tar.gz"
-        if len(recognized) >= 2 and recognized[-1] in compressed_file_extensions:
-            return "".join(recognized[-2:])
-        return recognized[-1]
-
-    # fallback to MIME type
-    if mime:
-        ext = mimetypes.guess_extension(mime)  # None for Google Docs
-        if ext:
-            return ext.lower()
-        return google_file_extensions.get(mime, "")
-
-    return ""
 
 def build_google_drive_path(file_meta: dict, file_by_id: dict) -> str:
     """

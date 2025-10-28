@@ -11,7 +11,7 @@ import msal
 
 from repository.service import get_tokens, get_service
 from repository.file import save_file
-from p7.helpers import validate_internal_auth
+from p7.helpers import validate_internal_auth, smart_extension
 
 fetch_onedrive_files_router = Router()
 
@@ -55,7 +55,11 @@ def fetch_onedrive_files(
         )
 
         for file in files:
-            extension = os.path.splitext(file["name"])[1]
+            extension = smart_extension(
+                "onedrive",
+                file.get("name"),
+                file.get("file", {}).get("mimeType"),
+            )
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(
                     "/drive/root:", ""
