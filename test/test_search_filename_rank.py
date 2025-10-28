@@ -18,7 +18,6 @@ django.setup()
 
 import pytest
 
-from repository.models import File, Service, User
 from helpers.search_filename_rank import (
     assert_get_exact_match,
     assert_file_length,
@@ -26,6 +25,8 @@ from helpers.search_filename_rank import (
     assert_overfitting_token_count,
     assert_partial_token_match
 )
+from repository.models import File, Service, User
+
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 
@@ -88,7 +89,7 @@ def test_data_fixture():
         "file2": file2,
         "file3": file3,
     }
-    
+
 def test_exact_match(test_data):
     """Test exact match ranking higher than partial matches."""
     assert_get_exact_match("Token1 Token2", test_data["file2"].name, test_data["file3"].name)
@@ -96,15 +97,15 @@ def test_exact_match(test_data):
 def test_file_name_length(test_data):
     """Test that shorter file names rank higher than longer ones."""
     assert_file_length("Token1", test_data["file2"].name, test_data["file1"].name)
-    
+
 def test_token_position(test_data):
     """Test that files with tokens in the beginning rank higher."""
     assert_token_position("Token1 Token2", "Token1 Token3", test_data["file1"].name)
-    
+
 def test_overfitting_token_count(test_data):
     """Test that overfitting penalizes the ranking score."""
     assert_overfitting_token_count("Token1 Token2", "Token1 Token2 Token3", test_data["file3"].name)
-    
+
 def test_partial_token_match(test_data):
     """Test that partial token matches rank lower than full token matches."""
     assert_partial_token_match("Token1", "Token1 Token2", test_data["file1"].name)

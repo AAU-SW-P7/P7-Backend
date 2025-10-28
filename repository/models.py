@@ -60,7 +60,7 @@ class File(models.Model):
     params:
         models (django.db): Base class for all models in Django.
     """
-    objects = FileManager() 
+    objects = FileManager()
     id = models.BigAutoField(primary_key=True)
     serviceId = models.ForeignKey(
         Service,

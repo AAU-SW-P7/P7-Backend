@@ -1,13 +1,10 @@
 """Saves file metadata and content to the database."""
 
 from django.db import transaction
-from django.db.models import Value, Q, F
+from django.db.models import Value, Q
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
 from repository.models import File, User
-from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
-
-
 
 
 def save_file(
@@ -99,13 +96,8 @@ def query_files_by_name(name_query, user_id):
     if not q.children:
         return File.objects.none()
     q &= Q(serviceId__userId=user_id)
-    
-    query_text = " ".join(name_query)
-    results = File.objects.smart_search(query_text, base_filter=q)
 
-    # Write ranks to a file
-    with open('rankings.txt', 'w') as f:  # Create or overwrite the file
-        for file in results:
-            f.write(f"File: {file.name}, Rank: {file.rank}\n")
-    
+    query_text = " ".join(name_query)
+    results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
+
     return results
