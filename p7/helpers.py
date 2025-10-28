@@ -1,8 +1,8 @@
 """Helper functions for internal API calls and validation."""
 import os
-import requests
 import mimetypes
 from pathlib import Path
+import requests
 from django.http import JsonResponse
 
 def validate_internal_auth(x_internal_auth: str) -> JsonResponse | None:
@@ -34,11 +34,15 @@ def fetch_api(url, headers, data):
     return response
 
 def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
+    """
+    Determine the file extension based on provider, filename, and MIME type.
+    """
     # known compression endings
     compressed_file_extensions = {'.gz', '.bz2', '.xz', '.zst', '.lz', '.lzma', '.br'}
      # known single extensions
     known_file_extensions = set(mimetypes.types_map) | compressed_file_extensions
-    
+
+    google_file_extensions = {}
     if provider == "google":
         google_file_extensions = {
             'application/vnd.google-apps.document': '.gdoc',

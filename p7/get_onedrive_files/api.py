@@ -55,7 +55,11 @@ def fetch_onedrive_files(
         )
 
         for file in files:
-            extension = smart_extension("onedrive", file.get("name"), file.get("file", {}).get("mimeType"))
+            extension = smart_extension(
+                "onedrive",
+                file.get("name"),
+                file.get("file", {}).get("mimeType"),
+            )
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(
                     "/drive/root:", ""
