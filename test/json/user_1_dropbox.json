@@ -1,0 +1,54 @@
+[
+    {
+    ".tag": "file",
+    "name": "Random facts.docx",
+    "path_lower": "/random facts.docx",
+    "path_display": "/Random facts.docx",
+    "id": "id:8WGkOhP6AoYAAAAAAAAABw",
+    "client_modified": "2025-10-10T11:51:37Z",
+    "server_modified": "2025-10-10T11:51:37Z",
+    "rev": "01640cc8a4615360000000301ba7c31",
+    "size": 12290,
+    "is_downloadable": true,
+    "content_hash": "a76ce290f354df2d69e3a554a2a0fd329f48700d154f5efe26fcf405628a9022"
+    },
+    {
+    ".tag": "file",
+    "name": "Distributed Systems - Concepts and Design, Coulouris et al., Fifth edition, Addison Wesley, 2015.pdf",
+    "path_lower": "/distributed systems - concepts and design, coulouris et al., fifth edition, addison wesley, 2015.pdf",
+    "path_display": "/Distributed Systems - Concepts and Design, Coulouris et al., Fifth edition, Addison Wesley, 2015.pdf",
+    "id": "id:8WGkOhP6AoYAAAAAAAAACg",
+    "client_modified": "2025-10-17T11:53:08Z",
+    "server_modified": "2025-10-17T12:03:00Z",
+    "rev": "016415983d7dc1e0000000301ba7c31",
+    "size": 10169495,
+    "is_downloadable": true,
+    "content_hash": "72d351c72e0540815b3009b427ecffed39b20c5f4ca90f94e690c74b147a5a99"
+    },
+    {
+    ".tag": "file",
+    "name": "Graham Hutton - Programming in Haskell - 2nd Edition.pdf",
+    "path_lower": "/graham hutton - programming in haskell - 2nd edition.pdf",
+    "path_display": "/Graham Hutton - Programming in Haskell - 2nd Edition.pdf",
+    "id": "id:8WGkOhP6AoYAAAAAAAAADA",
+    "client_modified": "2025-10-22T08:42:31Z",
+    "server_modified": "2025-10-22T08:42:31Z",
+    "rev": "01641bb4c1540eb0000000301ba7c31",
+    "size": 2101585,
+    "is_downloadable": true,
+    "content_hash": "eddc2beffb09a2425f299ce11df9ad4e686bcfd9a253d295eead88b3c7d964b4"
+    },
+    {
+    ".tag": "file",
+    "name": "simple.hs",
+    "path_lower": "/simple.hs",
+    "path_display": "/simple.hs",
+    "id": "id:8WGkOhP6AoYAAAAAAAAADQ",
+    "client_modified": "2025-10-22T08:42:44Z",
+    "server_modified": "2025-10-22T08:42:44Z",
+    "rev": "01641bb4ce34cf00000000301ba7c31",
+    "size": 1111,
+    "is_downloadable": true,
+    "content_hash": "e31cb829ff236505b70699c9717b029e988875967c7f7c19a40a859f34026d1f"
+    }
+]

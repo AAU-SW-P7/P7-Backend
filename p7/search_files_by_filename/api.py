@@ -1,9 +1,10 @@
-import re 
+import re
 from p7.helpers import validate_internal_auth
 from repository.file import query_files_by_name
 
 from ninja import Router, Header
 from django.http import JsonResponse
+from repository.user import get_user
 
 search_files_by_filename_router = Router()
 
@@ -21,13 +22,13 @@ def sanitize_user_search(text: str) -> str:
 
     # 2. Remove all punctution except for ' and - and _
     text = re.sub(r"[^\w\s'\-_]", "", text)
-    
+
     # 3. Replace the '-_' with space
     text = re.sub(r"[\-_]", " ", text)
 
     # 4. Collapse extra whitespace
     text = re.sub(r"\s+", " ", text).strip()
-    
+
     return text
 
 
@@ -55,10 +56,14 @@ def search_files_by_filename(
         x_internal_auth (str): The internal auth header for validating the request.
         filename (str): The filename or substring to search for.
     """
-    
+
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
+
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     if not search_string:
         return JsonResponse({"error": "search_string required"}, status=400)

@@ -1,4 +1,4 @@
-"""Finds both tokens and service object for a user and service name."""
+"""Service repository for managing user service tokens and details."""
 
 from typing import Any
 from django.http import JsonResponse
@@ -77,6 +77,7 @@ def save_service(
     account_id,
     email,
     scope_name,
+    indexed_at,
 ) -> Service:
     """
     Saves or updates sevice data in the database
@@ -94,6 +95,7 @@ def save_service(
                 "accountId": account_id,
                 "email": email,
                 "scopeName": scope_name,
+                "indexedAt": indexed_at,
             },
         )
         return service

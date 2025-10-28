@@ -46,6 +46,7 @@ class Service(models.Model):
     accountId = models.TextField()
     email = models.TextField()
     scopeName = models.TextField()
+    indexedAt = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         """Class defining metadata for the Service model."""

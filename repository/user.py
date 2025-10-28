@@ -20,6 +20,8 @@ def get_user(user_id: int) -> Union[User, JsonResponse]:
         # ensure we pass a User instance (ForeignKey expects model instance)
         user = User.objects.get(pk=user_id)
         return user
+    except (ValueError, TypeError) as e:
+        return JsonResponse({"error": "Invalid user id", "detail": str(e)}, status=400)
     except User.DoesNotExist:
         return JsonResponse({"error": "User not found"}, status=404)
     except RuntimeError as e:
@@ -48,3 +50,18 @@ def save_user() -> Union[User, JsonResponse]:
         )
     # Let unexpected exceptions propagate; callers or middleware should
     # translate them into HTTP responses where appropriate.
+
+def delete_user(user_id: int) -> Union[User, JsonResponse]:
+    """
+    Deletes a user from the database
+    """
+    try:
+        user = User.objects.get(pk=user_id)
+        user.delete()
+        return {"status": 200}
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)
+    except RuntimeError as e:
+        return JsonResponse(
+            {"error": "Failed to delete user", "detail": str(e)}, status=500
+        )
