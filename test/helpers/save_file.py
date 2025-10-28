@@ -5,6 +5,7 @@ import pytest_check as check
 from django.db import connection
 
 from p7.get_google_drive_files.api import build_google_drive_path
+from p7.helpers import smart_extension
 from repository.models import Service, User, File
 
 
@@ -50,7 +51,7 @@ def assert_save_file_success(client, user_id, service_name):
 
             # check.equal(file.get('.etag'), 'file')
 
-            extension = os.path.splitext(file["name"])[1]
+            extension = smart_extension("dropbox", file["name"], file.get("mime_type"))
             path = file["path_display"]
             link = "https://www.dropbox.com/preview" + path
 
@@ -76,7 +77,7 @@ def assert_save_file_success(client, user_id, service_name):
 
         elif service_name == "google":
             file_by_id = {file["id"]: file for file in data}
-            extension = os.path.splitext(file.get("name", ""))[1]
+            extension = smart_extension("google", file["name"], file.get("mimeType"))
             downloadable = file.get("capabilities", {}).get("canDownload")
             path = build_google_drive_path(file, file_by_id)
 
@@ -100,8 +101,8 @@ def assert_save_file_success(client, user_id, service_name):
             check.equal(file_count, 1)
             check_tokens_against_ts_vector(db_file)
 
-        elif service_name == "microsoft-entra-id":
-            extension = os.path.splitext(file["name"])[1]
+        elif service_name == "onedrive":
+            extension = smart_extension("onedrive", file["name"], file.get("file", {}).get("mimeType"))
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(
                     "/drive/root:", ""

@@ -5,7 +5,7 @@ import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
-from p7.helpers import validate_internal_auth, fetch_api
+from p7.helpers import validate_internal_auth, fetch_api, smart_extension
 from repository.service import get_tokens, get_service
 from repository.file import save_file
 
@@ -53,7 +53,7 @@ def fetch_dropbox_files(
             if file[".tag"] != "file":
                 continue
 
-            extension = os.path.splitext(file["name"])[1]
+            extension = smart_extension("dropbox", file["name"], file.get("mime_type"))
             path = file["path_display"]
             link = "https://www.dropbox.com/preview" + path
             # Behøves vi dette? Vi kunne jo tage "path" ("path" + "name")
