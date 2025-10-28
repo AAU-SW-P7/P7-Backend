@@ -74,7 +74,7 @@ def search_files_by_filename(
     service_name_cache: dict = {}
 
     files_data = []
-    
+
     for file in results:
         #Extract id as file.serviceId is a service object
         service_ref = file.serviceId

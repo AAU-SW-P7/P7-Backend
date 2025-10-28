@@ -33,6 +33,7 @@ def find_services(
     # get_all_user_services can return a JsonResponse on error
     if isinstance(qs, JsonResponse):
         return qs
+
     serialized_services = []
     for s in qs:
         ser = serialize_service(s)

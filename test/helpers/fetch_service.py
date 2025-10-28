@@ -22,10 +22,10 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
         ).count()
 
     # Assuming 3 users are already created for service creation
-    check.equal(initial_user_count == 3, True)
-    check.equal(initial_service_count == 9, True)
+    check.equal(initial_user_count, 3)
+    check.equal(initial_service_count, 9)
     # Assuming no files are created initially
-    check.equal(initial_file_count == 0, True)
+    check.equal(initial_file_count, 0)
 
     try:
         response = client.get(
@@ -113,10 +113,10 @@ def assert_fetch_google_files_success(client, user_id, service):
         ).count()
 
     # Assuming 3 users are already created for service creation
-    check.equal(initial_user_count == 3, True)
-    check.equal(initial_service_count == 9, True)
+    check.equal(initial_user_count, 3)
+    check.equal(initial_service_count, 9)
     # Assuming no files are created initially
-    check.equal(initial_file_count == 0, True)
+    check.equal(initial_file_count, 0)
 
     try:
         response = client.get(
@@ -200,10 +200,10 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     ).count()
 
     # Assuming 3 users are already created for service creation
-    check.equal(initial_user_count == 3, True)
-    check.equal(initial_service_count == 9, True)
+    check.equal(initial_user_count, 3)
+    check.equal(initial_service_count, 9)
     # Assuming no files are created initially
-    check.equal(initial_file_count == 0, True)
+    check.equal(initial_file_count, 0)
 
     try:
         response = client.get(
