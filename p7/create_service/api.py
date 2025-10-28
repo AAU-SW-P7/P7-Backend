@@ -1,6 +1,6 @@
 """API endpoint for creating a new service associated with a user."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Tuple
 from ninja import Router, Body, Header
 from django.http import JsonResponse
@@ -44,6 +44,7 @@ def create_service(
         cleaned["accountId"],
         cleaned["email"],
         cleaned["scopeName"],
+        datetime.now(timezone.utc),
     )
 
     # save_service returns either a Service or JsonResponse on error

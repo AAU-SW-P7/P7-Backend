@@ -1,0 +1,271 @@
+[
+    {
+        "parents": [
+        "0AJl3zNrPbzEFUk9PVA"
+        ],
+        "capabilities": {
+        "canCopy": true,
+        "canDownload": true
+        },
+        "downloadRestrictions": {
+        "itemDownloadRestriction": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        }
+        },
+        "kind": "drive#file",
+        "id": "1wbJS22Bzjhz_8kwQhm2l3i5DNdfSY6xBO2aBENSHme0",
+        "name": "Test document 1",
+        "mimeType": "application/vnd.google-apps.document",
+        "starred": false,
+        "trashed": false,
+        "webViewLink": "https://docs.google.com/document/d/1wbJS22Bzjhz_8kwQhm2l3i5DNdfSY6xBO2aBENSHme0/edit?usp=drivesdk",
+        "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+        "hasThumbnail": false,
+        "viewedByMeTime": "2025-10-24T12:15:40.463Z",
+        "createdTime": "2025-10-24T12:15:25.189Z",
+        "modifiedTime": "2025-10-24T12:15:40.463Z",
+        "shared": false,
+        "ownedByMe": true,
+        "size": "1024"
+    },
+    {
+        "parents": [
+        "0AJl3zNrPbzEFUk9PVA"
+        ],
+        "capabilities": {
+        "canCopy": true,
+        "canDownload": true
+        },
+        "downloadRestrictions": {
+        "itemDownloadRestriction": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        }
+        },
+        "kind": "drive#file",
+        "id": "1Ne-PlcYM4jLQDhoQPTt5e-P2WaiOHfMH4Nd6Mx10ipA",
+        "name": "RANDOM ASS FILE TO CHECK IF TEST DIES",
+        "mimeType": "application/vnd.google-apps.document",
+        "starred": false,
+        "trashed": true,
+        "webViewLink": "https://docs.google.com/document/d/1Ne-PlcYM4jLQDhoQPTt5e-P2WaiOHfMH4Nd6Mx10ipA/edit?usp=drivesdk",
+        "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+        "hasThumbnail": true,
+        "viewedByMeTime": "2025-10-17T12:29:30.664Z",
+        "createdTime": "2025-10-17T12:29:17.251Z",
+        "modifiedTime": "2025-10-17T12:29:30.664Z",
+        "shared": false,
+        "ownedByMe": true,
+        "size": "1024"
+    },
+    {
+        "parents": [
+        "0AJl3zNrPbzEFUk9PVA"
+        ],
+        "capabilities": {
+        "canCopy": true,
+        "canDownload": true
+        },
+        "downloadRestrictions": {
+        "itemDownloadRestriction": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        }
+        },
+        "kind": "drive#file",
+        "id": "1fzC8GiJ-xHxMsD0W94TZSK8BIn3nX7uYAXtGACUwHeI",
+        "name": "Random fil",
+        "mimeType": "application/vnd.google-apps.document",
+        "starred": false,
+        "trashed": true,
+        "webViewLink": "https://docs.google.com/document/d/1fzC8GiJ-xHxMsD0W94TZSK8BIn3nX7uYAXtGACUwHeI/edit?usp=drivesdk",
+        "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+        "hasThumbnail": false,
+        "viewedByMeTime": "2025-10-21T09:49:35.281Z",
+        "createdTime": "2025-10-17T12:12:57.272Z",
+        "modifiedTime": "2025-10-17T12:13:09.196Z",
+        "shared": false,
+        "ownedByMe": true,
+        "size": "1024"
+    },
+    {
+        "parents": [
+        "1BZ18zfDtsNJ4MdQR1A_4nJWZEY7Hptgu"
+        ],
+        "capabilities": {
+        "canCopy": true,
+        "canDownload": true
+        },
+        "downloadRestrictions": {
+        "itemDownloadRestriction": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        }
+        },
+        "kind": "drive#file",
+        "id": "1gTqrVSLkpeduRrXi0o0Hwfgx5zCLVr0p8p27dQDGGOo",
+        "name": "Test File Do Not Remove",
+        "mimeType": "application/vnd.google-apps.document",
+        "starred": false,
+        "trashed": false,
+        "webViewLink": "https://docs.google.com/document/d/1gTqrVSLkpeduRrXi0o0Hwfgx5zCLVr0p8p27dQDGGOo/edit?usp=drivesdk",
+        "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+        "hasThumbnail": true,
+        "viewedByMeTime": "2025-10-16T09:52:45.636Z",
+        "createdTime": "2025-10-10T12:30:51.862Z",
+        "modifiedTime": "2025-10-16T10:08:16.086Z",
+        "shared": false,
+        "ownedByMe": true,
+        "size": "1024"
+    },
+    {
+        "parents": [
+        "1BZ18zfDtsNJ4MdQR1A_4nJWZEY7Hptgu"
+        ],
+        "capabilities": {
+        "canCopy": true,
+        "canDownload": true
+        },
+        "downloadRestrictions": {
+        "itemDownloadRestriction": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        }
+        },
+        "kind": "drive#file",
+        "id": "19AU7fYJKCjV7jiStr8-QsDE0jVPvBP6h_3OQ-9KQESk",
+        "name": "Test File Do Not Remove 2",
+        "mimeType": "application/vnd.google-apps.document",
+        "starred": false,
+        "trashed": false,
+        "webViewLink": "https://docs.google.com/document/d/19AU7fYJKCjV7jiStr8-QsDE0jVPvBP6h_3OQ-9KQESk/edit?usp=drivesdk",
+        "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
+        "hasThumbnail": true,
+        "viewedByMeTime": "2025-10-16T10:07:23.903Z",
+        "createdTime": "2025-10-16T10:05:31.493Z",
+        "modifiedTime": "2025-10-16T10:05:43.287Z",
+        "shared": false,
+        "ownedByMe": true,
+        "size": "1673"
+    },
+    {
+        "parents": [
+        "0AJl3zNrPbzEFUk9PVA"
+        ],
+        "capabilities": {
+        "canCopy": false,
+        "canDownload": true
+        },
+        "downloadRestrictions": {
+        "itemDownloadRestriction": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        }
+        },
+        "kind": "drive#file",
+        "id": "1BZ18zfDtsNJ4MdQR1A_4nJWZEY7Hptgu",
+        "name": "Test Folder",
+        "mimeType": "application/vnd.google-apps.folder",
+        "starred": false,
+        "trashed": false,
+        "webViewLink": "https://drive.google.com/drive/folders/1BZ18zfDtsNJ4MdQR1A_4nJWZEY7Hptgu",
+        "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.folder",
+        "hasThumbnail": false,
+        "viewedByMeTime": "2025-10-21T10:07:58.234Z",
+        "createdTime": "2025-10-16T09:53:00.993Z",
+        "modifiedTime": "2025-10-16T09:53:00.993Z",
+        "shared": false,
+        "ownedByMe": true
+    },
+    {
+        "capabilities": {
+        "canCopy": false,
+        "canDownload": true
+        },
+        "downloadRestrictions": {
+        "itemDownloadRestriction": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        }
+        },
+        "kind": "drive#file",
+        "id": "1BYCglBzu9CoxaAlGaO-kCSvt4U1bJB7u",
+        "name": "SW7 Gruppe Drive",
+        "mimeType": "application/vnd.google-apps.folder",
+        "starred": false,
+        "trashed": false,
+        "webViewLink": "https://drive.google.com/drive/folders/1BYCglBzu9CoxaAlGaO-kCSvt4U1bJB7u",
+        "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.folder+shared",
+        "hasThumbnail": false,
+        "viewedByMeTime": "2025-10-10T10:57:49.920Z",
+        "createdTime": "2025-09-03T06:38:06.970Z",
+        "modifiedTime": "2025-09-08T08:21:04.865Z",
+        "shared": true,
+        "ownedByMe": false
+    },
+    {
+        "parents": [
+        "0AJl3zNrPbzEFUk9PVA"
+        ],
+        "capabilities": {
+        "canCopy": true,
+        "canDownload": true
+        },
+        "downloadRestrictions": {
+        "itemDownloadRestriction": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        },
+        "effectiveDownloadRestrictionWithContext": {
+            "restrictedForReaders": false,
+            "restrictedForWriters": false
+        }
+        },
+        "kind": "drive#file",
+        "id": "1cfqpSKpVcuCDC3UnNL2RKodnVOtB-kv5",
+        "name": "Introduction to Compiler Design.pdf",
+        "mimeType": "application/pdf",
+        "starred": false,
+        "trashed": false,
+        "webContentLink": "https://drive.google.com/uc?id=1cfqpSKpVcuCDC3UnNL2RKodnVOtB-kv5&export=download",
+        "webViewLink": "https://drive.google.com/file/d/1cfqpSKpVcuCDC3UnNL2RKodnVOtB-kv5/view?usp=drivesdk",
+        "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/pdf",
+        "hasThumbnail": true,
+        "viewedByMeTime": "2025-10-24T12:15:14.774Z",
+        "createdTime": "2025-10-24T12:15:14.774Z",
+        "modifiedTime": "2024-02-07T11:58:07.000Z",
+        "shared": false,
+        "ownedByMe": true,
+        "originalFilename": "Introduction to Compiler Design.pdf",
+        "size": "7933431"
+    }
+]

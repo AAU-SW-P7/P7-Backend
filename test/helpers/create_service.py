@@ -15,9 +15,7 @@ def assert_create_service_success(client, payload, service_count):
     initial_user_count = User.objects.count()
     initial_service_count = Service.objects.count()
 
-    # Assuming 3 users are already created for service creation
-    check.equal(initial_user_count == 3, True)
-    check.equal(initial_service_count == service_count, True)
+    check.equal(initial_service_count, service_count)
 
     response = client.post(
         "/",
@@ -33,7 +31,7 @@ def assert_create_service_success(client, payload, service_count):
     check.equal(isinstance(data["name"], str), True)
     check.equal(data["name"], payload["name"])
 
-    # Assert that a new user was created in the database
+    # Assert that a new service was created in the database
     check.equal(User.objects.count(), initial_user_count)  # User count should remain the same
     check.equal(Service.objects.count(), initial_service_count + 1)
 
@@ -68,7 +66,10 @@ def assert_create_service_missing_header(client, payload):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             }
         ]
     }), True)
 
@@ -82,12 +83,18 @@ def assert_create_service_missing_payload(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'},
+            {'type': 'missing',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Field required'
+             },
             {'type': 'missing', 'loc': ['body', 'payload'], 'msg': 'Field required'}
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'},
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             },
             {'type': 'missing', 'loc': ['body', 'payload'], 'msg': 'Field required'}
         ]
     }), True)

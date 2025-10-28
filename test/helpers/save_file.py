@@ -4,7 +4,7 @@ import os
 import pytest_check as check
 from django.db import connection
 
-from p7.get_google_drive_files.api import build_google_drive_path
+from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
 
 
@@ -23,8 +23,8 @@ def assert_save_file_success(client, user_id, service_name):
     ).count()
 
     # Assuming 3 users are already created for service creation
-    check.equal(initial_user_count == 3, True)
-    check.equal(initial_service_count == 1, True)
+    check.equal(initial_user_count, 3)
+    check.equal(initial_service_count, 1)
 
     response = client.get(
         f"/?user_id={user_id}",
@@ -75,6 +75,14 @@ def assert_save_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file)
 
         elif service_name == "google":
+            # Skip non-files (folders, shortcuts, etc)
+            mime_type = file.get("mimeType", "")
+            if (
+                mime_type == "application/vnd.google-apps.folder"
+                or mime_type == "application/vnd.google-apps.shortcut"
+                or mime_type == "application/vnd.google-apps.drive-sdk"
+            ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
+                continue
             file_by_id = {file["id"]: file for file in data}
             extension = os.path.splitext(file.get("name", ""))[1]
             downloadable = file.get("capabilities", {}).get("canDownload")

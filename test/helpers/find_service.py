@@ -16,7 +16,7 @@ def assert_find_service_success(client, user_id, email):
     initial_user_count = User.objects.count()
 
     # Assuming 3 users are already created for service creation
-    check.equal(initial_user_count == 3, True)
+    check.equal(initial_user_count, 3)
 
     try:
         response = client.get(

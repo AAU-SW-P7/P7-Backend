@@ -14,7 +14,7 @@ def assert_create_user_success(client, user_number):
     # Get initial user count
     initial_count = User.objects.count()
 
-    check.equal(initial_count == user_number - 1, True)
+    check.equal(initial_count, user_number - 1)
 
     response = client.post("/", headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")})
 
