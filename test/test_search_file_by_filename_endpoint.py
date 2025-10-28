@@ -4,6 +4,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
+from django.utils import timezone
 
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
@@ -110,7 +111,7 @@ def test_search_filename_end_to_end(search_file):
         oauthType="GOOGLE",
         oauthToken="fake-token-1",
         accessToken="fake-access-1",
-        accessTokenExpiration=datetime.now() + timedelta(days=365),
+    accessTokenExpiration=timezone.now() + timedelta(days=365),
         refreshToken="fake-refresh-1",
         name="google",
         accountId="acc1",
@@ -126,8 +127,8 @@ def test_search_filename_end_to_end(search_file):
         path="/report-user1.docx",
         link="http://dropbox/link1",
         size=1024,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+    createdAt=timezone.now(),
+    modifiedAt=timezone.now(),
     )
     test_file_2 = File.objects.create(
         serviceId=service1,
@@ -138,8 +139,8 @@ def test_search_filename_end_to_end(search_file):
         path="/another-file-with-different-name.docx",
         link="http://dropbox/link2",
         size=1024,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+    createdAt=timezone.now(),
+    modifiedAt=timezone.now(),
     )
 
     # Perform a search for 'report'

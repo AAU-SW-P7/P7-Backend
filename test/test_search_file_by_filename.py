@@ -4,6 +4,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
+from django.utils import timezone
 
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
@@ -40,7 +41,7 @@ def test_data_fixture():
         oauthType="DROPBOX",
         oauthToken="fake-token-1",
         accessToken="fake-access-1",
-        accessTokenExpiration=datetime.now() + timedelta(days=365),
+        accessTokenExpiration=timezone.now() + timedelta(days=365),
         refreshToken="fake-refresh-1",
         name="dropbox",
         accountId="acc1",
@@ -56,8 +57,8 @@ def test_data_fixture():
         path="/report-user1.docx",
         link="http://dropbox/link1",
         size=1024,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+        createdAt=timezone.now(),
+        modifiedAt=timezone.now(),
     )
     file11 = File.objects.create(
         serviceId=service1,
@@ -68,8 +69,8 @@ def test_data_fixture():
         path="/report-user1.docx",
         link="http://dropbox/link11",
         size=1024,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+        createdAt=timezone.now(),
+        modifiedAt=timezone.now(),
     )
 
     user2 = User.objects.create()
@@ -78,7 +79,7 @@ def test_data_fixture():
         oauthType="GOOGLE",
         oauthToken="fake-token-2",
         accessToken="fake-access-2",
-        accessTokenExpiration=datetime.now() + timedelta(days=365),
+        accessTokenExpiration=timezone.now() + timedelta(days=365),
         refreshToken="fake-refresh-2",
         name="google",
         accountId="acc2",
@@ -94,8 +95,8 @@ def test_data_fixture():
         path="/report-user2.pdf",
         link="http://google/link2",
         size=2048,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+        createdAt=timezone.now(),
+        modifiedAt=timezone.now(),
     )
     file22 = File.objects.create(
         serviceId=service2,
@@ -106,8 +107,8 @@ def test_data_fixture():
         path="/report-user2.pdf",
         link="http://google/link22",
         size=2048,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+        createdAt=timezone.now(),
+        modifiedAt=timezone.now(),
     )
 
     return {
