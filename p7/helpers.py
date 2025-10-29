@@ -39,8 +39,11 @@ def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
     """
     # known compression endings
     compressed_file_extensions = {'.gz', '.bz2', '.xz', '.zst', '.lz', '.lzma', '.br'}
-     # known single extensions
-    known_file_extensions = set(mimetypes.types_map) | compressed_file_extensions
+    known_file_extensions = (
+      set(mimetypes.types_map) |    # platform-dependent
+      set(mimetypes.common_types) | # adds many common ones incl .docx on most installs
+      compressed_file_extensions
+    )
 
     google_file_extensions = {}
     if provider == "google":
@@ -68,10 +71,15 @@ def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
     recognized = [suffix for suffix in suffixes if suffix in known_file_extensions]
 
     if recognized:
-        # preserve compression combos like ".tar.gz"
         if len(recognized) >= 2 and recognized[-1] in compressed_file_extensions:
             return "".join(recognized[-2:])
         return recognized[-1]
+    
+    # fallback: trust the filename if it has an apparent extension
+    if suffixes:
+        if len(suffixes) >= 2 and suffixes[-1] in compressed_file_extensions:
+            return "".join(s.lower() for s in suffixes[-2:])
+        return suffixes[-1]
 
     # fallback to MIME type
     if mime:
