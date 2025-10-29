@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from repository.models import File, Service, User
 
 
+
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
     service_file_id,
@@ -23,8 +24,8 @@ def save_file(
     snippet,
     content,
     *,
-    ts_config="english"  # allow overriding the FTS config if needed
-    ):
+    ts_config='simple'  # allow overriding the FTS config if needed
+):
     """Saves or updates file metadata and content to the database.
 
     params:
@@ -104,7 +105,11 @@ def query_files_by_name(name_query, user_id):
     if not q.children:
         return File.objects.none()
     q &= Q(serviceId__userId=user_id)
-    return File.objects.filter(q)
+
+    query_text = " ".join(name_query)
+    results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
+
+    return results
 
 def get_files_by_service(service):
     """Retrieves all files associated with a given service.
