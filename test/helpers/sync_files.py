@@ -93,11 +93,11 @@ def assert_sync_files_missing_user_id(client):
 def assert_sync_files_function_missing_user_id(provider):
     """Helper function to assert behavior when called without user_id"""
     if provider == "dropbox":
-        response = sync_dropbox_files()
+        response = sync_dropbox_files("")
     elif provider == "google":
-        response = sync_google_drive_files()
+        response = sync_google_drive_files("")
     elif provider == "onedrive":
-        response = sync_onedrive_files()
+        response = sync_onedrive_files("")
     else:
         print("Wrong provider provided. Please use dropbox, google, or onedrive")
         check.equal(True, False)

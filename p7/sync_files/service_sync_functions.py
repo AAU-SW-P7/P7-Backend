@@ -2,8 +2,15 @@
 import os
 from datetime import datetime, timezone
 
-
 from django.http import JsonResponse
+
+# Google libs
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+
+# Microsoft libs
+import msal
+
 from p7.get_dropbox_files.helper import (
     update_or_create_file as update_or_create_file_dropbox,
     fetch_recursive_files as fetch_recursive_files_dropbox,
@@ -19,13 +26,7 @@ from p7.get_onedrive_files.helper import (
     )
 from repository.service import get_tokens, get_service
 from repository.file import get_files_by_service
-
-# Google libs
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-
-# Microsoft libs
-import msal
+from repository.user import get_user
 
 def sync_dropbox_files(
     user_id: str = None,
@@ -34,8 +35,10 @@ def sync_dropbox_files(
         params: 
         user_id: The id of the user whose files are to be synced.
     """
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
+
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
     service = get_service(user_id, "dropbox")
@@ -94,8 +97,10 @@ def sync_google_drive_files(
         params:
         user_id: The id of the user whose files are to be synced.
     """
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
+
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     access_token, _, refresh_token = get_tokens(user_id, "google")
     service = get_service(user_id, "google")
@@ -187,11 +192,13 @@ def sync_onedrive_files(
         params:
         user_id: The id of the user whose files are to be synced.
     """
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
 
-    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "microsoft-entra-id")
-    service = get_service(user_id, "microsoft-entra-id")
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
+
+    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "onedrive")
+    service = get_service(user_id, "onedrive")
 
     try:
         indexing_time = datetime.now(timezone.utc)

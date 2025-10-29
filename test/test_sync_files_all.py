@@ -91,7 +91,7 @@ def test_sync_files_all(
     service_google_drive.save(update_fields=["indexedAt"])
 
     #Get Onedrive service and set index time
-    service_onedrive = get_service(user_id, "microsoft-entra-id")
+    service_onedrive = get_service(user_id, "onedrive")
     service_onedrive.indexedAt = datetime.fromisoformat(index_time)
     service_onedrive.save(update_fields=["indexedAt"])
 

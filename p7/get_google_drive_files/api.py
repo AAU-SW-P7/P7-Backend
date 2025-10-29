@@ -1,19 +1,19 @@
 """API for fetching and saving Google Drive files."""
-from datetime import datetime, timezone
 import os
-from p7.helpers import validate_internal_auth
-from p7.get_google_drive_files.helper import (
-    update_or_create_file, fetch_recursive_files, get_new_access_token)
-from repository.service import get_tokens, get_service
-
 from ninja import Router, Header
 from django.http import JsonResponse
 # Google libs
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-fetch_google_drive_files_router = Router()
+from p7.helpers import validate_internal_auth
+from p7.get_google_drive_files.helper import (
+    update_or_create_file, fetch_recursive_files, get_new_access_token
+)
+from repository.service import get_tokens, get_service
+from repository.user import get_user
 
+fetch_google_drive_files_router = Router()
 @fetch_google_drive_files_router.get("/")
 def fetch_google_drive_files(
     request,
@@ -30,8 +30,9 @@ def fetch_google_drive_files(
     if auth_resp:
         return auth_resp
 
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     access_token, _, refresh_token = get_tokens(user_id, "google")
     service = get_service(user_id, "google")
@@ -68,13 +69,13 @@ def fetch_google_drive_files(
 
         for file in files:
             # Skip non-files (folders, shortcuts, etc)
-            mime_type = file.get("mimeType", "")
-            if (
-                mime_type == "application/vnd.google-apps.folder"
-                or mime_type == "application/vnd.google-apps.shortcut"
-                or mime_type == "application/vnd.google-apps.drive-sdk"
-            ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
+            if file.get("mimeType", "") in (
+                'application/vnd.google-apps.folder',
+                'application/vnd.google-apps.shortcut',
+                'application/vnd.google-apps.drive-sdk',
+            ): # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
+
             update_or_create_file(file, service, file_by_id)
 
         return JsonResponse(files, safe=False)

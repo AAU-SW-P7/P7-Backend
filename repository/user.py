@@ -55,6 +55,9 @@ def delete_user(user_id: int) -> Union[User, JsonResponse]:
     """
     Deletes a user from the database
     """
+    if not user_id:
+        return JsonResponse({"error": "user_id required"}, status=400)
+
     try:
         user = User.objects.get(pk=user_id)
         user.delete()

@@ -16,6 +16,24 @@ def get_tokens(user_id, service_name):
     return service.accessToken, service.accessTokenExpiration, service.refreshToken
 
 
+def get_service_name(user_id, service_id):
+    """
+    Fetches only the service name based on the user_id and service_id
+    """
+    try:
+        service = Service.objects.get(userId_id=user_id, id=service_id)
+        return service.name
+    except Service.DoesNotExist:
+        return JsonResponse(
+            {"error": f"Service id:({service_id}) not found for user"}, status=404
+        )
+    except Service.MultipleObjectsReturned as e:
+        return JsonResponse(
+            {"error": f"Failed to retrieve service id({service_id})", "detail": str(e)},
+            status=500,
+        )
+
+
 def get_service(user_id, service_name) -> Service:
     """
     Fetches the entire service object based on user and service name
@@ -48,6 +66,7 @@ def get_all_user_services(user_id) -> list[Service]:
             {"error": "Failed to retrieve service", "detail": str(e)}, status=500
         )
 
+
 def get_user_service_related_to_email(email) -> Service:
     """
     Get a user based on email connected to service
@@ -63,7 +82,6 @@ def get_user_service_related_to_email(email) -> Service:
         return JsonResponse(
             {"error": "Failed to retrieve service", "detail": str(e)}, status=500
         )
-
 
 
 def save_service(

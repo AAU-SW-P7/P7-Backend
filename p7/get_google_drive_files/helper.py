@@ -1,11 +1,11 @@
 """Helper functions for Google Drive file operations."""
 from datetime import datetime, timezone
-import os
 from typing import Dict
-from repository.file import save_file
-
 # Google libs
 from google.auth.transport.requests import Request
+
+from p7.helpers import smart_extension
+from repository.file import save_file
 
 def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
     """ Updates or creates a File record from Google Drive file metadata.
@@ -14,7 +14,7 @@ def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
         service: The service object associated with the user.
         file_by_id: A dictionary mapping file IDs to their metadata for path construction.
     """
-    extension = os.path.splitext(file.get("name", ""))[1]
+    extension = smart_extension("google", file["name"], file.get("mimeType"))
     downloadable = file.get("capabilities", {}).get("canDownload")
     path = build_google_drive_path(file, file_by_id)
 

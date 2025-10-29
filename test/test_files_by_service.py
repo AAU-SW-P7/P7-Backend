@@ -108,13 +108,13 @@ def test_get_files_by_service_success(
     service_list = []
     service_list.append(get_service(1, "dropbox"))
     service_list.append(get_service(1, "google"))
-    service_list.append(get_service(1, "microsoft-entra-id"))
+    service_list.append(get_service(1, "onedrive"))
     service_list.append(get_service(2, "dropbox"))
     service_list.append(get_service(2, "google"))
-    service_list.append(get_service(2, "microsoft-entra-id"))
+    service_list.append(get_service(2, "onedrive"))
     service_list.append(get_service(3, "dropbox"))
     service_list.append(get_service(3, "google"))
-    service_list.append(get_service(3, "microsoft-entra-id"))
+    service_list.append(get_service(3, "onedrive"))
 
     #Check that we can get the correct files for each service
     for service in service_list:

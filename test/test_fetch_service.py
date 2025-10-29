@@ -291,7 +291,7 @@ def test_fetch_onedrive_files_success(fetch_onedrive_files_client):
         assert_fetch_onedrive_files_success(
             fetch_onedrive_files_client,
             user_number,
-            "microsoft-entra-id"
+            "onedrive"
         )
 
 def test_fetch_onedrive_files_invalid_auth(fetch_onedrive_files_client):

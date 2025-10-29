@@ -15,6 +15,7 @@ def create_user(request, x_internal_auth: str = Header(..., alias="x-internal-au
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
+
     user = save_user()
     return {
         "id": user.id,

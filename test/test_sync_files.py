@@ -202,7 +202,7 @@ def test_sync_onedrive_files(
 
     test_files = read_json_file("test/json/user_3_onedrive.json")
 
-    service = get_service(user_id, "microsoft-entra-id")
+    service = get_service(user_id, "onedrive")
     service.indexedAt = datetime.fromisoformat("2025-10-24T08:46:32.234+00:00")
     service.save(update_fields=["indexedAt"])
 

@@ -4,7 +4,7 @@ import os
 import requests
 from django.http import JsonResponse
 
-from p7.helpers import fetch_api
+from p7.helpers import fetch_api, smart_extension
 from repository.file import save_file
 
 def update_or_create_file(file, service):
@@ -13,7 +13,7 @@ def update_or_create_file(file, service):
         file: A dictionary containing Dropbox file metadata.
         service: The service object associated with the user.
     """
-    extension = os.path.splitext(file["name"])[1]
+    extension = smart_extension("dropbox", file["name"], file.get("mime_type"))
     path = file["path_display"]
     link = "https://www.dropbox.com/preview" + path
 

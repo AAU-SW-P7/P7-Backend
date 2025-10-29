@@ -1,8 +1,8 @@
 """Helper functions for Google Drive file operations."""
-import os
 from datetime import datetime, timezone
 import requests
 
+from p7.helpers import smart_extension
 from repository.file import save_file
 
 def update_or_create_file(file, service):
@@ -11,7 +11,11 @@ def update_or_create_file(file, service):
         file: A dictionary containing OneDrive file metadata.
         service: The service object associated with the user.
     """
-    extension = os.path.splitext(file["name"])[1]
+    extension = smart_extension(
+        "onedrive",
+        file.get("name"),
+        file.get("file", {}).get("mimeType"),
+    )
     path = (
         (file.get("parentReference", {}).get("path", "")).replace(
             "/drive/root:", ""

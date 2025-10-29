@@ -2,11 +2,12 @@
 from ninja import Router, Header
 from django.http import JsonResponse
 
+from p7.helpers import validate_internal_auth
 from p7.sync_files.service_sync_functions import (
     sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
-    )
+)
 from repository.service import get_service
-from p7.helpers import validate_internal_auth
+from repository.user import get_user
 
 sync_files_router = Router()
 @sync_files_router.get("/")
@@ -24,12 +25,13 @@ def sync_files(
     if auth_resp:
         return auth_resp
 
-    if not user_id:
-        return JsonResponse({"error": "user_id required"}, status=400)
+    user = get_user(user_id)
+    if isinstance(user, JsonResponse):
+        return user
 
     dropbox_service = get_service(user_id, "dropbox")
     google_drive_service = get_service(user_id, "google")
-    onedrive_service = get_service(user_id, "microsoft-entra-id")
+    onedrive_service = get_service(user_id, "onedrive")
 
     dropbox_updated_files = []
     google_drive_updated_files = []
@@ -46,9 +48,9 @@ def sync_files(
         print("Syncing OneDrive files...")
         onedrive_updated_files = sync_onedrive_files(user_id)
 
-    if isinstance(dropbox_updated_files, JsonResponse) or isinstance(
-        google_drive_updated_files, JsonResponse
-    ) or isinstance(onedrive_updated_files, JsonResponse):
+    if isinstance(dropbox_updated_files, JsonResponse) \
+    or isinstance(google_drive_updated_files, JsonResponse) \
+    or isinstance(onedrive_updated_files, JsonResponse):
         print(dropbox_updated_files)
         print(google_drive_updated_files)
         print(onedrive_updated_files)
@@ -57,8 +59,8 @@ def sync_files(
         )
 
     # This array is for when we want to download all updated files from all services to index them
-    combined_updated_files = (
-        dropbox_updated_files + google_drive_updated_files + onedrive_updated_files
-    )
+    # combined_updated_files = (
+    #     dropbox_updated_files + google_drive_updated_files + onedrive_updated_files
+    # )
 
     return JsonResponse({"ok": True}, status=200)
