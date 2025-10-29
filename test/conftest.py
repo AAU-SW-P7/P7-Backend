@@ -84,6 +84,16 @@ def django_db_setup():
     # pristine empty DB
     run_sql(psql.SQL("CREATE DATABASE {} TEMPLATE template0").format(psql.Identifier(test_db_name)))
 
+    # create pg_trgm extension in the newly created test database
+    kwargs = _admin_conn_kwargs()
+    kwargs['dbname'] = test_db_name
+    conn = psycopg2.connect(**kwargs)
+    try:
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+    finally:
+        conn.close()
     for connection in connections.all():
         connection.close()
 
