@@ -18,19 +18,18 @@ def update_or_create_file(file, service):
     link = "https://www.dropbox.com/preview" + path
 
     save_file(
-        service,
-        file["id"],
-        file["name"],
-        extension,
-        file["is_downloadable"],
-        path,
-        link,
-        file["size"],
-        file["client_modified"],
-        file["server_modified"],
-        None,
-        None,
-        None,
+        service_id=service,
+        service_file_id=file["id"],
+        name=file["name"],
+        extension=extension,
+        downloadable=file["is_downloadable"],
+        path=path,
+        link=link,
+        size=file["size"],
+        created_at=file["client_modified"],
+        modified_at=file["server_modified"],
+        indexed_at=None,
+        snippet=None,
     )
 
 def fetch_recursive_files(

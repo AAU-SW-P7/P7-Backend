@@ -89,3 +89,17 @@ def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
         return google_file_extensions.get(mime, "") if provider == "google" else ""
 
     return ""
+
+def downloadable_file_extensions() -> set[str]:
+    """Return a set of file extensions considered downloadable."""
+    return {
+        '.txt',
+        '.hs',
+        # '.pdf', # add libaries to do this
+        # '.doc',
+        # '.docx',
+        # '.xls',
+        # '.xlsx',
+        # '.ppt',
+        # '.pptx',
+    }
