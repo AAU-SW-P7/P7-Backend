@@ -33,8 +33,8 @@ def assert_save_file_success(client, user_id, service_name):
 
     data = response.json()
 
-    check.equal(response.status_code, 200)
-    check.is_instance(data, list)
+    check.equal(response.status_code, 202)
+    check.is_instance(data, dict)
 
     for file in data:
         check.is_instance(file, dict)

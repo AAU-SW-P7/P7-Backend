@@ -127,9 +127,9 @@ def assert_fetch_google_files_success(client, user_id, service):
         print(f"Exception during GET request: {e}")
         raise
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
     check.equal(response.json() is not None, True)
-    check.equal(isinstance(response.json(), list), True)
+    check.equal(isinstance(response.json(), dict), True)
 
 def assert_fetch_google_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.

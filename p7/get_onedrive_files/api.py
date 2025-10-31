@@ -3,7 +3,7 @@ import os
 
 from ninja import Router, Header
 from django.http import JsonResponse
-
+from django_q.tasks import async_task
 # Microsoft libs
 import msal
 
@@ -35,20 +35,16 @@ def fetch_onedrive_files(
     user = get_user(user_id)
     if isinstance(user, JsonResponse):
         return user
+    
+    async_task(process_onedrive_files, user_id, queue="high")
+    return JsonResponse({"status": "processing"}, status=202)
 
+def process_onedrive_files(user_id):
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "onedrive")
     service = get_service(user_id, "onedrive")
 
     try:
-        # Build MSAL app instance
-        app = msal.ConfidentialClientApplication(
-            os.getenv("MICROSOFT_CLIENT_ID"),
-            authority="https://login.microsoftonline.com/common",
-            client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
-        )
-
         files = fetch_recursive_files(
-            app,
             service,
             access_token,
             access_token_expiration,
@@ -56,11 +52,11 @@ def fetch_onedrive_files(
         )
 
         for file in files:
-            if "folder" in file:  # Skip folders
+            if not file.get("file"):
                 continue
 
             update_or_create_file(file, service)
 
-        return JsonResponse(files, safe=False)
-    except (ValueError, TypeError, RuntimeError) as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except KeyError as e:
+        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
+        return response

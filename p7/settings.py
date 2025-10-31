@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from math import ceil, floor
+import multiprocessing
 import os
 from pathlib import Path
 
@@ -127,6 +129,7 @@ DATABASES = {
 # DJANGO_Q database config. Docs: https://django-q2.readthedocs.io/en/master/configure.html
 Q_CLUSTER = {
     'name': 'default',
+    'workers': multiprocessing.cpu_count(),
     'retry': 3600,
     'timeout': 600,
     'recycle': 250,
@@ -135,6 +138,14 @@ Q_CLUSTER = {
     'cpu_affinity': 1,
     'label': 'Django Q2',
     'orm': 'default',
+    'queues':{
+        'low': {
+            'workers': ceil(multiprocessing.cpu_count()*0.25),
+        },
+        'high': {
+            'workers': floor(multiprocessing.cpu_count()*0.75),
+        },
+   }
 }
 
 

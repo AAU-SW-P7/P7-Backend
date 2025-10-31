@@ -35,11 +35,11 @@ def fetch_google_drive_files(
     if isinstance(user, JsonResponse):
         return user
 
-    async_task(process_drive_files, user_id)
-    return JsonResponse("status: processing", status=202)
+    async_task(process_google_drive_files, user_id, queue="high")
+    return JsonResponse({"status": "processing"}, status=202)
     
 
-def process_drive_files(user_id):
+def process_google_drive_files(user_id):
     # Build credentials object. token may be stale; refresh() will update it.
     try:
         access_token, _, refresh_token = get_tokens(user_id, "google")

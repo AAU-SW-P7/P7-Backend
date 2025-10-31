@@ -7,6 +7,13 @@ from django.http import JsonResponse
 from repository.service import save_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
+from p7.get_google_drive_files.api import process_google_drive_files
+from p7.get_dropbox_files.api import process_dropbox_files
+from p7.get_onedrive_files.api import process_onedrive_files
+from django_q.tasks import async_task, schedule
+from p7.sync_files.service_sync_functions import (
+    sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
+)
 
 create_service_router = Router()
 
@@ -50,7 +57,45 @@ def create_service(
     # save_service returns either a Service or JsonResponse on error
     if isinstance(service, JsonResponse):
         return service
-
+    match cleaned["name"]:
+        case "google":
+            # Could trigger Google Drive file fetch here if desired
+            async_task(process_google_drive_files, cleaned["userId"], queue="high")
+            # Schedule daily sync of Google Drive files
+            schedule(
+                func=sync_google_drive_files, 
+                args=cleaned["userId"],
+                schedule_type='D',
+                name=f"Google-Drive-{cleaned["userId"]}",
+                queue="low"
+                )
+        case "dropbox":
+            # Could trigger Dropbox file fetch here if desired
+            async_task(process_dropbox_files, cleaned["userId"], queue="high")
+            # Schedule daily sync of Dropbox files
+            schedule(
+                func=sync_dropbox_files, 
+                args=cleaned["userId"],
+                schedule_type='D',
+                name=f"Dropbox-{cleaned["userId"]}",
+                queue="low"
+                )
+            pass
+        case "onedrive":
+            # Could trigger OneDrive file fetch here if desired
+            async_task(process_onedrive_files, cleaned["userId"], queue="high")
+            # Schedule daily sync of OneDrive files
+            schedule(
+                func=sync_onedrive_files, 
+                args=cleaned["userId"],
+                schedule_type='D',
+                name=f"Onedrive-{cleaned["userId"]}",
+                queue="low"
+                )
+            pass
+        case _:
+            raise NotImplementedError(f"Service fetch not implemented for {cleaned['name']}")
+            
     return {"id": service.id, "name": service.name}
 
 
