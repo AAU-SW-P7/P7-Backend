@@ -2,9 +2,10 @@
 
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
-from django.contrib.postgres.search import SearchVector, SearchVectorField
+from django.contrib.postgres.search import SearchVectorField
 
 from repository.managers import FileManager
+import pgcrypto
 
 
 class User(models.Model):
@@ -69,28 +70,19 @@ class File(models.Model):
         db_column="serviceId",
         related_name="files",
     )
-    serviceFileId = models.TextField()
-    name = models.TextField()
+    serviceFileId = pgcrypto.EncryptedTextField()
+    name = pgcrypto.EncryptedTextField()
     extension = models.TextField()
     downloadable = models.BooleanField()
-    path = models.TextField()
-    link = models.TextField()
+    path = pgcrypto.EncryptedTextField()
+    link = pgcrypto.EncryptedTextField()
     size = models.BigIntegerField()
-    createdAt = models.DateTimeField()
+    createdAt = pgcrypto.EncryptedDateTimeField()
     modifiedAt = models.DateTimeField()
-    lastIndexed = models.DateTimeField(null=True, blank=True)
+    indexedAt = models.DateTimeField(null=True, blank=True)
     snippet = models.TextField(null=True, blank=True)
     content = models.TextField(null=True, blank=True)
-    ts = models.GeneratedField(
-        expression=(
-            SearchVector('name',   weight='A', config='simple') +
-            SearchVector('content', weight='B', config='english')
-        ),
-        output_field=SearchVectorField(),
-        db_persist=True,
-        editable=False,
-        null=True,
-    )
+    ts = SearchVectorField(null=True)
 
     class Meta:
         """Class defining metadata for the File model."""

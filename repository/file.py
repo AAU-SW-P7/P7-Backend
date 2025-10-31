@@ -1,13 +1,11 @@
 """Repository functions for handling File model operations."""
 
 from django.db import transaction
-from django.db.models import Value, Q
+from django.db.models import Value, Q, F
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
-
-
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -20,11 +18,8 @@ def save_file(
     size,
     created_at,
     modified_at,
-    last_indexed,
+    indexed_at,
     snippet,
-    content,
-    *,
-    ts_config='simple'  # allow overriding the FTS config if needed
 ):
     """Saves or updates file metadata and content to the database.
 
@@ -39,9 +34,8 @@ def save_file(
         size: Size of the file in bytes.
         createdAt: Timestamp when the file was created.
         modifiedAt: Timestamp when the file was last modified.
-        lastIndexed: Timestamp when the file was last indexed.
+        indexedAt: Timestamp when the file was last indexed.
         snippet: Text snippet or preview of the file content.
-        content: Full text content of the file.
         """
 
     with transaction.atomic():
@@ -55,30 +49,30 @@ def save_file(
         "size": size,
         "createdAt": created_at,
         "modifiedAt": modified_at,
-        "lastIndexed": last_indexed,
+        "indexedAt": indexed_at,
         "snippet": snippet,
-        "content": content,
         }
         file, _ = File.objects.update_or_create(
             serviceId=service_id,
             serviceFileId=service_file_id,
             defaults=defaults,
         )
-
-        # 2) Compute & store the tsvector (use Coalesce to avoid NULLs)
-        File.objects.filter(pk=file.pk).update(
-            ts=(
-                SearchVector(Coalesce("name", Value("")), weight="A", config=ts_config)
-                + SearchVector(
-                    Coalesce("content", Value("")), weight="B", config=ts_config
-                )
-            )
-        )
-
-        # 3) Load the computed ts on the instance
-        file.refresh_from_db(fields=["ts"])
+        
+        update_tsvector(file, name, None)
 
     return file
+
+def update_tsvector(file, name: str, content: str | None):
+    """Update the tsvector field for full-text search on the given file instance."""
+    
+    File.objects.filter(pk=file.pk).update(
+            ts=(
+                SearchVector(Value(name), weight="A", config='simple') +
+                SearchVector(Value(content or ""), weight="B", config='english')
+            )
+        )
+        
+    file.refresh_from_db(fields=["ts"])
 
 def query_files_by_name(name_query, user_id):
     """Query for files by name containing any of the given tokens and user id.

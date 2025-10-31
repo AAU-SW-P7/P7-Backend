@@ -1,6 +1,6 @@
 """Test settings for the Django application."""
 import os
-
+SECRET_KEY = "test-secret-key"
 INSTALLED_APPS = [
     "repository",
 ]

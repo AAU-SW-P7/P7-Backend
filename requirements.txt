@@ -16,3 +16,4 @@ pytest-check
 pylint
 pylint-django
 hypothesis
+django-pgcrypto
