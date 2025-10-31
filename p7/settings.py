@@ -29,12 +29,12 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
-    #'django.contrib.admin',
-    #'django.contrib.auth', -Creates default tables which we do not want
-    #'django.contrib.contenttypes',
-    #'django.contrib.sessions',
-    #'django.contrib.messages',
-    #'django.contrib.staticfiles',
+    'django.contrib.admin',
+    'django.contrib.auth',  # Creates default tables which we do not want
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
     "corsheaders",
     # "repository.apps.RepositoryConfig",
     "repository",
@@ -43,11 +43,11 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    #'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    #'django.contrib.auth.middleware.AuthenticationMiddleware',
-    #'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "corsheaders.middleware.CorsMiddleware",
 ]
@@ -101,8 +101,8 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
-                #'django.contrib.auth.context_processors.auth',
-                #'django.contrib.messages.context_processors.messages',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },

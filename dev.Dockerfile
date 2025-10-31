@@ -29,4 +29,4 @@ COPY . /app/
 EXPOSE 8000
  
 # Run Django’s development server
-CMD ["sh", "-c", "python manage.py makemigrations repository && python manage.py migrate repository --noinput && python manage.py runserver 0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py makemigrations repository && python manage.py migrate repository --noinput && python manage.py qcluster && python manage.py runserver 0.0.0.0:8000"]

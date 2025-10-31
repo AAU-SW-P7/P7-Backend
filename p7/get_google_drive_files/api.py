@@ -2,6 +2,7 @@
 import os
 from ninja import Router, Header
 from django.http import JsonResponse
+from django_q.tasks import async_task
 # Google libs
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -34,11 +35,15 @@ def fetch_google_drive_files(
     if isinstance(user, JsonResponse):
         return user
 
-    access_token, _, refresh_token = get_tokens(user_id, "google")
-    service = get_service(user_id, "google")
+    async_task(process_drive_files, user_id)
+    return JsonResponse("status: processing", status=202)
+    
 
+def process_drive_files(user_id):
+    # Build credentials object. token may be stale; refresh() will update it.
     try:
-        # Build credentials object. token may be stale; refresh() will update it.
+        access_token, _, refresh_token = get_tokens(user_id, "google")
+        service = get_service(user_id, "google")
         creds = Credentials(
             token=access_token,
             refresh_token=refresh_token,
@@ -73,11 +78,10 @@ def fetch_google_drive_files(
                 'application/vnd.google-apps.folder',
                 'application/vnd.google-apps.shortcut',
                 'application/vnd.google-apps.drive-sdk',
-            ): # https://developers.google.com/workspace/drive/api/guides/mime-types
+            ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
 
             update_or_create_file(file, service, file_by_id)
 
-        return JsonResponse(files, safe=False)
-    except (ValueError,TypeError,KeyError, RuntimeError) as e:
+    except (ValueError, TypeError, KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
