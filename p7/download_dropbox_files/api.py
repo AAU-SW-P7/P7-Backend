@@ -45,10 +45,12 @@ def download_dropbox_files(
             refresh_token,
         )
         
-        download_recursive_files(
+        files = download_recursive_files(
             service,
             access_token,
         )
+        
+        return JsonResponse(files, safe=False)
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
         return response
@@ -76,8 +78,9 @@ def download_recursive_files(
 
     dropbox_files = fetch_downloadable_files(service)
     if not dropbox_files:
-        return {"saved": [], "note": "no files found in database"}
+        return False # do error handling here
 
+    files = []
     for dropbox_file in dropbox_files:
         response = requests.post(
             "https://content.dropboxapi.com/2/files/download",
@@ -101,8 +104,11 @@ def download_recursive_files(
                     dropbox_result.get("name"),
                     dropbox_content,
                 )
+                
+                dropbox_result['content'] = dropbox_content
+                files.append(dropbox_result)
             except Exception as e:
                 # don't fail the whole loop for a tsvector error; optionally log
-                pass
+                return False # do error handling here
 
-    return True
+    return files
