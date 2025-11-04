@@ -68,7 +68,6 @@ def assert_save_file_success(client, user_id, service_name):
                 modifiedAt=file.get("server_modified"),
                 indexedAt=None,
                 snippet=None,
-                content=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -102,7 +101,6 @@ def assert_save_file_success(client, user_id, service_name):
                 modifiedAt=file.get("modifiedTime"),
                 indexedAt=None,
                 snippet=None,
-                content=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -132,7 +130,6 @@ def assert_save_file_success(client, user_id, service_name):
                 modifiedAt=file.get("lastModifiedDateTime"),
                 indexedAt=None,
                 snippet=None,
-                content=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -218,7 +215,6 @@ def assert_save_file_missing_user_id(client):
             {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
         ]
     }), True)
-
 
 def check_tokens_against_ts_vector(file: File):
     """

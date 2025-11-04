@@ -31,7 +31,7 @@ def assert_download_file_success(client, user_id, service_name):
     )
 
     data = response.json()
-
+    
     check.equal(response.status_code, 200)
     check.is_instance(data, list)
 
@@ -60,6 +60,7 @@ def assert_download_file_success(client, user_id, service_name):
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
+            check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "google":
             # Skip non-files (folders, shortcuts, etc)
@@ -201,3 +202,50 @@ def assert_download_file_missing_user_id(client):
             {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
         ]
     }), True)
+
+def check_tokens_against_ts_vector(file: File, content: str):
+    """
+    Checks tokenized file name and content against the tsvector stored in the database
+    """
+    # Get produced ts vector for the file
+    ts = file.get().ts
+    file_name = file.get().name
+
+    # Tokenize & lexize file name
+    name_tokens = ts_tokenize_simple(file_name)
+
+    # Tokenize & lexize content (if any)
+    content_lexemes = []
+    if content:
+        content_tokens = ts_tokenize_english(content)
+        content_lexemes = [lex for token in content_tokens for lex in ts_lexize(token)]
+
+    # Combine and dedupe lexemes from name and content
+    all_lexemes = set(name_tokens + content_lexemes)
+
+    # Ensure each lexeme appears in the stored tsvector
+    for lex in all_lexemes:
+        check.equal(lex in ts, True)
+
+def ts_tokenize_simple(text):
+    "Tokenizes a string using PostgreSQL's tsvector parser"
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT unnest(tsvector_to_array(to_tsvector('simple', %s)))", [text]
+        )
+        return [row[0] for row in cursor.fetchall()]
+
+def ts_tokenize_english(text):
+    "Tokenizes a string using PostgreSQL's tsvector parser"
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT unnest(tsvector_to_array(to_tsvector('english', %s)))", [text]
+        )
+        return [row[0] for row in cursor.fetchall()]
+
+def ts_lexize(token):
+    "Lexizes (stems) a token"
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT ts_lexize('english_stem', %s);", [token])
+        result = cursor.fetchone()
+        return result[0] if result and result[0] is not None else []
