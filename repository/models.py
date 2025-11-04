@@ -2,7 +2,7 @@
 
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
-from django.contrib.postgres.search import SearchVector, SearchVectorField
+from django.contrib.postgres.search import SearchVectorField
 
 from repository.managers import FileManager
 
@@ -78,19 +78,10 @@ class File(models.Model):
     size = models.BigIntegerField()
     createdAt = models.DateTimeField()
     modifiedAt = models.DateTimeField()
-    lastIndexed = models.DateTimeField(null=True, blank=True)
+    indexedAt = models.DateTimeField(null=True, blank=True)
     snippet = models.TextField(null=True, blank=True)
     content = models.TextField(null=True, blank=True)
-    ts = models.GeneratedField(
-        expression=(
-            SearchVector('name',   weight='A', config='simple') +
-            SearchVector('content', weight='B', config='english')
-        ),
-        output_field=SearchVectorField(),
-        db_persist=True,
-        editable=False,
-        null=True,
-    )
+    ts = SearchVectorField(null=True)
 
     class Meta:
         """Class defining metadata for the File model."""
@@ -105,91 +96,3 @@ class File(models.Model):
         ]
         # GIN index over a weighted SearchVector expression
         indexes = [GinIndex(name="file_search_gin", fields=["ts"])]
-
-
-class Term(models.Model):
-    """A class representing a unique term used in the inverted index.
-
-    params:
-        models (django.db): Base class for all models in Django.
-    """
-
-    # Natural key used by FKs in other tables
-    termName = models.TextField(unique=True)
-
-    class Meta:
-        """Class defining metadata for the Term model."""
-
-        app_label = "repository"
-        db_table = '"term"'
-
-
-class InvertedIndex(models.Model):
-    """A class representing the inverted index for terms and their document frequencies.
-
-    params:
-        models (django.db): Base class for all models in Django.
-    """
-
-    # Per-user term stats
-    userId = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        db_column="userId",
-        related_name="inverted_terms",
-    )
-    termName = models.ForeignKey(
-        Term,
-        to_field="termName",  # reference Term.termName (unique field)
-        on_delete=models.CASCADE,
-        db_column="termName",
-        related_name="user_inverted_rows",
-    )
-    documentFrequency = models.BigIntegerField()
-
-    class Meta:
-        """Class defining metadata for the InvertedIndex model."""
-
-        app_label = "repository"
-        db_table = '"invertedindex"'
-        constraints = [
-            models.UniqueConstraint(
-                fields=["userId", "termName"],
-                name="uq_inv_user_term_name",
-            ),
-        ]
-
-
-class Posting(models.Model):
-    """A class representing a posting in the inverted index, linking terms to files.
-
-    params:
-        models (django.db): Base class for all models in Django.
-    """
-
-    termName = models.ForeignKey(
-        Term,
-        to_field="termName",  # reference Term.termName (unique field)
-        on_delete=models.CASCADE,
-        db_column="termName",
-        related_name="postings",
-    )
-    fileId = models.ForeignKey(
-        File,
-        on_delete=models.CASCADE,
-        db_column="fileId",
-        related_name="postings",
-    )
-    termFrequency = models.BigIntegerField()
-
-    class Meta:
-        """Class defining metadata for the Posting model."""
-
-        app_label = "repository"
-        db_table = '"posting"'
-        constraints = [
-            models.UniqueConstraint(
-                fields=["termName", "fileId"],
-                name="uq_term_name_file_id",
-            ),
-        ]

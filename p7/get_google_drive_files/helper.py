@@ -31,7 +31,6 @@ def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
         file["modifiedTime"],
         None,
         None,
-        None,
     )
 
 def fetch_recursive_files(
