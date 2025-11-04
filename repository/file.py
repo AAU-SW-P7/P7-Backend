@@ -58,6 +58,15 @@ def save_file(
             defaults=defaults,
         )
         
+        # Remove extensions tag from name field
+        extension_list = ["pdf", "docx","gdocx", "doc", "txt", "md", "xlsx", "xls", "pptx", "ppt", "csv", "rtf", "odt"]
+        for ext in extension_list:
+            if file.name.lower().endswith('.' + ext):
+                name = file.name[:-(len(ext) + 1)]
+                file.extension = '.' + ext
+                file.save(update_fields=["extension"])
+                break
+                
         update_tsvector(file, name, None)
 
     return file
@@ -102,7 +111,8 @@ def query_files_by_name(name_query, user_id):
 
     query_text = " ".join(name_query)
     results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
-
+    for f in results:
+        print(f.rank, f.name)
     return results
 
 def get_files_by_service(service):

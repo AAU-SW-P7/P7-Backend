@@ -1,5 +1,7 @@
 """" Manager for ranking files based on query matches. """
 
+import json
+from pathlib import Path
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db.models import F, Value, FloatField
@@ -15,9 +17,21 @@ class FileQuerySet(models.QuerySet):
         tokens = query_text.split()
         token_count = len(tokens)
 
-        # Search vector on the 'name' field
-        query_text_search_vector = SearchVector("name", config="simple")
 
+        # Search vector on the ts vector
+        query_text_search_vector = F("ts")
+        
+        # Evaluate the expression per row and capture it as text
+        debug_rows = list(
+            self.annotate(tsv=query_text_search_vector)
+                .values("id", "name", "tsv")[:50]   # limit to keep it small
+        )
+
+        Path("query_text_search_vector.json").write_text(
+            json.dumps(debug_rows, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        
         # Search type phrase favors exact phrase matches
         # Search type plain favors individual token matches
         phrase_q = SearchQuery(query_text, search_type="phrase", config="simple")
@@ -31,7 +45,7 @@ class FileQuerySet(models.QuerySet):
         # Annotate how many tokens appear in the name
         token_match_expr = sum(
             models.Case(
-                models.When(name__icontains=t, then=Value(1)),
+                models.When(ts__icontains=t, then=Value(1)),
                 default=Value(0),
                 output_field=models.IntegerField(),
             )
@@ -47,16 +61,15 @@ class FileQuerySet(models.QuerySet):
         return (
             query_set
             .annotate(
-                search=query_text_search_vector,
-                phrase_rank=SearchRank(query_text_search_vector, phrase_q),
-                plain_rank=SearchRank(query_text_search_vector, plain_q),
+                phrase_rank=SearchRank(F("ts"), phrase_q),
+                plain_rank=SearchRank(F("ts"), plain_q),
                 matched_tokens=token_match_expr,
             )
             .annotate(
                 token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
                 exact_phrase_match=models.Case(
-                        models.When(name__icontains=query_text,
-                                    then=Value(1.0)/models.functions.Length("name")),
+                        models.When(ts__icontains=query_text,
+                                    then=Value(1.0)/models.functions.Length("ts")),
                     default=Value(0.0),
                     output_field=FloatField(),
                 ),
@@ -66,9 +79,9 @@ class FileQuerySet(models.QuerySet):
                     # heavier weight for phrase matches
                     (F("phrase_rank") * 3.0 + F("plain_rank") * 1.0)
                     + (F("token_ratio") * 1.0)
-                    + (F("exact_phrase_match") * 4)  # large boost for exact ordered phrase
+                    + (F("exact_phrase_match") * 0)  # large boost for exact ordered phrase
                 )
-                / models.functions.Greatest(models.functions.Length("name"), Value(1))
+                / models.functions.Greatest(models.functions.Length("ts"), Value(1))
             )
             .filter(rank__gt=0.0)
             .order_by("-rank")

@@ -26,7 +26,7 @@ from helpers.search_filename_rank import (
     assert_partial_token_match
 )
 from repository.models import File, Service, User
-
+from django.contrib.postgres.search import SearchVector, Value
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 
@@ -57,6 +57,7 @@ def test_data_fixture():
         size=1024,
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
+        ts=SearchVector(Value("Token1 Token2 Token3 Token4 Token5.docx"), weight="A", config='simple')
     )
     file2 = File.objects.create(
         serviceId=service1,
@@ -69,6 +70,7 @@ def test_data_fixture():
         size=1024,
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
+        ts=SearchVector(Value("Token1 Token2.docx"), weight="A", config='simple')
     )
     file3 = File.objects.create(
         serviceId=service1,
@@ -81,6 +83,7 @@ def test_data_fixture():
         size=1024,
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
+        ts=SearchVector(Value("Token2 Token1.docx"), weight="A", config='simple')
     )
     return {
         "user1": user1,
@@ -89,6 +92,7 @@ def test_data_fixture():
         "file2": file2,
         "file3": file3,
     }
+
 
 def test_exact_match(test_data):
     """Test exact match ranking higher than partial matches."""

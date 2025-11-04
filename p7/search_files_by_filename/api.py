@@ -101,7 +101,6 @@ def search_files_by_filename(
                 "modifiedAt": file.modifiedAt,
                 "snippet": file.snippet,
                 "serviceName": service_name_cache.get(service_id),
-                "tsvector": file.ts,
             }
         )
 
