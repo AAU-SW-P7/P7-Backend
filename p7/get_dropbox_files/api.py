@@ -30,7 +30,7 @@ def fetch_dropbox_files(
     user = get_user(user_id)
     if isinstance(user, JsonResponse):
         return user
-    async_task(process_dropbox_files, user_id, queue="high")
+    async_task(process_dropbox_files, user_id, cluster="high", group=f"Dropbox-{user_id}")
 
     return JsonResponse({"status": "processing"}, status=202)
 

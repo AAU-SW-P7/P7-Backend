@@ -138,7 +138,7 @@ Q_CLUSTER = {
     'cpu_affinity': 1,
     'label': 'Django Q2',
     'orm': 'default',
-    'queues':{
+    'ALT_CLUSTERS':{
         'low': {
             'workers': ceil(multiprocessing.cpu_count()*0.25),
         },

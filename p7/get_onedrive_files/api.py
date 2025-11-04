@@ -36,7 +36,7 @@ def fetch_onedrive_files(
     if isinstance(user, JsonResponse):
         return user
     
-    async_task(process_onedrive_files, user_id, queue="high")
+    async_task(process_onedrive_files, user_id, cluster="high", group=f"Onedrive-{user_id}")
     return JsonResponse({"status": "processing"}, status=202)
 
 def process_onedrive_files(user_id):
