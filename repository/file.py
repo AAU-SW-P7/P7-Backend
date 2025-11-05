@@ -156,7 +156,7 @@ def query_files_by_name(name_query, user_id):
         QuerySet of File objects matching the search criteria.
     """
     try:
-        User.objects.get(pk=user_id)  # Ensure user exists
+        user = User.objects.get(pk=user_id)  # Ensure user exists
     except User.DoesNotExist:
         return JsonResponse(
             {"error": f"Service ({user_id}) not found for user"}, status=404
@@ -173,7 +173,7 @@ def query_files_by_name(name_query, user_id):
     q &= Q(serviceId__userId=user_id)
 
     query_text = " ".join(name_query)
-    results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
+    results = File.objects.ranking_based_on_file_name(query_text, base_filter=q, user_salt=user.salt)
     for f in results:
         print(f.rank, f.name)
     return results

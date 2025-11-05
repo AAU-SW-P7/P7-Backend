@@ -1,23 +1,34 @@
 """" Manager for ranking files based on query matches. """
 
+import hashlib
 import json
 from pathlib import Path
+import re
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db.models import F, Value, FloatField
 
+
+        
+def hash_query_tokens(query: str, salt: str):
+    """Tokenize query and hash tokens with the given salt."""
+    tokens = re.findall(r'\w+', query.lower())
+    hashed = [hashlib.sha256((salt + t).encode('utf-8')).hexdigest() for t in tokens]
+    return hashed
+
 class FileQuerySet(models.QuerySet):
     """Custom QuerySet for File model with ranking capabilities."""
-    def ranking_based_on_file_name(self, query_text: str, base_filter: models.Q | None = None):
+    def ranking_based_on_file_name(self, query_text: str, base_filter: models.Q | None = None, user_salt: str = None):
         """
         Apply ranking favoring phrase matches, and token coverage.
         - query_text: the original user query ("file name with spaces")
         - base_filter: optional Q object with prefilter logic
         """
-        tokens = query_text.split()
-        token_count = len(tokens)
 
 
+        hashed_tokens = hash_query_tokens(query_text, user_salt)
+        token_count = len(hashed_tokens)
+        print(f"Ranking query tokens (count={token_count}): {hashed_tokens}")
         # Search vector on the ts vector
         query_text_search_vector = F("ts")
         
@@ -49,7 +60,7 @@ class FileQuerySet(models.QuerySet):
                 default=Value(0),
                 output_field=models.IntegerField(),
             )
-            for t in tokens
+            for t in hashed_tokens
         )
 
         # Final ranking combines:
