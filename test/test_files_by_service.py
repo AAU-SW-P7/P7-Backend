@@ -23,9 +23,7 @@ from ninja.testing import TestClient
 from helpers.create_user import (
     assert_create_user_success
 )
-from helpers.create_service import (
-    assert_create_service_success
-)
+from helpers.sync_files import create_service
 
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
@@ -66,22 +64,7 @@ def test_get_files_by_service_success(
     for user_id in range(1, 3+1):
         # Create a service for each provider for each user
         for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
-            payload = {
-                "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
-                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
-                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}"),
-                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}"),
-                "accessTokenExpiration": os.getenv(
-                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
-                ),
-                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}"),
-                "name": os.getenv(f"TEST_USER_{provider}_NAME_{user_id}"),
-                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}"),
-                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}"),
-                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
-            }
-
-            assert_create_service_success(service_client, payload, service_count)
+            create_service(provider, user_id)
 
             service_count += 1
 

@@ -36,8 +36,8 @@ def fetch_onedrive_files(
     if isinstance(user, JsonResponse):
         return user
 
-    async_task(process_onedrive_files, user_id, cluster="high", group=f"Onedrive-{user_id}")
-    return JsonResponse({"status": "processing"}, status=202)
+    task_id = async_task(process_onedrive_files, user_id, cluster="high", group=f"Onedrive-{user_id}")
+    return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
 
 def process_onedrive_files(user_id):
     """Process and sync OneDrive files for a given user."""
@@ -64,6 +64,7 @@ def process_onedrive_files(user_id):
                 continue
 
             update_or_create_file(file, service)
+        return files
 
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)

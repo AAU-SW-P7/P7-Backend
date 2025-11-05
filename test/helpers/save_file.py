@@ -3,6 +3,7 @@
 import os
 import pytest_check as check
 from django.db import connection
+from django_q.tasks import result
 from p7.helpers import smart_extension
 from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
@@ -32,9 +33,10 @@ def assert_save_file_success(client, user_id, service_name):
     )
 
     data = response.json()
+    data = result(task_id=response.json().get("task_id")) if response.status_code == 202 else data   
 
     check.equal(response.status_code, 202)
-    check.is_instance(data, dict)
+    check.is_instance(data, list)
 
     for file in data:
         check.is_instance(file, dict)

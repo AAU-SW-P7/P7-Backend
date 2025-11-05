@@ -35,9 +35,8 @@ def fetch_google_drive_files(
     if isinstance(user, JsonResponse):
         return user
 
-    async_task(process_google_drive_files, user_id, cluster="high", group=f"Google-Drive-{user_id}")
-    return JsonResponse({"status": "processing"}, status=202)
-    
+    task_id = async_task(process_google_drive_files, user_id, cluster="high", group=f"Google-Drive-{user_id}")
+    return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
 
 def process_google_drive_files(user_id):
     # Build credentials object. token may be stale; refresh() will update it.
@@ -82,6 +81,7 @@ def process_google_drive_files(user_id):
                 continue
 
             update_or_create_file(file, service, file_by_id)
+        return files
 
     except (ValueError, TypeError, KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)

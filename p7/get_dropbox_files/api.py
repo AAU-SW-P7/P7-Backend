@@ -30,9 +30,9 @@ def fetch_dropbox_files(
     user = get_user(user_id)
     if isinstance(user, JsonResponse):
         return user
-    async_task(process_dropbox_files, user_id, cluster="high", group=f"Dropbox-{user_id}")
+    task_id = async_task(process_dropbox_files, user_id, cluster="high", group=f"Dropbox-{user_id}")
 
-    return JsonResponse({"status": "processing"}, status=202)
+    return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
 
 def process_dropbox_files(user_id):
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
@@ -58,6 +58,7 @@ def process_dropbox_files(user_id):
                 continue
 
             update_or_create_file(file, service)
+        return files
 
     except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
         response = JsonResponse({"error": {str(e)}}, status=500)
