@@ -3,6 +3,7 @@ import os
 import sys
 from pathlib import Path
 
+
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
 sys.path.insert(0, str(repo_backend))
@@ -13,7 +14,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
 import django
 django.setup()
-from django.utils import timezone
+from datetime import datetime, timezone
 from django.http import JsonResponse
 
 import pytest
@@ -28,8 +29,10 @@ from helpers.create_service import (
 
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
-from repository.service import get_service
+from repository.service import get_service, save_service
 from repository.file import get_files_by_service
+from repository.user import get_user
+
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 
@@ -83,7 +86,7 @@ def test_get_files_by_service_success(
             service_count += 1
 
     # Save files for users
-    now = timezone.now()
+    now = datetime.now(timezone.utc)
     files_payload = []
     file_count = 18
     service_count = 9  # 3 users * 3 services each
@@ -137,25 +140,35 @@ def test_get_files_by_service_no_files(
     # Create a user
     user_id = 4
     assert_create_user_success(user_client, user_id)
-
-    # Create a service for the user
+    user = get_user(user_id)
+    # # Create a service for the user
     payload = {
-        "userId": user_id,
-        "oauthType": "Test 4",
-        "oauthToken": "Test 4",
-        "accessToken": "Test 4",
-        "accessTokenExpiration": "2025-10-21 09:26:06+00",
-        "refreshToken": "Test 4",
+        "user_id": user,
+        "oauth_type": "Test 4",
+        "oauth_token": "Test 4",
+        "access_token": "Test 4",
+        "access_token_expiration": "2025-10-21 09:26:06+00",
+        "refresh_token": "Test 4",
         "name": "dropbox",
-        "accountId": "Test 4",
+        "account_id": "Test 4",
         "email": "Test 4",
-        "scopeName": "Test 4",
+        "scope_name": "Test 4",
     }
-
-    service_client.post(
-        "/",
-        json=payload, headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
+    
+    save_service(
+        user_id=user,
+        oauth_type=payload["oauth_type"],
+        oauth_token=payload["oauth_token"],
+        access_token=payload["access_token"],
+        access_token_expiration=payload["access_token_expiration"],
+        refresh_token=payload["refresh_token"],
+        name=payload["name"],
+        account_id=payload["account_id"],
+        email=payload["email"],
+        scope_name=payload["scope_name"],
+        indexed_at=datetime.now(timezone.utc),
     )
+    
 
     service = get_service(user_id, "dropbox")
     # Ensure no files exist for the service

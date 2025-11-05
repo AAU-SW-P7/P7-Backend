@@ -131,10 +131,10 @@ def get_new_access_token(
                 timeout=10
             )
         except requests.RequestException:
-            return JsonResponse({"error": "Refreshing access token failed"}, status=400)
+            raise JsonResponse({"error": "Refreshing access token failed"}, status=400)
 
         if token_resp.status_code != 200:
-            return JsonResponse({"error": "Token response not 200"}, status=token_resp.status_code)
+            raise JsonResponse({"error": "Token response not 200"}, status=token_resp.status_code)
 
         token_json = token_resp.json()
         new_access_token = token_json.get("access_token")
