@@ -11,9 +11,6 @@
 
 //If this pull request is not directly related to a GitHub issue, please elaborate on what has been fixed and why
 
-## Testing
-//Please explain how to allow PR-reviewers and codeowners on how to test your added functionality
-
 ## Checks
 - [ ] Updated / added tests for these changes
 - [ ] Pylint locally passed
