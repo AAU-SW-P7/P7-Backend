@@ -3,12 +3,14 @@ import os
 import pytest_check as check
 from pathlib import Path
 import json
+from datetime import datetime, timezone
 
 from django.http import JsonResponse
 from p7.sync_files.service_sync_functions import (
     sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
     )
-from helpers.create_service import (assert_create_service_success)
+from repository.user import get_user
+from repository.service import save_service
 
 def assert_sync_files_invalid_auth(client, user_id):
     """Helper function to assert syncing with invalid auth.
@@ -107,25 +109,38 @@ def assert_sync_files_function_missing_user_id(provider):
     check.equal(response is not None, True)
     check.equal(isinstance(response, JsonResponse), True)
 
-def create_service(service_client, provider, user_id, service_count):
+def create_service(provider, user_id):
     """Helper function to create a service"""
-    payload = {
-                "userId": os.getenv(f"TEST_USER_{provider}_ID_{user_id}"),
-                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}"),
-                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}"),
-                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}"),
-                "accessTokenExpiration": os.getenv(
-                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
-                ),
-                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}"),
-                "name": os.getenv(f"TEST_USER_{provider}_NAME_{user_id}"),
-                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}"),
-                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}"),
-                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
-            }
-    assert_create_service_success(service_client, payload, service_count)
+    user_id = os.getenv(f"TEST_USER_{provider}_ID_{user_id}")
+    oauth_type = os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{user_id}")
+    oauth_token = os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{user_id}")
+    access_token = os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{user_id}")
+    access_token_expiration = os.getenv(
+        f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{user_id}"
+    )
+    refresh_token = os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{user_id}")
+    name = os.getenv(f"TEST_USER_{provider}_NAME_{user_id}")
+    account_id = os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{user_id}")
+    email = os.getenv(f"TEST_USER_{provider}_EMAIL_{user_id}")
+    scope_name = os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}")
 
-def read_json_file(filePath):
+    # Save service and link to user
+    user = get_user(user_id)
+    save_service(
+        user,
+        oauth_type,
+        oauth_token,
+        access_token,
+        access_token_expiration,
+        refresh_token,
+        name,
+        account_id,
+        email,
+        scope_name,
+        datetime.now(timezone.utc),
+    )
+
+def read_json_file(file_path):
     """
     Read and parse a list of JSON objects from a file.
 
@@ -136,7 +151,7 @@ def read_json_file(filePath):
         list: List of JSON objects, or JsonResponse error if file cannot be loaded.
     """
     try:
-        with open(filePath, 'r') as f: 
+        with open(file_path, 'r') as f:
             text = f.read()
         return json.loads(text)
     except (FileNotFoundError, json.JSONDecodeError):

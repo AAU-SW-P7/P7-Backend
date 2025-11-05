@@ -39,17 +39,6 @@ def assert_save_file_success(client, user_id, service_name):
     for file in data:
         check.is_instance(file, dict)
         if service_name == "dropbox":
-            # check.is_instance(file.get('.tag'), str)
-            # check.is_instance(file.get('name'), str)
-            # check.is_instance(file.get('path_display'), str)
-            # check.is_instance(file.get('id'), str)
-            # check.is_instance(file.get('client_modified'), str)
-            # check.is_instance(file.get('server_modified'), str)
-            # check.is_instance(file.get('size'), int)
-            # check.is_instance(file.get('is_downloadable'), bool)
-
-            # check.equal(file.get('.etag'), 'file')
-
             extension = smart_extension("dropbox", file["name"], file.get("mime_type"))
             path = file["path_display"]
             link = "https://www.dropbox.com/preview" + path

@@ -36,7 +36,7 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
         print(f"Exception during GET request: {e}")
         raise
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), list), True)
 
@@ -214,7 +214,7 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
         print(f"Exception during GET request: {e}")
         raise
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), list), True)
 

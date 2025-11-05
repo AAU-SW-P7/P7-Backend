@@ -23,7 +23,6 @@ from helpers.sync_files import (create_service, read_json_file)
 
 from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router
-from p7.create_service.api import create_service_router
 from p7.get_dropbox_files.helper import (update_or_create_file as update_or_create_file_dropbox)
 from p7.get_google_drive_files.helper import (
     update_or_create_file as update_or_create_file_google_drive
@@ -45,14 +44,6 @@ def create_user_client():
      """
     return TestClient(create_user_router)
 
-@pytest.fixture(name="service_client", scope='module', autouse=True)
-def create_service_client():
-    """Fixture for creating a test client for the create_service endpoint.
-    Returns:
-        TestClient: A test client for the create_service endpoint.
-    """
-    return TestClient(create_service_router)
-
 @pytest.fixture(name="sync_files_client_fixture", scope='module', autouse=True)
 def sync_file_client():
     """Fixture for creating a test client for the save_file endpoint.
@@ -69,14 +60,13 @@ def test_create_user_success(user_client):
     assert_create_user_success(user_client, 1)
 
 def test_sync_files_all(
-    service_client: TestClient,
     sync_files_client_fixture: TestClient,
     ):
     """Test syncing files for all services for a user."""
     user_id = 1
-    create_service(service_client, "DROPBOX", user_id, 0)
-    create_service(service_client, "GOOGLE", user_id, 1)
-    create_service(service_client, "ONEDRIVE", user_id, 2)
+    create_service("DROPBOX", user_id)
+    create_service("GOOGLE", user_id)
+    create_service("ONEDRIVE", user_id)
 
     # Setting a specific last index time, in order to ensure that everything looks new/updated
     index_time = "2025-10-22T08:42:44+00:00"
@@ -126,7 +116,7 @@ def test_sync_files_all(
                 headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
                 )
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
 
     dropbox_files = get_files_by_service(service_dropbox)
     google_drive_files = get_files_by_service(service_google_drive)

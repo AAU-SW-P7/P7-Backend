@@ -11,9 +11,6 @@ from p7.get_google_drive_files.api import process_google_drive_files
 from p7.get_dropbox_files.api import process_dropbox_files
 from p7.get_onedrive_files.api import process_onedrive_files
 from django_q.tasks import async_task, schedule
-from p7.sync_files.service_sync_functions import (
-    sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
-)
 
 create_service_router = Router()
 
@@ -84,7 +81,6 @@ def create_service(
                 user_id=cleaned["userId"],
                 cluster="low",
             )
-            pass
         case "onedrive":
             group=f"Onedrive-{cleaned["userId"]}"
             # Could trigger OneDrive file fetch here if desired
@@ -97,10 +93,9 @@ def create_service(
                 user_id=cleaned["userId"],
                 cluster="low",
             )
-            pass
         case _:
             raise NotImplementedError(f"Service fetch not implemented for {cleaned['name']}")
-            
+
     return {"id": service.id, "name": service.name}
 
 
