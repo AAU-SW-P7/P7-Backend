@@ -35,11 +35,12 @@ def fetch_onedrive_files(
     user = get_user(user_id)
     if isinstance(user, JsonResponse):
         return user
-    
+
     async_task(process_onedrive_files, user_id, cluster="high", group=f"Onedrive-{user_id}")
     return JsonResponse({"status": "processing"}, status=202)
 
 def process_onedrive_files(user_id):
+    """Process and sync OneDrive files for a given user."""
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "onedrive")
     service = get_service(user_id, "onedrive")
 
