@@ -1,11 +1,13 @@
 """Repository functions for handling File model operations."""
 
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.models import Value, Q, F
 from django.db.models.functions import Coalesce
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
+import hashlib
+import re
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -71,17 +73,78 @@ def save_file(
 
     return file
 
-def update_tsvector(file, name: str, content: str | None):
-    """Update the tsvector field for full-text search on the given file instance."""
-    
-    File.objects.filter(pk=file.pk).update(
-            ts=(
-                SearchVector(Value(name), weight="A", config='simple') +
-                SearchVector(Value(content or ""), weight="B", config='english')
+def get_raw_tsvector(text: str, config: str = "simple", weight: str | None = None):
+    """
+    Return PostgreSQL's weighted tsvector (with A/B weights).
+    If no weight is provided, returns a normal tsvector.
+    """
+    if not text:
+        return ""
+    with connection.cursor() as cursor:
+        if weight:
+            cursor.execute(
+                "SELECT setweight(to_tsvector(%s, %s), %s)", [config, text, weight]
             )
+        else:
+            cursor.execute("SELECT to_tsvector(%s, %s)", [config, text])
+        result = cursor.fetchone()
+    return result[0] if result else ""
+
+def update_tsvector(file, name: str, content: str | None):
+    """Generate a tsvector from name + content and store salted-hashed tokens."""
+    user = file.serviceId.userId
+    salt = user.salt
+
+    # 1️⃣ Generate both vectors normally via PostgreSQL
+    raw_name_vec = get_raw_tsvector(name, "simple", "A")
+    raw_content_vec = get_raw_tsvector(content or "", "english", "B")
+
+    # 2️⃣ Hash tokens in both, preserving weights/positions
+    hashed_name_vec = hash_tsvector(raw_name_vec, salt)
+    hashed_content_vec = hash_tsvector(raw_content_vec, salt)
+
+    # 3️⃣ Combine vectors — both remain valid TSVECTOR syntax
+    combined_tsvector = f"{hashed_name_vec} {hashed_content_vec}".strip()
+
+    # 4️⃣ Update DB directly using tsvector literal
+    with connection.cursor() as cursor:
+        cursor.execute(
+            'UPDATE "file" SET ts = %s::tsvector WHERE id = %s',
+            [combined_tsvector, file.id],
         )
-        
+
     file.refresh_from_db(fields=["ts"])
+
+
+def tokenize_and_hash_with_salt(name: str, salt: str):
+    """Tokenize, alphabetize, and hash each token with the given user salt."""
+    tokens = re.findall(r'\w+', name.lower())
+    tokens.sort()
+
+    hashed_tokens = [
+        hashlib.sha256((salt + token).encode('utf-8')).hexdigest()
+        for token in tokens
+    ]
+    return hashed_tokens
+
+def hash_tsvector(tsvector_str: str, salt: str):
+    """
+    Replace lexemes in a tsvector string with salted hashes,
+    preserving position and weight data (like :3A,21A).
+    """
+    if not tsvector_str:
+        return ""
+
+    pattern = r"'([^']+)'(:[0-9A,]+)"
+    hashed_entries = []
+
+    for match in re.finditer(pattern, tsvector_str):
+        token = match.group(1)
+        positions = match.group(2)
+        hashed_token = hashlib.sha256((salt + token).encode("utf-8")).hexdigest()
+        hashed_entries.append(f"'{hashed_token}'{positions}")
+
+    return " ".join(hashed_entries)
 
 def query_files_by_name(name_query, user_id):
     """Query for files by name containing any of the given tokens and user id.

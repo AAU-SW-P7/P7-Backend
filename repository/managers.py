@@ -67,6 +67,7 @@ class FileQuerySet(models.QuerySet):
             )
             .annotate(
                 token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
+                token_penalty= 1.0 - (F("matched_tokens") / Value(token_count, output_field=FloatField())),
                 exact_phrase_match=models.Case(
                         models.When(ts__icontains=query_text,
                                     then=Value(1.0)/models.functions.Length("ts")),
@@ -75,11 +76,19 @@ class FileQuerySet(models.QuerySet):
                 ),
             )
             .annotate(
+                ordered_bonus=models.Case(
+                    models.When(name__icontains=query_text, then=Value(1.0)),
+                    default=Value(0.0),
+                    output_field=FloatField(),
+                ),
+            )
+            .annotate(
                 rank=(
                     # heavier weight for phrase matches
-                    (F("phrase_rank") * 3.0 + F("plain_rank") * 1.0)
-                    + (F("token_ratio") * 1.0)
-                    + (F("exact_phrase_match") * 0)  # large boost for exact ordered phrase
+                    (F("phrase_rank") + F("plain_rank"))
+                    + (F("token_ratio") * 1.5)
+                    - (F("token_penalty") * (token_count + 3 - F("matched_tokens"))) * 2.5  # small penalty for missing tokens
+                    + F('ordered_bonus') * 2  # large boost for exact ordered phrase
                 )
                 / models.functions.Greatest(models.functions.Length("ts"), Value(1))
             )

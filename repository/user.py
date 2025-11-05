@@ -4,6 +4,7 @@ Repository helpers for user persistence.
 This module provides functions to create and persist User records.
 """
 
+
 from typing import Union
 
 from django.db import IntegrityError
@@ -28,8 +29,7 @@ def get_user(user_id: int) -> Union[User, JsonResponse]:
         return JsonResponse(
             {"error": "Failed to retrieve user", "detail": str(e)}, status=500
         )
-
-
+        
 def save_user() -> Union[User, JsonResponse]:
     """Create and persist a new User.
 
@@ -43,6 +43,8 @@ def save_user() -> Union[User, JsonResponse]:
     """
     try:
         user = User.objects.create()
+        user.generate_salt()
+        user.save()
         return user
     except IntegrityError as exc:
         return JsonResponse(

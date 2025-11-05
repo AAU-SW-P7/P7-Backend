@@ -57,7 +57,7 @@ def test_data_fixture():
         size=1024,
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
-        ts=SearchVector(Value("Token1 Token2 Token3 Token4 Token5.docx"), weight="A", config='simple')
+        ts=SearchVector(Value("Token1 Token2 Token3 Token4 Token5"), weight="A", config='simple')
     )
     file2 = File.objects.create(
         serviceId=service1,
@@ -70,7 +70,7 @@ def test_data_fixture():
         size=1024,
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
-        ts=SearchVector(Value("Token1 Token2.docx"), weight="A", config='simple')
+        ts=SearchVector(Value("Token1 Token2"), weight="A", config='simple')
     )
     file3 = File.objects.create(
         serviceId=service1,
@@ -83,7 +83,7 @@ def test_data_fixture():
         size=1024,
         createdAt=datetime.now(),
         modifiedAt=datetime.now(),
-        ts=SearchVector(Value("Token2 Token1.docx"), weight="A", config='simple')
+        ts=SearchVector(Value("Token2 Token1"), weight="A", config='simple')
     )
     return {
         "user1": user1,
