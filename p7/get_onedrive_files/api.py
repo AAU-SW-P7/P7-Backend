@@ -44,7 +44,14 @@ def process_onedrive_files(user_id):
     service = get_service(user_id, "onedrive")
 
     try:
+        # Build MSAL app instance
+        app = msal.ConfidentialClientApplication(
+            os.getenv("MICROSOFT_CLIENT_ID"),
+            authority="https://login.microsoftonline.com/common",
+            client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
+        )
         files = fetch_recursive_files(
+            app,
             service,
             access_token,
             access_token_expiration,
