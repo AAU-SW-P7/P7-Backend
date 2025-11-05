@@ -110,7 +110,7 @@ def download_recursive_files(
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                content = fh.getvalue().decode('utf-8', errors='ignore')
+                content = fh.getvalue().decode('utf-8-sig', errors='ignore') # decode with utf-8-sig to remove BOM if present
                 
                 update_tsvector(
                     google_drive_file,
@@ -119,8 +119,7 @@ def download_recursive_files(
                 )
                 
                 files.append({
-                    "file_id": file_id,
-                    "name": name,
+                    "id": file_id,
                     "content": content,
                 })
             except:
@@ -131,7 +130,7 @@ def download_recursive_files(
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                content = fh.getvalue().decode('utf-8', errors='ignore')
+                content = fh.getvalue().decode('utf-8-sig', errors='ignore') # decode with utf-8-sig to remove BOM if present
                 
                 update_tsvector(
                     google_drive_file,
@@ -140,8 +139,7 @@ def download_recursive_files(
                 )
                 
                 files.append({
-                    "file_id": file_id,
-                    "name": name,
+                    "id": file_id,
                     "content": content,
                 })
                 

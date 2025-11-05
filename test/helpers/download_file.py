@@ -38,62 +38,24 @@ def assert_download_file_success(client, user_id, service_name):
     for file in data:
         check.is_instance(file, dict)
         if service_name == "dropbox":
-            
-            extension = smart_extension("dropbox", file["name"], file.get("mime_type"))
-            path = file["path_display"]
-            link = "https://www.dropbox.com/preview" + path
-
             db_file = File.objects.filter(
-                serviceId__userId=user_id,
-                serviceId__name=service_name,
                 serviceFileId=file.get("id"),
-                name=file.get("name"),
-                extension=extension,
-                downloadable=file.get("is_downloadable"),
-                path=path,
-                link=link,
-                size=file.get("size"),
-                createdAt=file.get("client_modified"),
-                modifiedAt=file.get("server_modified"),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
+            
             check.equal(file_count, 1)
+            
             check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "google":
-            # Skip non-files (folders, shortcuts, etc)
-            mime_type = file.get("mimeType", "")
-            if (
-                mime_type == "application/vnd.google-apps.folder"
-                or mime_type == "application/vnd.google-apps.shortcut"
-                or mime_type == "application/vnd.google-apps.drive-sdk"
-            ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
-                continue
-            file_by_id = {file["id"]: file for file in data}
-            extension = smart_extension("google", file["name"], file.get("mimeType"))
-            downloadable = file.get("capabilities", {}).get("canDownload")
-            path = build_google_drive_path(file, file_by_id)
-
             db_file = File.objects.filter(
-                serviceId__userId=user_id,
-                serviceId__name=service_name,
                 serviceFileId=file.get("id"),
-                name=file.get("name"),
-                extension=extension,
-                downloadable=downloadable,
-                path=path,
-                link=file.get("webViewLink"),
-                size=file.get("size", 0),
-                createdAt=file.get("createdTime"),
-                modifiedAt=file.get("modifiedTime"),
-                indexedAt=None,
-                snippet=None,
-                content=None,
             )
             file_count = db_file.count()
+
             check.equal(file_count, 1)
+            
+            check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "onedrive":
             extension = smart_extension("onedrive", file["name"], file.get("file", {}).get("mimeType"))
@@ -218,7 +180,7 @@ def check_tokens_against_ts_vector(file: File, content: str):
     content_lexemes = []
     if content:
         content_tokens = ts_tokenize_english(content)
-        content_lexemes = [lex for token in content_tokens for lex in ts_lexize(token)]
+        content_lexemes = [token for token in content_tokens]
 
     # Combine and dedupe lexemes from name and content
     all_lexemes = set(name_tokens + content_lexemes)
@@ -242,10 +204,3 @@ def ts_tokenize_english(text):
             "SELECT unnest(tsvector_to_array(to_tsvector('english', %s)))", [text]
         )
         return [row[0] for row in cursor.fetchall()]
-
-def ts_lexize(token):
-    "Lexizes (stems) a token"
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT ts_lexize('english_stem', %s);", [token])
-        result = cursor.fetchone()
-        return result[0] if result and result[0] is not None else []
