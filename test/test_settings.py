@@ -23,6 +23,7 @@ DATABASES = {
     }
 }
 Q_CLUSTER = p7_settings.Q_CLUSTER.copy()
+Q_CLUSTER['sync'] = True  # Run tasks synchronously in tests
 # DJANGO_Q database config. Docs: https://django-q2.readthedocs.io/en/master/configure.html
 # Q_CLUSTER = {
 #     'name': 'default',

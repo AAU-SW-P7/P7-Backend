@@ -22,7 +22,6 @@ from helpers.create_user import (
     assert_create_user_missing_header,
 )
 from helpers.create_service import (
-    assert_create_service_success,
     assert_create_service_invalid_auth,
     assert_create_service_missing_header,
     assert_create_service_missing_payload,
@@ -46,6 +45,7 @@ from p7.create_service.api import create_service_router
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
 from p7.get_google_drive_files.api import fetch_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router
+from test.helpers.sync_files import create_service
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
@@ -112,32 +112,12 @@ def test_create_user_missing_header(user_client):
     """
     assert_create_user_missing_header(user_client)
 
-def test_create_service_success(service_client):
+def test_create_service_success():
     """Test creating 9 services successfully (3 each for Dropbox, Google, OneDrive).
-    params:
-        service_client: Fixture for creating a test client for the create_service endpoint.
     """
-    service_count = 0
     for service_number in range(1, 3+1):  # 3 services
         for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
-            payload = {
-                "userId": os.getenv(f"TEST_USER_{provider}_ID_{service_number}"),
-                "oauthType": os.getenv(f"TEST_USER_{provider}_OAUTHTYPE_{service_number}"),
-                "oauthToken": os.getenv(f"TEST_USER_{provider}_OAUTHTOKEN_{service_number}"),
-                "accessToken": os.getenv(f"TEST_USER_{provider}_ACCESSTOKEN_{service_number}"),
-                "accessTokenExpiration": os.getenv(
-                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{service_number}"
-                ),
-                "refreshToken": os.getenv(f"TEST_USER_{provider}_REFRESHTOKEN_{service_number}"),
-                "name": os.getenv(f"TEST_USER_{provider}_NAME_{service_number}"),
-                "accountId": os.getenv(f"TEST_USER_{provider}_ACCOUNTID_{service_number}"),
-                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{service_number}"),
-                "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{service_number}"),
-            }
-
-            assert_create_service_success(service_client, payload, service_count)
-
-            service_count += 1
+            create_service(provider, service_number)
 
 def test_create_service_invalid_auth(service_client):
     """Test creating a service with invalid auth token.
