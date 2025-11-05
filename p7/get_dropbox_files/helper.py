@@ -30,7 +30,6 @@ def update_or_create_file(file, service):
         file["server_modified"],
         None,
         None,
-        None,
     )
 
 def fetch_recursive_files(

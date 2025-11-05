@@ -10,7 +10,7 @@ from googleapiclient.http import MediaIoBaseDownload
 
 from p7.helpers import validate_internal_auth
 from p7.get_google_drive_files.helper import (
-    update_or_create_file, fetch_recursive_files, get_new_access_token
+    get_new_access_token
 )
 from p7.fetch_downloadable_files.api import fetch_downloadable_files
 from repository.file import update_tsvector
@@ -60,12 +60,12 @@ def download_google_drive_files(
 
         # Build Drive service and list files
         drive_api = build("drive", "v3", credentials=creds)
-        
+
         files = download_recursive_files(
             drive_api,
             service,
         )
-        
+
         return JsonResponse(files, safe=False)
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
@@ -95,7 +95,7 @@ def download_recursive_files(
     google_drive_files = fetch_downloadable_files(service)
     if not google_drive_files:
         print("No downloadable Google Drive files found.")
-        pass # do error handling here
+        # do error handling here
 
     files = []
     for google_drive_file in google_drive_files:
@@ -110,19 +110,20 @@ def download_recursive_files(
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                content = fh.getvalue().decode('utf-8-sig', errors='ignore') # decode with utf-8-sig to remove BOM if present
-                
+                # decode with utf-8-sig to remove BOM if present
+                content = fh.getvalue().decode('utf-8-sig', errors='ignore')
+
                 update_tsvector(
                     google_drive_file,
                     google_drive_file.name,
                     content,
                 )
-                
+
                 files.append({
                     "id": file_id,
                     "content": content,
                 })
-            except:
+            except RuntimeError:
                 # Regular binary file -> get_media
                 request = drive_api.files().get_media(fileId=file_id)
                 fh = io.BytesIO()
@@ -130,21 +131,22 @@ def download_recursive_files(
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                content = fh.getvalue().decode('utf-8-sig', errors='ignore') # decode with utf-8-sig to remove BOM if present
-                
+                # decode with utf-8-sig to remove BOM if present
+                content = fh.getvalue().decode('utf-8-sig', errors='ignore')
+
                 update_tsvector(
                     google_drive_file,
                     google_drive_file.name,
                     content,
                 )
-                
+
                 files.append({
                     "id": file_id,
                     "content": content,
                 })
-                
-        except Exception as e:
-            # log and continue
+
+        except RuntimeError as e:
+             # do error handling here
             print(f"Failed to download {file_id} ({name}): {e}")
 
     return files

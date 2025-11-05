@@ -37,7 +37,6 @@ def update_or_create_file(file, service):
         file["lastModifiedDateTime"],
         None,
         None,
-        None,
     )
 
 def fetch_recursive_files(

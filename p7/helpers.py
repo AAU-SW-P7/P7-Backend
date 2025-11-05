@@ -95,7 +95,7 @@ def downloadable_file_extensions() -> set[str]:
         '.gscript',
         '.gsite',
         '.gjam',
-        
+
         '.txt',
         '.hs',
         # '.pdf', # add libaries to do this

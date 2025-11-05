@@ -1,7 +1,7 @@
 """API endpoint to fetch downloadable files for a given service."""
 from typing import List
 
-from ninja import Router, Header
+from ninja import Router
 from p7.helpers import downloadable_file_extensions
 from repository.models import File
 
@@ -11,7 +11,7 @@ def fetch_downloadable_files(service) -> List:
     """
     Return list of File entries for the given user and service.
     """
-    
+
     return list(
         File.objects.filter(
             serviceId=service,
