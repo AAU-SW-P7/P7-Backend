@@ -19,6 +19,11 @@ import pytest_check as check
 from ninja.testing import TestClient
 from helpers.create_user import (assert_create_user_success)
 from helpers.create_service import (assert_create_service_success)
+from helpers.fetch_service import (
+    assert_fetch_dropbox_files_success,
+    assert_fetch_google_files_success,
+    assert_fetch_onedrive_files_success,
+)
 from helpers.download_file import (
     assert_download_file_success,
     assert_download_file_invalid_auth,
@@ -28,6 +33,9 @@ from helpers.download_file import (
 
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
+from p7.get_dropbox_files.api import fetch_dropbox_files_router
+from p7.get_google_drive_files.api import fetch_google_drive_files_router
+from p7.get_onedrive_files.api import fetch_onedrive_files_router
 from p7.download_dropbox_files.api import download_dropbox_files_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
@@ -48,6 +56,30 @@ def create_service_client():
         TestClient: A test client for the create_service endpoint.
     """
     return TestClient(create_service_router)
+
+@pytest.fixture(name="fetch_dropbox_files_client", scope='module', autouse=True)
+def create_fetch_dropbox_files_client():
+    """Fixture for creating a test client for the fetch_dropbox_files endpoint.
+    Returns:
+        TestClient: A test client for the fetch_dropbox_files endpoint.
+    """
+    return TestClient(fetch_dropbox_files_router)
+
+@pytest.fixture(name="fetch_google_files_client", scope='module', autouse=True)
+def create_fetch_google_files_client():
+    """Fixture for creating a test client for the fetch_google_files endpoint.
+    Returns:
+        TestClient: A test client for the fetch_google_files endpoint.
+    """
+    return TestClient(fetch_google_drive_files_router)
+
+@pytest.fixture(name="fetch_onedrive_files_client", scope='module', autouse=True)
+def create_fetch_onedrive_files_client():
+    """Fixture for creating a test client for the fetch_onedrive_files endpoint.
+    Returns:
+        TestClient: A test client for the fetch_onedrive_files endpoint.
+    """
+    return TestClient(fetch_onedrive_files_router)
 
 @pytest.fixture(name="download_dropbox_files_client_fixture", scope='module', autouse=True)
 def download_dropbox_files_client():
@@ -91,7 +123,21 @@ def test_create_service_success(service_client):
             assert_create_service_success(service_client, payload, service_count)
 
             service_count += 1
-            
+
+def test_fetch_dropbox_files_success(fetch_dropbox_files_client):
+    """Test fetching Dropbox files successfully for 3 users.
+    params:
+        fetch_dropbox_files_client:
+            Fixture for creating a test client for the fetch_dropbox_files endpoint.
+    """
+    for user_number in range(1, 3+1):  # 3 users
+
+        assert_fetch_dropbox_files_success(
+            fetch_dropbox_files_client,
+            user_number,
+            "dropbox",
+        )
+
 def test_download_dropbox_file_success(download_dropbox_files_client_fixture):
     """Test downloading a Dropbox file."""
 

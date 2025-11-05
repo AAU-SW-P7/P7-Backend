@@ -78,7 +78,8 @@ def download_recursive_files(
 
     dropbox_files = fetch_downloadable_files(service)
     if not dropbox_files:
-        return False # do error handling here
+        print("No downloadable Dropbox files found.")
+        pass # do error handling here
 
     files = []
     for dropbox_file in dropbox_files:
@@ -92,7 +93,7 @@ def download_recursive_files(
         
         dropbox_result = json.loads(response.headers.get("Dropbox-API-Result"))
         dropbox_content = response.content.decode('utf-8', errors='ignore') if response.content else None
-        
+
         if response.status_code != 200 and dropbox_result is None:
             # do better error handling
             raise ConnectionError(f"Dropbox download failed for {dropbox_file}: {response.status_code} - {response.text}")
@@ -108,7 +109,8 @@ def download_recursive_files(
                 dropbox_result['content'] = dropbox_content
                 files.append(dropbox_result)
             except Exception as e:
+                print(f"Error updating tsvector for file {dropbox_file}: {str(e)}")
                 # don't fail the whole loop for a tsvector error; optionally log
-                return False # do error handling here
+                pass # do error handling here
 
     return files
