@@ -1,8 +1,7 @@
 """API endpoint to download Dropbox files for a user."""
 
-import requests
-import os
 import json
+import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
@@ -44,12 +43,12 @@ def download_dropbox_files(
             access_token_expiration,
             refresh_token,
         )
-        
+
         files = download_recursive_files(
             service,
             access_token,
         )
-        
+
         return JsonResponse(files, safe=False)
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
@@ -79,7 +78,7 @@ def download_recursive_files(
     dropbox_files = fetch_downloadable_files(service)
     if not dropbox_files:
         print("No downloadable Dropbox files found.")
-        pass # do error handling here
+        # do error handling here
 
     files = []
     for dropbox_file in dropbox_files:
@@ -89,14 +88,16 @@ def download_recursive_files(
                 "Authorization": f"Bearer {access_token}",
                 "Dropbox-API-Arg": json.dumps({"path": dropbox_file.serviceFileId}),
             },
+            timeout=30,
         )
-        
+
         dropbox_result = json.loads(response.headers.get("Dropbox-API-Result"))
-        dropbox_content = response.content.decode('utf-8', errors='ignore') if response.content else None
+        dropbox_content = response.content.decode('utf-8', errors='ignore')
 
         if response.status_code != 200 and dropbox_result is None:
             # do better error handling
-            raise ConnectionError(f"Dropbox download failed for {dropbox_file}: {response.status_code} - {response.text}")
+            raise ConnectionError(f"Dropbox download failed for {dropbox_file} \
+                                    : {response.status_code} - {response.text}")
 
         if dropbox_content:
             try:
@@ -105,12 +106,11 @@ def download_recursive_files(
                     dropbox_result.get("name"),
                     dropbox_content,
                 )
-                
+
                 dropbox_result['content'] = dropbox_content
                 files.append(dropbox_result)
-            except Exception as e:
+            except RuntimeError as e:
                 print(f"Error updating tsvector for file {dropbox_file}: {str(e)}")
-                # don't fail the whole loop for a tsvector error; optionally log
-                pass # do error handling here
+                # do error handling here
 
     return files

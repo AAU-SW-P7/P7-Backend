@@ -56,21 +56,21 @@ def save_file(
             serviceFileId=service_file_id,
             defaults=defaults,
         )
-        
+
         update_tsvector(file, name, None)
 
     return file
 
 def update_tsvector(file, name: str, content: str | None):
     """Update the tsvector field for full-text search on the given file instance."""
-    
+
     File.objects.filter(pk=file.pk).update(
         ts=(
             SearchVector(Value(name), weight="A", config='simple') +
             SearchVector(Value(content or ""), weight="B", config='english')
         )
     )
-        
+
     file.refresh_from_db(fields=["ts"])
 
 def query_files_by_name(name_query, user_id):

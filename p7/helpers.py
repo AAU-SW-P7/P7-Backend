@@ -74,7 +74,7 @@ def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
         if len(recognized) >= 2 and recognized[-1] in compressed_file_extensions:
             return "".join(recognized[-2:])
         return recognized[-1]
-    
+
     # fallback: trust the filename if it has an apparent extension
     if suffixes:
         if len(suffixes) >= 2 and suffixes[-1] in compressed_file_extensions:
