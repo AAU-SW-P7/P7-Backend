@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-lint:
-    name: Pylint
+    name: Run Pylint
     runs-on: ubuntu-latest
     # Skip for draft PRs
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
