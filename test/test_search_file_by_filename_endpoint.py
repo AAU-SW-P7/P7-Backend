@@ -27,7 +27,7 @@ from helpers.search_filename import (
     assert_search_filename_missing_search_string,
     assert_search_filename_missing_userid,
 )
-#ESlint: disable=C0411
+
 from helpers.create_user import assert_create_user_success
 from repository.models import File, Service, User
 from p7.search_files_by_filename.api import search_files_by_filename_router
