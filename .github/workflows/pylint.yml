@@ -1,12 +1,16 @@
-name: pylint 
+name: Pylint 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: 
     - '**'
 
 jobs:
-  build-lint:
+  run-pylint:
+    name: Run Pylint
     runs-on: ubuntu-latest
+    # Skip for draft PRs
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     steps: 
       - uses: actions/checkout@v5
       
@@ -19,6 +23,6 @@ jobs:
         run: |
           pip install -r ./requirements.txt
       
-      - name: Run pylint
+      - name: Run Pylint
         run: |
-          pylint --ignore=test,tests .
+          pylint .
