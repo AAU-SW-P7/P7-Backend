@@ -80,7 +80,7 @@ def smart_extension(provider: str, name: str, mime: Optional[str] = None) -> str
     if not core:
         pass  # fall through to MIME fallback below
     elif "." not in core:
-        # Handle names like "..docx" / "...pdf": 
+        # Handle names like "..docx" / "...pdf":
         # if the remaining token itself is a known ext, use it.
         candidate = f".{core.lower()}"
         if candidate in known_file_extensions:
