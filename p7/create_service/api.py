@@ -56,7 +56,7 @@ def create_service(
         return service
     match cleaned["name"]:
         case "google":
-            group=f"Google-Drive-{cleaned["userId"]}"
+            group = f"Google-Drive-{cleaned['userId']}"
             # Could trigger Google Drive file fetch here if desired
             async_task(process_google_drive_files, cleaned["userId"], cluster="high", group=group)
             # Schedule daily sync of Google Drive files
@@ -70,7 +70,7 @@ def create_service(
                 cluster="low",
             )
         case "dropbox":
-            group=f"Dropbox-{cleaned["userId"]}"
+            group = f"Dropbox-{cleaned['userId']}"
             # Could trigger Dropbox file fetch here if desired
             async_task(process_dropbox_files, cleaned["userId"], cluster="high", group=group)
             # Schedule daily sync of Dropbox files
@@ -82,7 +82,7 @@ def create_service(
                 cluster="low",
             )
         case "onedrive":
-            group=f"Onedrive-{cleaned["userId"]}"
+            group = f"Onedrive-{cleaned['userId']}"
             # Could trigger OneDrive file fetch here if desired
             async_task(process_onedrive_files, cleaned["userId"], cluster="high", group=group)
             # Schedule daily sync of OneDrive files
