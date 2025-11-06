@@ -31,4 +31,4 @@ EXPOSE 8000
 # Run Django’s development server
 # Start both qclusters in the background, then exec the runserver in the foreground.
 # Using `&` for both qclusters prevents the first (high) from blocking the second.
-CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate --noinput && Q_CLUSTER_NAME=high python manage.py qcluster & Q_CLUSTER_NAME=low python manage.py qcluster & exec python manage.py runserver 0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py makemigrations repository && python manage.py migrate repository --noinput && python manage.py makemigrations && python manage.py migrate --noinput && Q_CLUSTER_NAME=high python manage.py qcluster & Q_CLUSTER_NAME=low python manage.py qcluster & exec python manage.py runserver 0.0.0.0:8000"]
