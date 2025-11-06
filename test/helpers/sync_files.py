@@ -1,9 +1,8 @@
 """Helper functions for test_sync_files.py"""
 import os
-import pytest_check as check
-from pathlib import Path
 import json
 from datetime import datetime, timezone
+import pytest_check as check
 
 from django.http import JsonResponse
 from p7.sync_files.service_sync_functions import (
@@ -151,7 +150,7 @@ def read_json_file(file_path):
         list: List of JSON objects, or JsonResponse error if file cannot be loaded.
     """
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             text = f.read()
         return json.loads(text)
     except (FileNotFoundError, json.JSONDecodeError):

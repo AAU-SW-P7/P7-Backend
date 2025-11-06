@@ -1,8 +1,6 @@
 """Helper functions for testing filename search ranking."""
 
-import os
 import pytest_check as check
-from django.db import connection
 
 from repository.models import File
 
@@ -19,9 +17,9 @@ def assert_get_exact_match(query: str, filename_exact_match: str, filename_parti
         if result.name == filename_exact_match:
             rank_exact = result.rank
         if result.name == filename_partial_match:
-            rank_partial = result.rank    
+            rank_partial = result.rank
     check.greater(rank_exact, rank_partial)
-     
+
 def assert_file_length(query, short_name, long_name):
     """Test shorter file names rank higher when tokens are the same.
     params:
@@ -34,7 +32,7 @@ def assert_file_length(query, short_name, long_name):
         if result.name == short_name:
             short_rank = result.rank
         if result.name == long_name:
-            long_rank = result.rank    
+            long_rank = result.rank
     check.greater(short_rank, long_rank)
 
 def assert_token_position(query_close: str, query_far_away: str, file_name: str):
@@ -47,7 +45,7 @@ def assert_token_position(query_close: str, query_far_away: str, file_name: str)
     result_close = File.objects.ranking_based_on_file_name(query_close)
     for result in result_close:
         if result.name == file_name:
-            close_rank = result.rank    
+            close_rank = result.rank
     result_far_away = File.objects.ranking_based_on_file_name(query_far_away)
     for result in result_far_away:
         if result.name == file_name:
@@ -55,7 +53,11 @@ def assert_token_position(query_close: str, query_far_away: str, file_name: str)
     check.greater(close_rank, far_away_rank)
 
 
-def assert_overfitting_token_count(query_exact_match: str, query_more_tokens: str, file_name: object):
+def assert_overfitting_token_count(
+        query_exact_match: str,
+        query_more_tokens: str,
+        file_name: object
+        ):
     """Test that overfitting penalizes the ranking score.
     params: 
         query_exact_match: search query string that exactly matches the file name

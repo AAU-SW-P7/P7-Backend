@@ -80,7 +80,11 @@ def assert_find_user_by_email_missing_header(client, email):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+                }
         ]
     }), True)
 
@@ -108,7 +112,15 @@ def assert_find_user_by_email_missing_email(client):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'email'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['query', 'email'],
+                'msg': 'Input should be a valid string'
+                },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+                }
         ]
     }), True)

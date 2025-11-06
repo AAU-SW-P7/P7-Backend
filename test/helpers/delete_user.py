@@ -14,9 +14,12 @@ def assert_delete_user_success(client, user_number):
     # Get initial user count
     initial_count = User.objects.count()
 
-    check.equal(initial_count , user_number)  
+    check.equal(initial_count , user_number)
 
-    response = client.post(f"/?user_id={user_number}", headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")})
+    response = client.post(
+        f"/?user_id={user_number}",
+        headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
+        )
 
     data = response.json()
 
@@ -55,7 +58,11 @@ def assert_delete_user_missing_header(client, user_number):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+                }
         ]
     }), True)
 
@@ -65,7 +72,10 @@ def assert_delete_user_invalid_user_id(client, user_number):
     params:
         client: The test client to make requests.
     """
-    response = client.post(f"/?user_id={user_number}", headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")})
+    response = client.post(
+        f"/?user_id={user_number}",
+        headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
+        )
 
     check.equal(response.status_code, 404)
     check.equal(response.json(), {

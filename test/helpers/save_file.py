@@ -33,7 +33,7 @@ def assert_save_file_success(client, user_id, service_name):
     )
 
     data = response.json()
-    data = result(task_id=response.json().get("task_id")) if response.status_code == 202 else data   
+    data = result(task_id=response.json().get("task_id")) if response.status_code == 202 else data
 
     check.equal(response.status_code, 202)
     check.is_instance(data, list)
@@ -100,7 +100,11 @@ def assert_save_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file)
 
         elif service_name == "onedrive":
-            extension = smart_extension("onedrive", file["name"], file.get("file", {}).get("mimeType"))
+            extension = smart_extension(
+                "onedrive",
+                file["name"],
+                file.get("file", {}).get("mimeType")
+                )
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(
                     "/drive/root:", ""
@@ -172,11 +176,19 @@ def assert_save_file_missing_header(client, user_id):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+                }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+                }
         ]
     }), True)
 
@@ -205,8 +217,16 @@ def assert_save_file_missing_user_id(client):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+                },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+                }
         ]
     }), True)
 
@@ -240,5 +260,5 @@ def ts_lexize(token):
     "Lexizes (stems) a token"
     with connection.cursor() as cursor:
         cursor.execute("SELECT ts_lexize('english_stem', %s);", [token])
-        result = cursor.fetchone()
-        return result[0] if result and result[0] is not None else []
+        result_token = cursor.fetchone()
+        return result_token[0] if result_token and result_token[0] is not None else []

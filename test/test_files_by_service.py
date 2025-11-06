@@ -2,6 +2,9 @@
 import os
 import sys
 from pathlib import Path
+import pytest
+import pytest_check as check
+from datetime import datetime, timezone
 
 
 # Make the local backend package importable so `from p7...` works under pytest
@@ -14,11 +17,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
 import django
 django.setup()
-from datetime import datetime, timezone
 from django.http import JsonResponse
 
-import pytest
-import pytest_check as check
 from ninja.testing import TestClient
 from helpers.create_user import (
     assert_create_user_success
@@ -53,7 +53,6 @@ def create_service_client():
 
 def test_get_files_by_service_success(
     user_client: TestClient,
-    service_client: TestClient,
 ):
     """Test getting files by service for Google Drive."""
     for user_id in range(1, 3+1):
@@ -117,7 +116,6 @@ def test_get_files_by_service_success(
 
 def test_get_files_by_service_no_files(
     user_client: TestClient,
-    service_client: TestClient,
 ):
     """Test getting files by service when no files exist for the service."""
     # Create a user
@@ -137,7 +135,7 @@ def test_get_files_by_service_no_files(
         "email": "Test 4",
         "scope_name": "Test 4",
     }
-    
+
     save_service(
         user_id=user,
         oauth_type=payload["oauth_type"],
@@ -151,7 +149,7 @@ def test_get_files_by_service_no_files(
         scope_name=payload["scope_name"],
         indexed_at=datetime.now(timezone.utc),
     )
-    
+
 
     service = get_service(user_id, "dropbox")
     # Ensure no files exist for the service

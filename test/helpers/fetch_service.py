@@ -71,7 +71,11 @@ def assert_fetch_dropbox_files_missing_header(client, user_id):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+                }
         ]
     }), True)
 
@@ -91,8 +95,14 @@ def assert_fetch_dropbox_files_missing_userid(client):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {'type': 'string_type',
+             'loc': ['query', 'user_id'],
+             'msg': 'Input should be a valid string'
+             },
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             }
         ]
     }), True)
 
@@ -160,7 +170,11 @@ def assert_fetch_google_files_missing_header(client, user_id):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+                }
         ]
     }), True)
 
@@ -179,8 +193,14 @@ def assert_fetch_google_files_missing_userid(client):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {'type': 'string_type',
+             'loc': ['query', 'user_id'],
+             'msg': 'Input should be a valid string'
+             },
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             }
         ]
     }), True)
 
@@ -247,7 +267,10 @@ def assert_fetch_onedrive_files_missing_header(client, user_id):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             }
         ]
     }), True)
 
@@ -266,7 +289,13 @@ def assert_fetch_onedrive_files_missing_userid(client):
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {'type': 'string_type',
+             'loc': ['query', 'user_id'],
+             'msg': 'Input should be a valid string'
+             },
+            {'type': 'string_type',
+             'loc': ['header', 'x-internal-auth'],
+             'msg': 'Input should be a valid string'
+             }
         ]
     }), True)

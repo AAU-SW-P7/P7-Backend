@@ -165,7 +165,7 @@ def test_search_filename_end_to_end(search_file):
     created_dt = _parse_iso_with_z(file["createdAt"])
     modified_dt = _parse_iso_with_z(file["modifiedAt"])
 
-    # Compare endpoint timestamps to the model datetimes using a small tolerance 
+    # Compare endpoint timestamps to the model datetimes using a small tolerance
     # to avoid failures caused by timezone/formatting differences.
     assert abs(created_dt.timestamp() - test_file_1.createdAt.timestamp()) < 1
     assert abs(modified_dt.timestamp() - test_file_1.modifiedAt.timestamp()) < 1

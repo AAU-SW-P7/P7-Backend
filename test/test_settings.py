@@ -1,6 +1,4 @@
 """Test settings for the Django application."""
-from math import ceil, floor
-import multiprocessing
 import os
 
 from p7 import settings as p7_settings
