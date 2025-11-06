@@ -3,7 +3,7 @@
 import os
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
 
 # Make the local backend package importable so `from p7...` works under pytest
