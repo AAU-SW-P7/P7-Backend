@@ -1,3 +1,4 @@
+"""Repository functions for managing queued tasks."""
 from django_q.models import Task
 
 

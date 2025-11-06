@@ -1,3 +1,4 @@
+"""Repository functions for managing scheduled tasks."""
 from django_q.models import Schedule
 
 def delete_user_schedules(user_id: int) -> None:

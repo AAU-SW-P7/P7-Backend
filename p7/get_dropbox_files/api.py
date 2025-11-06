@@ -35,6 +35,15 @@ def fetch_dropbox_files(
     return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
 
 def process_dropbox_files(user_id):
+    """Process and sync Dropbox files for a given user.
+
+    params:
+        user_id (str): The ID of the user whose Dropbox files are to be processed.
+
+    Returns:
+        list: A list of processed Dropbox files or a JsonResponse with an error message.
+    
+    """
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
     service = get_service(user_id, "dropbox")
 
@@ -63,4 +72,3 @@ def process_dropbox_files(user_id):
     except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
         response = JsonResponse({"error": {str(e)}}, status=500)
         return response
-    

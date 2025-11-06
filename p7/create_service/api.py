@@ -4,13 +4,13 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Tuple
 from ninja import Router, Body, Header
 from django.http import JsonResponse
+from django_q.tasks import async_task, schedule
 from repository.service import save_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
 from p7.get_google_drive_files.api import process_google_drive_files
 from p7.get_dropbox_files.api import process_dropbox_files
 from p7.get_onedrive_files.api import process_onedrive_files
-from django_q.tasks import async_task, schedule
 
 create_service_router = Router()
 

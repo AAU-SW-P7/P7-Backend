@@ -201,4 +201,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 } """
 
 APPEND_SLASH = True  # Ensure trailing slashes are appended to URLs
-

@@ -36,10 +36,25 @@ def sync_files(
 
     # Check if services exist before syncing
     if dropbox_service and not isinstance(dropbox_service, JsonResponse):
-        async_task(sync_dropbox_files, user_id, cluster="high", group=f"Dropbox-{user_id}")
+        async_task(
+            sync_dropbox_files,
+            user_id,
+            cluster="high",
+            group=f"Dropbox-{user_id}"
+        )
     if google_drive_service and not isinstance(google_drive_service, JsonResponse):
-        async_task(sync_google_drive_files, user_id, cluster="high", group=f"Google-Drive-{user_id}")
+        async_task(
+            sync_google_drive_files,
+            user_id,
+            cluster="high",
+            group=f"Google-Drive-{user_id}"
+            )
     if onedrive_service and not isinstance(onedrive_service, JsonResponse):
-        async_task(sync_onedrive_files, user_id, cluster="high", group=f"Onedrive-{user_id}")
+        async_task(
+            sync_onedrive_files,
+            user_id,
+            cluster="high",
+            group=f"Onedrive-{user_id}"
+        )
 
     return JsonResponse({"Status": "Processing"}, status=202)
