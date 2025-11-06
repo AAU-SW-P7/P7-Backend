@@ -130,7 +130,7 @@ def test_search_filename_end_to_end(search_file):
     	createdAt=timezone.now(),
     	modifiedAt=timezone.now(),
     )
-    test_file_2 = File.objects.create(
+    File.objects.create(
         serviceId=service1,
         serviceFileId="file-2",
         name="another-file-with-different-name.docx",

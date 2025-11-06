@@ -13,6 +13,8 @@ def assert_get_exact_match(query: str, filename_exact_match: str, filename_parti
         filename_partial_match: name of the file that partially matches the query
     """
     results = File.objects.ranking_based_on_file_name(query)
+    rank_exact = None
+    rank_partial = None
     for result in results:
         if result.name == filename_exact_match:
             rank_exact = result.rank
@@ -28,6 +30,8 @@ def assert_file_length(query, short_name, long_name):
         long_name: name of the longer file
     """
     results = File.objects.ranking_based_on_file_name(query)
+    short_rank = None
+    long_rank = None
     for result in results:
         if result.name == short_name:
             short_rank = result.rank
@@ -43,6 +47,8 @@ def assert_token_position(query_close: str, query_far_away: str, file_name: str)
         file_name: name of the file being tested
     """
     result_close = File.objects.ranking_based_on_file_name(query_close)
+    close_rank = None
+    far_away_rank = None
     for result in result_close:
         if result.name == file_name:
             close_rank = result.rank
@@ -65,6 +71,8 @@ def assert_overfitting_token_count(
         file_name: name of the file being tested
     """
     result_exact = File.objects.ranking_based_on_file_name(query_exact_match)
+    exact_rank = None
+    more_tokens_rank = None
     for result in result_exact:
         if result.name == file_name:
             exact_rank = result.rank
@@ -82,6 +90,8 @@ def assert_partial_token_match(query_partial: str, query_more_tokens_partial: st
         file_name: name of the file being tested
     """
     result_partial = File.objects.ranking_based_on_file_name(query_partial)
+    more_partial_rank = None
+    partial_rank = None
     for result in result_partial:
         if result.name == file_name:
             partial_rank = result.rank

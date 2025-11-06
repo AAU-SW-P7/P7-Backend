@@ -2,9 +2,9 @@
 import os
 import sys
 from pathlib import Path
+from datetime import datetime, timezone
 import pytest
 import pytest_check as check
-from datetime import datetime, timezone
 
 
 # Make the local backend package importable so `from p7...` works under pytest
