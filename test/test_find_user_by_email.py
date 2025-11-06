@@ -79,14 +79,12 @@ def test_create_user_success(user_client):
 
         assert_create_user_success(user_client, user_number)
 
-
 def test_create_user_invalid_auth(user_client):
     """Test creating a user with invalid auth token.
     params:
         user_client: Fixture for creating a test client for the create_user endpoint.
     """
     assert_create_user_invalid_auth(user_client)
-
 
 def test_create_user_missing_header(user_client):
     """Test creating a user with missing auth header.

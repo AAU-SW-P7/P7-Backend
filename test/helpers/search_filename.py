@@ -23,8 +23,8 @@ def assert_query_matches_count(user_id, query, expected_count):
     """Assert that search returns no results for a missing query."""
     results = query_files_by_name(query, user_id)
 
-    check.equal(results.count(), expected_count)   
- 
+    check.equal(results.count(), expected_count)
+
 def assert_search_filename_invalid_auth(client, user_id, search_string):
     """Helper function to assert unauthorized access when invalid auth token is provided.
 
@@ -33,7 +33,10 @@ def assert_search_filename_invalid_auth(client, user_id, search_string):
         user_id: ID of the user whose files are to be fetched.
     """
     print(f"Fetching Dropbox files for user_id: {user_id}")
-    response = client.get(f"/?user_id={user_id}&search_string={search_string}", headers={"x-internal-auth": "invalid_token"})
+    response = client.get(
+        f"/?user_id={user_id}&search_string={search_string}",
+        headers={"x-internal-auth": "invalid_token"},
+    )
 
     check.equal(response.status_code, 401)
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
@@ -49,11 +52,19 @@ def assert_search_filename_missing_header(client, user_id, search_string):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -68,13 +79,29 @@ def assert_search_filename_missing_userid(client, search_string):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -88,11 +115,19 @@ def assert_search_filename_missing_search_string(client, user_id):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'search_string'], 'msg': 'Field required'},
+            {
+                'type': 'missing',
+                'loc': ['query', 'search_string'],
+                'msg': 'Field required'
+            },
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'search_string'], 'msg': 'Input should be a valid string'},
+            {
+                'type': 'string_type',
+                'loc': ['query', 'search_string'],
+                'msg': 'Input should be a valid string'
+            },
         ]
     }), True)
 

@@ -15,14 +15,11 @@ import django
 django.setup()
 
 import pytest
-import pytest_check as check
 from ninja.testing import TestClient
 from helpers.create_user import (assert_create_user_success)
 from helpers.create_service import (assert_create_service_success)
 from helpers.fetch_service import (
     assert_fetch_dropbox_files_success,
-    assert_fetch_google_files_success,
-    assert_fetch_onedrive_files_success,
 )
 from helpers.download_file import (
     assert_download_file_success,
@@ -96,7 +93,7 @@ def test_create_user_success(user_client):
     """
     for user_number in range(1, 3+1):  # 3 users
         assert_create_user_success(user_client, user_number)
-        
+
 def test_create_service_success(service_client):
     """Test creating 9 services successfully (3 each for Dropbox, Google, OneDrive).
     params:

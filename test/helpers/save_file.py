@@ -76,10 +76,10 @@ def assert_save_file_success(client, user_id, service_name):
         elif service_name == "google":
             # Skip non-files (folders, shortcuts, etc)
             mime_type = file.get("mimeType", "")
-            if (
-                mime_type == "application/vnd.google-apps.folder"
-                or mime_type == "application/vnd.google-apps.shortcut"
-                or mime_type == "application/vnd.google-apps.drive-sdk"
+            if mime_type in (
+                "application/vnd.google-apps.folder",
+                "application/vnd.google-apps.shortcut",
+                "application/vnd.google-apps.drive-sdk",
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
             file_by_id = {file["id"]: file for file in data}
@@ -107,7 +107,11 @@ def assert_save_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file)
 
         elif service_name == "onedrive":
-            extension = smart_extension("onedrive", file["name"], file.get("file", {}).get("mimeType"))
+            extension = smart_extension(
+                "onedrive",
+                file["name"],
+                file.get("file", {}).get("mimeType"),
+            )
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(
                     "/drive/root:", ""
@@ -178,11 +182,19 @@ def assert_save_file_missing_header(client, user_id):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -206,13 +218,29 @@ def assert_save_file_missing_user_id(client):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
