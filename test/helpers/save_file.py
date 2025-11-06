@@ -108,7 +108,9 @@ def assert_save_file_success(client, user_id, service_name):
 
         elif service_name == "onedrive":
             extension = smart_extension(
-                "onedrive", file["name"], file.get("file", {}).get("mimeType")
+                "onedrive",
+                file["name"],
+                file.get("file", {}).get("mimeType"),
             )
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(

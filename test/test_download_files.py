@@ -110,7 +110,6 @@ def download_google_files_client():
     """
     return TestClient(download_google_drive_files_router)
 
-
 @pytest.fixture(
     name="download_onedrive_files_client_fixture", scope="module", autouse=True
 )
@@ -129,7 +128,6 @@ def test_create_user_success(user_client):
     """
     for user_number in range(1, 3 + 1):  # 3 users
         assert_create_user_success(user_client, user_number)
-
 
 def test_create_service_success(service_client):
     """Test creating 9 services successfully (3 each for Dropbox, Google, OneDrive).
@@ -170,6 +168,7 @@ def test_create_service_success(service_client):
 
             service_count += 1
 
+# --- TESTS FOR DROPBOX ---
 
 def test_fetch_dropbox_files_success(fetch_dropbox_files_client):
     """Test fetching Dropbox files successfully for 3 users.
@@ -221,6 +220,7 @@ def test_download_dropbox_file_missing_user_id(download_dropbox_files_client_fix
 
     assert_download_file_missing_user_id(download_dropbox_files_client_fixture)
 
+# --- TESTS FOR GOOGLE DRIVE ---
 
 def test_fetch_google_drive_files_success(fetch_google_files_client):
     """Test fetching Google Drive files successfully for 3 users.
@@ -243,7 +243,9 @@ def test_download_google_drive_file_success(download_google_drive_files_client_f
     for user_number in range(1, 3 + 1):  # 3 users
 
         assert_download_file_success(
-            download_google_drive_files_client_fixture, user_number, "google"
+            download_google_drive_files_client_fixture,
+            user_number,
+            'google',
         )
 
 

@@ -31,7 +31,6 @@ def assert_query_matches_count(user_id, query, expected_count):
 
     check.equal(results.count(), expected_count)
 
-
 def assert_search_filename_invalid_auth(client, user_id, search_string):
     """Helper function to assert unauthorized access when invalid auth token is provided.
 

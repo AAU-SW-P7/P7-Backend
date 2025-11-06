@@ -102,18 +102,19 @@ def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
 def downloadable_file_extensions() -> set[str]:
     """Return a set of file extensions considered downloadable."""
     return {
-        ".gdoc",
-        ".gsheet",
-        ".gslides",
-        ".gdraw",
-        ".gform",
-        ".gtable",
-        ".gmap",
-        ".gscript",
-        ".gsite",
-        ".gjam",
-        ".txt",
-        ".hs",
+        '.gdoc',
+        '.gsheet',
+        '.gslides',
+        '.gdraw',
+        '.gform',
+        '.gtable',
+        '.gmap',
+        '.gscript',
+        '.gsite',
+        '.gjam',
+
+        '.txt',
+        '.hs',
         # '.pdf', # add libaries to do this
         # '.doc',
         # '.docx',

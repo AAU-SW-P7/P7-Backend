@@ -4,6 +4,7 @@ import os
 import json
 import pytest_check as check
 
+import pytest_check as check
 from django.http import JsonResponse
 from helpers.create_service import assert_create_service_success
 from p7.sync_files.service_sync_functions import (
@@ -157,7 +158,6 @@ def create_service(service_client, provider, user_id, service_count):
         "scopeName": os.getenv(f"TEST_USER_{provider}_SCOPENAME_{user_id}"),
     }
     assert_create_service_success(service_client, payload, service_count)
-
 
 def read_json_file(file_path):
     """

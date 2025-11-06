@@ -97,6 +97,7 @@ def download_recursive_files(
     google_drive_files = fetch_downloadable_files(service)
     if not google_drive_files:
         print("No downloadable Google Drive files found.")
+        # do error handling here
 
     files = []
     for google_drive_file in google_drive_files:
@@ -113,9 +114,8 @@ def download_recursive_files(
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                content = fh.getvalue().decode(
-                    "utf-8-sig", errors="ignore"
-                )  # decode with utf-8-sig to remove BOM if present
+                # decode with utf-8-sig to remove BOM if present
+                content = fh.getvalue().decode('utf-8-sig', errors='ignore')
 
                 update_tsvector(
                     google_drive_file,
@@ -123,13 +123,11 @@ def download_recursive_files(
                     content,
                 )
 
-                files.append(
-                    {
-                        "id": file_id,
-                        "content": content,
-                    }
-                )
-            except (ValueError, TypeError, RuntimeError):
+                files.append({
+                    "id": file_id,
+                    "content": content,
+                })
+            except RuntimeError:
                 # Regular binary file -> get_media
                 request = drive_api.files().get_media(fileId=file_id)
                 fh = io.BytesIO()
@@ -137,9 +135,8 @@ def download_recursive_files(
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                content = fh.getvalue().decode(
-                    "utf-8-sig", errors="ignore"
-                )  # decode with utf-8-sig to remove BOM if present
+                # decode with utf-8-sig to remove BOM if present
+                content = fh.getvalue().decode('utf-8-sig', errors='ignore')
 
                 update_tsvector(
                     google_drive_file,
@@ -147,14 +144,13 @@ def download_recursive_files(
                     content,
                 )
 
-                files.append(
-                    {
-                        "id": file_id,
-                        "content": content,
-                    }
-                )
-        except (ValueError, TypeError, RuntimeError) as e:
-            # log and continue
+                files.append({
+                    "id": file_id,
+                    "content": content,
+                })
+
+        except RuntimeError as e:
+             # do error handling here
             print(f"Failed to download {file_id} ({name}): {e}")
 
     return files
