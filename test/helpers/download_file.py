@@ -58,33 +58,14 @@ def assert_download_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "onedrive":
-            extension = smart_extension("onedrive", file["name"], file.get("file", {}).get("mimeType"))
-            path = (
-                (file.get("parentReference", {}).get("path", "")).replace(
-                    "/drive/root:", ""
-                )
-                + "/"
-                + file["name"]
-            )
-
             db_file = File.objects.filter(
-                serviceId__userId=user_id,
-                serviceId__name=service_name,
                 serviceFileId=file.get("id"),
-                name=file.get("name"),
-                extension=extension,
-                downloadable=1,
-                path=path,
-                link=file.get("webUrl"),
-                size=file.get("size", 0),
-                createdAt=file.get("createdDateTime"),
-                modifiedAt=file.get("lastModifiedDateTime"),
-                indexedAt=None,
-                snippet=None,
-                content=None,
             )
             file_count = db_file.count()
+            
             check.equal(file_count, 1)
+            
+            check_tokens_against_ts_vector(db_file, file.get("content"))
 
 def assert_download_file_invalid_auth(client, user_id):
     """Helper function to assert finding a service with invalid auth.

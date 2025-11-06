@@ -65,7 +65,6 @@ def download_onedrive_files(
             service,
             access_token,
         )
-        print(f"THIS IS THE FILE LOOK HERE FAGGOT:{files}")
         return JsonResponse(files, safe=False)
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
@@ -106,8 +105,7 @@ def download_recursive_files(
     # Tell static type checkers that we expect a list of File objects here.
     onedrive_files = fetch_downloadable_files(service)
     if not onedrive_files:
-        print(f"THIS IS WHY Adumbass is a a dumbass:")
-        return False  # do error handling here
+        return [] # Return empty as it has a filetype we do not handle yet
 
     files = []
     for file in onedrive_files:
