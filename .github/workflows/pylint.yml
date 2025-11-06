@@ -1,4 +1,4 @@
-name: pylint 
+name: Pylint 
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -6,7 +6,7 @@ on:
     - '**'
 
 jobs:
-  build-lint:
+  run-pylint:
     name: Run Pylint
     runs-on: ubuntu-latest
     # Skip for draft PRs
@@ -23,6 +23,6 @@ jobs:
         run: |
           pip install -r ./requirements.txt
       
-      - name: Run pylint
+      - name: Run Pylint
         run: |
-          pylint --ignore=test,tests .
+          pylint .
