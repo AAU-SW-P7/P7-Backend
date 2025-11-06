@@ -54,7 +54,9 @@ def smart_extension(provider: str, name: str, mime: Optional[str] = None) -> str
         '.ttf', '.otf', '.woff', '.woff2'
     }
 
-    known_file_extensions = set(mimetypes.types_map) | compressed_file_extensions | extra_known_extensions
+    known_file_extensions = set(mimetypes.types_map) \
+                            | compressed_file_extensions \
+                            | extra_known_extensions
 
     google_file_extensions = {}
     if provider == "google":
@@ -78,7 +80,8 @@ def smart_extension(provider: str, name: str, mime: Optional[str] = None) -> str
     if not core:
         pass  # fall through to MIME fallback below
     elif "." not in core:
-        # Handle names like "..docx" / "...pdf": if the remaining token itself is a known ext, use it.
+        # Handle names like "..docx" / "...pdf": 
+        # if the remaining token itself is a known ext, use it.
         candidate = f".{core.lower()}"
         if candidate in known_file_extensions:
             return candidate
