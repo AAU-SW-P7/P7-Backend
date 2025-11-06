@@ -67,11 +67,12 @@ def assert_save_file_success(client, user_id, service_name):
 
         elif service_name == "google":
             # Skip non-files (folders, shortcuts, etc)
-            mime_type = file.get("mimeType", "")
             if (
-                mime_type == "application/vnd.google-apps.folder"
-                or mime_type == "application/vnd.google-apps.shortcut"
-                or mime_type == "application/vnd.google-apps.drive-sdk"
+                file.get("mimeType", "") in (
+                'application/vnd.google-apps.folder',
+                'application/vnd.google-apps.shortcut',
+                'application/vnd.google-apps.drive-sdk',
+            )
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
             file_by_id = {file["id"]: file for file in data}

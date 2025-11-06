@@ -3,7 +3,7 @@
 import os
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
@@ -15,7 +15,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
 import django
 django.setup()
-
+from django.utils import timezone
 import pytest
 
 from helpers.search_filename_rank import (
@@ -39,7 +39,7 @@ def test_data_fixture():
         oauthType="DROPBOX",
         oauthToken="fake-token-1",
         accessToken="fake-access-1",
-        accessTokenExpiration=datetime.now() + timedelta(days=365),
+        accessTokenExpiration=timezone.now() + timedelta(days=365),
         refreshToken="fake-refresh-1",
         name="Dropbox",
         accountId="acc1",
@@ -55,8 +55,8 @@ def test_data_fixture():
         path="/report-user1.docx",
         link="http://dropbox/link1",
         size=1024,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+        createdAt=timezone.now(),
+        modifiedAt=timezone.now(),
     )
     file2 = File.objects.create(
         serviceId=service1,
@@ -67,8 +67,8 @@ def test_data_fixture():
         path="/report-user1.docx",
         link="http://dropbox/link1",
         size=1024,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+        createdAt=timezone.now(),
+        modifiedAt=timezone.now(),
     )
     file3 = File.objects.create(
         serviceId=service1,
@@ -79,8 +79,8 @@ def test_data_fixture():
         path="/report-user1.docx",
         link="http://dropbox/link1",
         size=1024,
-        createdAt=datetime.now(),
-        modifiedAt=datetime.now(),
+        createdAt=timezone.now(),
+        modifiedAt=timezone.now(),
     )
     return {
         "user1": user1,

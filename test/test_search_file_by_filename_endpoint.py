@@ -4,7 +4,6 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
-from django.utils import timezone
 
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
@@ -16,6 +15,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
 import django
 django.setup()
+from django.utils import timezone
 
 import pytest
 from ninja.testing import TestClient
