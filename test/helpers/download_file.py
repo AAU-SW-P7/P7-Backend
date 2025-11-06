@@ -4,7 +4,6 @@ import os
 import pytest_check as check
 from django.db import connection
 from repository.models import Service, User, File
-from p7.helpers import smart_extension
 
 
 def assert_download_file_success(client, user_id, service_name):
