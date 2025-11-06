@@ -58,10 +58,18 @@ def assert_create_user_missing_header(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)

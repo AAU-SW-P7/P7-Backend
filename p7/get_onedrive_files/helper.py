@@ -25,18 +25,18 @@ def update_or_create_file(file, service):
     )
 
     save_file(
-        service,
-        file["id"],
-        file["name"],
-        extension,
-        True,
-        path,
-        file["webUrl"],
-        file.get("size", 0),
-        file["createdDateTime"],
-        file["lastModifiedDateTime"],
-        None,
-        None,
+        service_id=service,
+        service_file_id=file["id"],
+        name=file["name"],
+        extension=extension,
+        downloadable=True,
+        path=path,
+        link=file["webUrl"],
+        size=file.get("size", 0),
+        created_at=file["createdDateTime"],
+        modified_at=file["lastModifiedDateTime"],
+        indexed_at=None,
+        snippet=None,
     )
 
 def fetch_recursive_files(

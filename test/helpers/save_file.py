@@ -68,7 +68,6 @@ def assert_save_file_success(client, user_id, service_name):
                 modifiedAt=file.get("server_modified"),
                 indexedAt=None,
                 snippet=None,
-                content=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -77,10 +76,10 @@ def assert_save_file_success(client, user_id, service_name):
         elif service_name == "google":
             # Skip non-files (folders, shortcuts, etc)
             mime_type = file.get("mimeType", "")
-            if (
-                mime_type == "application/vnd.google-apps.folder"
-                or mime_type == "application/vnd.google-apps.shortcut"
-                or mime_type == "application/vnd.google-apps.drive-sdk"
+            if mime_type in (
+                "application/vnd.google-apps.folder",
+                "application/vnd.google-apps.shortcut",
+                "application/vnd.google-apps.drive-sdk",
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
             file_by_id = {file["id"]: file for file in data}
@@ -102,14 +101,17 @@ def assert_save_file_success(client, user_id, service_name):
                 modifiedAt=file.get("modifiedTime"),
                 indexedAt=None,
                 snippet=None,
-                content=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
             check_tokens_against_ts_vector(db_file)
 
         elif service_name == "onedrive":
-            extension = smart_extension("onedrive", file["name"], file.get("file", {}).get("mimeType"))
+            extension = smart_extension(
+                "onedrive",
+                file["name"],
+                file.get("file", {}).get("mimeType"),
+            )
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(
                     "/drive/root:", ""
@@ -132,7 +134,6 @@ def assert_save_file_success(client, user_id, service_name):
                 modifiedAt=file.get("lastModifiedDateTime"),
                 indexedAt=None,
                 snippet=None,
-                content=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -181,11 +182,19 @@ def assert_save_file_missing_header(client, user_id):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -209,16 +218,31 @@ def assert_save_file_missing_user_id(client):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
-
 
 def check_tokens_against_ts_vector(file: File):
     """
@@ -231,7 +255,7 @@ def check_tokens_against_ts_vector(file: File):
     # To produce the tokens PostgreSQL's tsvector parser is used
     # NOTE: this currently only takes into account the file name
     name_tokens = ts_tokenize(file_name)
-    name_tokens = [token for token in name_tokens]
+    name_tokens = list(name_tokens)
     for token in name_tokens:
         check.equal(token in ts, True)
 

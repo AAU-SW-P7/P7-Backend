@@ -4,7 +4,6 @@ import os
 import pytest_check as check
 from django.db import connection
 from p7.helpers import smart_extension
-from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
 
 def assert_download_file_success(client, user_id, service_name):
@@ -31,7 +30,7 @@ def assert_download_file_success(client, user_id, service_name):
     )
 
     data = response.json()
-    
+
     check.equal(response.status_code, 200)
     check.is_instance(data, list)
 
@@ -42,9 +41,9 @@ def assert_download_file_success(client, user_id, service_name):
                 serviceFileId=file.get("id"),
             )
             file_count = db_file.count()
-            
+
             check.equal(file_count, 1)
-            
+
             check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "google":
@@ -54,11 +53,15 @@ def assert_download_file_success(client, user_id, service_name):
             file_count = db_file.count()
 
             check.equal(file_count, 1)
-            
+
             check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "onedrive":
-            extension = smart_extension("onedrive", file["name"], file.get("file", {}).get("mimeType"))
+            extension = smart_extension(
+                "onedrive",
+                file["name"],
+                file.get("file", {}).get("mimeType"),
+            )
             path = (
                 (file.get("parentReference", {}).get("path", "")).replace(
                     "/drive/root:", ""
@@ -127,11 +130,19 @@ def assert_download_file_missing_header(client, user_id):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -155,13 +166,29 @@ def assert_download_file_missing_user_id(client):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'user_id'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -180,7 +207,7 @@ def check_tokens_against_ts_vector(file: File, content: str):
     content_lexemes = []
     if content:
         content_tokens = ts_tokenize_english(content)
-        content_lexemes = [token for token in content_tokens]
+        content_lexemes = list(content_tokens)
 
     # Combine and dedupe lexemes from name and content
     all_lexemes = set(name_tokens + content_lexemes)
