@@ -1,18 +1,21 @@
 """Helper functions for Google Drive file operations."""
+
 from datetime import datetime, timezone
 from typing import Dict
+
 # Google libs
 from google.auth.transport.requests import Request
 
-from p7.helpers import smart_extension
 from repository.file import save_file
+from p7.helpers import smart_extension
+
 
 def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
-    """ Updates or creates a File record from Google Drive file metadata.
-        params:
-        file: A dictionary containing Google Drive file metadata.
-        service: The service object associated with the user.
-        file_by_id: A dictionary mapping file IDs to their metadata for path construction.
+    """Updates or creates a File record from Google Drive file metadata.
+    params:
+    file: A dictionary containing Google Drive file metadata.
+    service: The service object associated with the user.
+    file_by_id: A dictionary mapping file IDs to their metadata for path construction.
     """
     extension = smart_extension("google", file["name"], file.get("mimeType"))
     downloadable = file.get("capabilities", {}).get("canDownload")
@@ -26,12 +29,13 @@ def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
         downloadable,
         path,
         file["webViewLink"],
-        file.get("size", 0), # Can be empty
+        file.get("size", 0),  # Can be empty
         file["createdTime"],
         file["modifiedTime"],
         None,
         None,
     )
+
 
 def fetch_recursive_files(
     drive_api,
@@ -74,6 +78,7 @@ def fetch_recursive_files(
 
     return files
 
+
 def get_new_access_token(
     service,
     creds,
@@ -83,7 +88,7 @@ def get_new_access_token(
 
     params:
         refresh_token (str): The refresh token to use for obtaining a new access token.
-    
+
     returns:
         str: A string with the new access token.
     """
@@ -94,7 +99,9 @@ def get_new_access_token(
 
         # Optionally persist the new access_token back to DB so next calls use it
         new_token = creds.token
-        new_token_expiration = datetime.fromtimestamp(creds.expiry.timestamp(), tz=timezone.utc)
+        new_token_expiration = datetime.fromtimestamp(
+            creds.expiry.timestamp(), tz=timezone.utc
+        )
         service.accessToken = new_token
         service.accessTokenExpiration = new_token_expiration
         service.save(update_fields=["accessToken", "accessTokenExpiration"])
@@ -103,9 +110,10 @@ def get_new_access_token(
 
     return access_token
 
+
 def build_google_drive_path(file_meta: dict, file_by_id: dict) -> str:
     """
-    Build a display path like /FolderA/FolderB/filename 
+    Build a display path like /FolderA/FolderB/filename
     using only the current `files` array.
 
     params:
@@ -115,16 +123,13 @@ def build_google_drive_path(file_meta: dict, file_by_id: dict) -> str:
     """
     parents = file_meta.get("parents") or []
     prefix_parts = (
-        google_drive_folder_path_parts(parents[0], file_by_id)
-        if parents
-        else []
+        google_drive_folder_path_parts(parents[0], file_by_id) if parents else []
     )
     # Join and include filename at the end to mimic Dropbox-style path_display
     return "/" + "/".join(prefix_parts + [file_meta.get("name", "")])
 
-def google_drive_folder_path_parts(
-    folder_id: str, file_by_id: Dict[str, dict]
-) -> list:
+
+def google_drive_folder_path_parts(folder_id: str, file_by_id: Dict[str, dict]) -> list:
     """
     Returns a list like ['FolderA', 'FolderB'] for a folder id.
     Stops gracefully if an ancestor isn't in `files`.

@@ -1,4 +1,5 @@
 """API routing for the P7 backend."""
+
 from ninja import NinjaAPI
 
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
@@ -35,5 +36,3 @@ api.add_router("/create_user/", create_user_router)
 api.add_router("/create_service/", create_service_router)
 api.add_router("/find_service/", find_services_router)
 api.add_router("/search_files_by_filename/", search_files_by_filename_router)
-
-

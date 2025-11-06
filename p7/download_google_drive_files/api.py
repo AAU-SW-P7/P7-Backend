@@ -1,23 +1,24 @@
 """API for fetching and saving Google Drive files."""
+
 import io
 import os
 from ninja import Router, Header
 from django.http import JsonResponse
+
 # Google libs
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-
-from p7.helpers import validate_internal_auth
-from p7.get_google_drive_files.helper import (
-    update_or_create_file, fetch_recursive_files, get_new_access_token
-)
-from p7.fetch_downloadable_files.api import fetch_downloadable_files
 from repository.file import update_tsvector
 from repository.service import get_tokens, get_service
 from repository.user import get_user
+from p7.helpers import validate_internal_auth
+from p7.get_google_drive_files.helper import get_new_access_token
+from p7.fetch_downloadable_files.api import fetch_downloadable_files
 
 download_google_drive_files_router = Router()
+
+
 @download_google_drive_files_router.get("/")
 def download_google_drive_files(
     request,
@@ -60,12 +61,12 @@ def download_google_drive_files(
 
         # Build Drive service and list files
         drive_api = build("drive", "v3", credentials=creds)
-        
+
         files = download_recursive_files(
             drive_api,
             service,
         )
-        
+
         return JsonResponse(files, safe=False)
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
@@ -86,6 +87,7 @@ def download_google_drive_files(
         response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
         return response
 
+
 def download_recursive_files(
     drive_api,
     service,
@@ -95,7 +97,6 @@ def download_recursive_files(
     google_drive_files = fetch_downloadable_files(service)
     if not google_drive_files:
         print("No downloadable Google Drive files found.")
-        pass # do error handling here
 
     files = []
     for google_drive_file in google_drive_files:
@@ -104,25 +105,31 @@ def download_recursive_files(
 
         try:
             try:
-                request = drive_api.files().export(fileId=file_id, mimeType='text/plain')
+                request = drive_api.files().export(
+                    fileId=file_id, mimeType="text/plain"
+                )
                 fh = io.BytesIO()
                 downloader = MediaIoBaseDownload(fh, request)
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                content = fh.getvalue().decode('utf-8-sig', errors='ignore') # decode with utf-8-sig to remove BOM if present
-                
+                content = fh.getvalue().decode(
+                    "utf-8-sig", errors="ignore"
+                )  # decode with utf-8-sig to remove BOM if present
+
                 update_tsvector(
                     google_drive_file,
                     google_drive_file.name,
                     content,
                 )
-                
-                files.append({
-                    "id": file_id,
-                    "content": content,
-                })
-            except:
+
+                files.append(
+                    {
+                        "id": file_id,
+                        "content": content,
+                    }
+                )
+            except (ValueError, TypeError, RuntimeError):
                 # Regular binary file -> get_media
                 request = drive_api.files().get_media(fileId=file_id)
                 fh = io.BytesIO()
@@ -130,20 +137,23 @@ def download_recursive_files(
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                content = fh.getvalue().decode('utf-8-sig', errors='ignore') # decode with utf-8-sig to remove BOM if present
-                
+                content = fh.getvalue().decode(
+                    "utf-8-sig", errors="ignore"
+                )  # decode with utf-8-sig to remove BOM if present
+
                 update_tsvector(
                     google_drive_file,
                     google_drive_file.name,
                     content,
                 )
-                
-                files.append({
-                    "id": file_id,
-                    "content": content,
-                })
-                
-        except Exception as e:
+
+                files.append(
+                    {
+                        "id": file_id,
+                        "content": content,
+                    }
+                )
+        except (ValueError, TypeError, RuntimeError) as e:
             # log and continue
             print(f"Failed to download {file_id} ({name}): {e}")
 

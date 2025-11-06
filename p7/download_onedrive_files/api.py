@@ -1,23 +1,21 @@
 """API endpoint to download OneDrive files for a user."""
 
+# Microsoft libs
+import os
+import msal
 import requests
-from typing import List, Union
 
 from ninja import Router, Header
 from django.http import JsonResponse
-from p7.helpers import validate_internal_auth
-from p7.get_onedrive_files.helper import get_new_access_token
-from p7.fetch_downloadable_files.api import fetch_downloadable_files
 from repository.file import update_tsvector
 from repository.service import get_tokens, get_service
 from repository.user import get_user
-from repository.models import File
-
-# Microsoft libs
-import msal
-import os
+from p7.helpers import validate_internal_auth
+from p7.get_onedrive_files.helper import get_new_access_token
+from p7.fetch_downloadable_files.api import fetch_downloadable_files
 
 download_onedrive_files_router = Router()
+
 
 @download_onedrive_files_router.get("/")
 def download_onedrive_files(
@@ -35,7 +33,7 @@ def download_onedrive_files(
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
-    
+
     user = get_user(user_id)
 
     if isinstance(user, JsonResponse):
@@ -53,11 +51,7 @@ def download_onedrive_files(
             client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
         )
         access_token = get_new_access_token(
-            service,
-            app,
-            access_token,
-            access_token_expiration,
-            refresh_token
+            service, app, access_token, access_token_expiration, refresh_token
         )
         print(access_token)
 
@@ -105,7 +99,7 @@ def download_recursive_files(
     # Tell static type checkers that we expect a list of File objects here.
     onedrive_files = fetch_downloadable_files(service)
     if not onedrive_files:
-        return [] # Return empty as it has a filetype we do not handle yet
+        return []  # Return empty as it has a filetype we do not handle yet
 
     files = []
     for file in onedrive_files:
@@ -115,6 +109,7 @@ def download_recursive_files(
             headers={
                 "Authorization": f"Bearer {access_token}",
             },
+            timeout=1000,
         )
 
         file_content = (
@@ -138,13 +133,11 @@ def download_recursive_files(
                 )
                 files.append(
                     {
-                        "id": file.serviceFileId, 
+                        "id": file.serviceFileId,
                         "name": file.name,
-                        "content": file_content
+                        "content": file_content,
                     }
                 )
-            except Exception as e:
-                # Log and continue
+            except (ValueError, TypeError, KeyError, RuntimeError) as e:
                 print(f"Failed to download {file.serviceFileId} ({file.name}): {e}")
-                pass
     return files

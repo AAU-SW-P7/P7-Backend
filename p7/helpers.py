@@ -1,9 +1,11 @@
 """Helper functions for internal API calls and validation."""
+
 import os
 import mimetypes
 from pathlib import Path
 import requests
 from django.http import JsonResponse
+
 
 def validate_internal_auth(x_internal_auth: str) -> JsonResponse | None:
     """
@@ -13,8 +15,11 @@ def validate_internal_auth(x_internal_auth: str) -> JsonResponse | None:
         x_internal_auth (str): The value of the x-internal-auth header to validate.
     """
     if x_internal_auth != os.getenv("INTERNAL_API_KEY"):
-        return JsonResponse({"error": "Unauthorized - invalid x-internal-auth"}, status=401)
+        return JsonResponse(
+            {"error": "Unauthorized - invalid x-internal-auth"}, status=401
+        )
     return None
+
 
 def fetch_api(url, headers, data):
     """
@@ -29,35 +34,38 @@ def fetch_api(url, headers, data):
     if not response.ok:
         return JsonResponse(
             {"error": "Failed to fetch files", "details": response.json()},
-            status=response.status_code
+            status=response.status_code,
         )
     return response
+
 
 def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
     """
     Determine the file extension based on provider, filename, and MIME type.
     """
     # known compression endings
-    compressed_file_extensions = {'.gz', '.bz2', '.xz', '.zst', '.lz', '.lzma', '.br'}
+    compressed_file_extensions = {".gz", ".bz2", ".xz", ".zst", ".lz", ".lzma", ".br"}
     known_file_extensions = (
-      set(mimetypes.types_map) |    # platform-dependent
-      set(mimetypes.common_types) | # adds many common ones incl .docx on most installs
-      compressed_file_extensions
+        set(mimetypes.types_map)  # platform-dependent
+        | set(
+            mimetypes.common_types
+        )  # adds many common ones incl .docx on most installs
+        | compressed_file_extensions
     )
 
     google_file_extensions = {}
     if provider == "google":
         google_file_extensions = {
-            'application/vnd.google-apps.document': '.gdoc',
-            'application/vnd.google-apps.spreadsheet': '.gsheet',
-            'application/vnd.google-apps.presentation': '.gslides',
-            'application/vnd.google-apps.drawing': '.gdraw',
-            'application/vnd.google-apps.form': '.gform',
-            'application/vnd.google-apps.fusiontable': '.gtable',
-            'application/vnd.google-apps.map': '.gmap',
-            'application/vnd.google-apps.script': '.gscript',
-            'application/vnd.google-apps.site': '.gsite',
-            'application/vnd.google-apps.jam': '.gjam',
+            "application/vnd.google-apps.document": ".gdoc",
+            "application/vnd.google-apps.spreadsheet": ".gsheet",
+            "application/vnd.google-apps.presentation": ".gslides",
+            "application/vnd.google-apps.drawing": ".gdraw",
+            "application/vnd.google-apps.form": ".gform",
+            "application/vnd.google-apps.fusiontable": ".gtable",
+            "application/vnd.google-apps.map": ".gmap",
+            "application/vnd.google-apps.script": ".gscript",
+            "application/vnd.google-apps.site": ".gsite",
+            "application/vnd.google-apps.jam": ".gjam",
         }
 
     path = Path(name)
@@ -74,7 +82,7 @@ def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
         if len(recognized) >= 2 and recognized[-1] in compressed_file_extensions:
             return "".join(recognized[-2:])
         return recognized[-1]
-    
+
     # fallback: trust the filename if it has an apparent extension
     if suffixes:
         if len(suffixes) >= 2 and suffixes[-1] in compressed_file_extensions:
@@ -90,22 +98,22 @@ def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
 
     return ""
 
+
 def downloadable_file_extensions() -> set[str]:
     """Return a set of file extensions considered downloadable."""
     return {
-        '.gdoc',
-        '.gsheet',
-        '.gslides',
-        '.gdraw',
-        '.gform',
-        '.gtable',
-        '.gmap',
-        '.gscript',
-        '.gsite',
-        '.gjam',
-        
-        '.txt',
-        '.hs',
+        ".gdoc",
+        ".gsheet",
+        ".gslides",
+        ".gdraw",
+        ".gform",
+        ".gtable",
+        ".gmap",
+        ".gscript",
+        ".gsite",
+        ".gjam",
+        ".txt",
+        ".hs",
         # '.pdf', # add libaries to do this
         # '.doc',
         # '.docx',
