@@ -65,7 +65,7 @@ def download_onedrive_files(
             service,
             access_token,
         )
-
+        print(f"THIS IS THE FILE LOOK HERE FAGGOT:{files}")
         return JsonResponse(files, safe=False)
     except KeyError as e:
         response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
@@ -96,7 +96,7 @@ def download_onedrive_files(
 def download_recursive_files(
     service,
     access_token: str,
-) -> Union[List[File], bool]:
+):
     """Download files recursively from a user's OneDrive account.
 
     Returns a list of File-like objects (from the `repository.models.File` type)
@@ -104,11 +104,12 @@ def download_recursive_files(
     """
 
     # Tell static type checkers that we expect a list of File objects here.
-    onedrive_files: List[File] = fetch_downloadable_files(service)
+    onedrive_files = fetch_downloadable_files(service)
     if not onedrive_files:
+        print(f"THIS IS WHY Adumbass is a a dumbass:")
         return False  # do error handling here
 
-    files: List[dict] = []
+    files = []
     for file in onedrive_files:
         # `file` is expected to be an instance of `repository.models.File`.
         response = requests.post(
@@ -123,7 +124,6 @@ def download_recursive_files(
             if response.content
             else None
         )
-        print(f"THIS IS THE FILE CONTENT:{file_content}")
 
         if response.status_code != 200:
             # Do better error handling
@@ -140,11 +140,13 @@ def download_recursive_files(
                 )
                 files.append(
                     {
-                        "fileName": file.name,
-                        "fileContent": file_content
+                        "id": file.serviceFileId, 
+                        "name": file.name,
+                        "content": file_content
                     }
                 )
-            except Exception:
-                # Don't fail the whole loop for a tsvector error; optionally log
-                return False  # Do error handling here
+            except Exception as e:
+                # Log and continue
+                print(f"Failed to download {file.serviceFileId} ({file.name}): {e}")
+                pass
     return files
