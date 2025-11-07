@@ -20,6 +20,7 @@ from helpers.create_user import (assert_create_user_success)
 from helpers.create_service import (assert_create_service_success)
 from helpers.fetch_service import (
     assert_fetch_dropbox_files_success,
+    assert_fetch_google_files_success,
 )
 from helpers.download_file import (
     assert_download_file_success,
@@ -33,7 +34,9 @@ from p7.create_service.api import create_service_router
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
 from p7.get_google_drive_files.api import fetch_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router
+
 from p7.download_dropbox_files.api import download_dropbox_files_router
+from p7.download_google_drive_files.api import download_google_drive_files_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
@@ -85,6 +88,14 @@ def download_dropbox_files_client():
         TestClient: A test client for the download_dropbox_files endpoint.
     """
     return TestClient(download_dropbox_files_router)
+
+@pytest.fixture(name="download_google_drive_files_client_fixture", scope='module', autouse=True)
+def download_google_files_client():
+    """Fixture for creating a test client for the download_google_drive_files endpoint.
+    Returns:
+        TestClient: A test client for the download_google_drive_files endpoint.
+    """
+    return TestClient(download_google_drive_files_router)
 
 def test_create_user_success(user_client):
     """Test creating 3 users successfully.
@@ -160,3 +171,47 @@ def test_download_dropbox_file_missing_user_id(download_dropbox_files_client_fix
     """Test downloading a Dropbox file with missing user ID."""
 
     assert_download_file_missing_user_id(download_dropbox_files_client_fixture)
+
+def test_fetch_google_drive_files_success(fetch_google_files_client):
+    """Test fetching Google Drive files successfully for 3 users.
+    params:
+        fetch_google_drive_files_client:
+            Fixture for creating a test client for the fetch_google_drive_files endpoint.
+    """
+    for user_number in range(1, 3+1):  # 3 users
+
+        assert_fetch_google_files_success(
+            fetch_google_files_client,
+            user_number,
+            "google",
+        )
+
+def test_download_google_drive_file_success(download_google_drive_files_client_fixture):
+    """Test downloading a Google Drive file."""
+
+    for user_number in range(1, 3+1):  # 3 users
+
+        assert_download_file_success(
+            download_google_drive_files_client_fixture,
+            user_number,
+            'google',
+        )
+
+def test_download_google_drive_file_invalid_auth(download_google_drive_files_client_fixture):
+    """Test downloading a Google Drive file with invalid auth."""
+
+    for user_number in range(1, 3+1):  # 3 users
+
+        assert_download_file_invalid_auth(download_google_drive_files_client_fixture, user_number)
+
+def test_download_google_drive_file_missing_header(download_google_drive_files_client_fixture):
+    """Test downloading a Google Drive file with missing header."""
+
+    for user_number in range(1, 3+1):  # 3 users
+
+        assert_download_file_missing_header(download_google_drive_files_client_fixture, user_number)
+
+def test_download_google_drive_file_missing_user_id(download_google_drive_files_client_fixture):
+    """Test downloading a Google Drive file with missing user ID."""
+
+    assert_download_file_missing_user_id(download_google_drive_files_client_fixture)
