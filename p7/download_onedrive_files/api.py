@@ -2,21 +2,19 @@
 
 # Microsoft libs
 import os
+from datetime import datetime
 import msal
 import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
-from repository.file import update_tsvector
+from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
 from p7.get_onedrive_files.helper import get_new_access_token
-from p7.fetch_downloadable_files.api import fetch_downloadable_files
 
 download_onedrive_files_router = Router()
-
-
 @download_onedrive_files_router.get("/")
 def download_onedrive_files(
     request,
@@ -50,39 +48,23 @@ def download_onedrive_files(
             authority="https://login.microsoftonline.com/common",
             client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
         )
+
         access_token = get_new_access_token(
-            service, app, access_token, access_token_expiration, refresh_token
+            service,
+            app,
+            access_token,
+            access_token_expiration,
+            refresh_token,
         )
-        print(access_token)
 
         files = download_recursive_files(
             service,
             access_token,
         )
+
         return JsonResponse(files, safe=False)
-    except KeyError as e:
-        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
-        print("ERROR 1")
-        return response
-    except ValueError as e:
-        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
-        print("ERROR 2")
-        return response
-    except ConnectionError as e:
-        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
-        print("ERROR 3")
-        return response
-    except RuntimeError as e:
-        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
-        print("ERROR 4")
-        return response
-    except TypeError as e:
-        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
-        print("ERROR 5")
-        return response
-    except OSError as e:
-        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
-        print("ERROR 6")
+    except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
+        response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response
 
 
@@ -99,9 +81,12 @@ def download_recursive_files(
     # Tell static type checkers that we expect a list of File objects here.
     onedrive_files = fetch_downloadable_files(service)
     if not onedrive_files:
+        print("No downloadable OneDrive files found for user.")
+
         return []  # Return empty as it has a filetype we do not handle yet
 
     files = []
+    errors = []
     for file in onedrive_files:
         # `file` is expected to be an instance of `repository.models.File`.
         response = requests.post(
@@ -109,7 +94,7 @@ def download_recursive_files(
             headers={
                 "Authorization": f"Bearer {access_token}",
             },
-            timeout=1000,
+            timeout=30,
         )
 
         file_content = (
@@ -119,8 +104,7 @@ def download_recursive_files(
         )
 
         if response.status_code != 200:
-            # Do better error handling
-            raise ConnectionError(
+            raise RuntimeError(
                 f"Onedrive download failed for {file}: {response.status_code} - {response.text}"
             )
 
@@ -130,6 +114,7 @@ def download_recursive_files(
                     file,
                     file.name,
                     file_content,
+                    datetime.now(),
                 )
                 files.append(
                     {
@@ -138,6 +123,12 @@ def download_recursive_files(
                         "content": file_content,
                     }
                 )
-            except (ValueError, TypeError, KeyError, RuntimeError) as e:
-                print(f"Failed to download {file.serviceFileId} ({file.name}): {e}")
+            except RuntimeError as e:
+                errors.append(f"Failed to download {file.serviceFileId} ({file.name}): {e}")
+
+    if errors:
+        print("Errors occurred during OneDrive file downloads:")
+        for error in errors:
+            print(error)
+
     return files

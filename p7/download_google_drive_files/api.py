@@ -2,6 +2,7 @@
 
 import io
 import os
+from datetime import datetime
 from ninja import Router, Header
 from django.http import JsonResponse
 
@@ -9,16 +10,14 @@ from django.http import JsonResponse
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-from repository.file import update_tsvector
-from repository.service import get_tokens, get_service
-from repository.user import get_user
+
 from p7.helpers import validate_internal_auth
 from p7.get_google_drive_files.helper import get_new_access_token
-from p7.fetch_downloadable_files.api import fetch_downloadable_files
+from repository.file import update_tsvector, fetch_downloadable_files
+from repository.service import get_tokens, get_service
+from repository.user import get_user
 
 download_google_drive_files_router = Router()
-
-
 @download_google_drive_files_router.get("/")
 def download_google_drive_files(
     request,
@@ -68,23 +67,8 @@ def download_google_drive_files(
         )
 
         return JsonResponse(files, safe=False)
-    except KeyError as e:
-        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
-        return response
-    except ValueError as e:
-        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
-        return response
-    except ConnectionError as e:
-        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
-        return response
-    except RuntimeError as e:
-        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
-        return response
-    except TypeError as e:
-        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
-        return response
-    except OSError as e:
-        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
+    except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
+        response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response
 
 
@@ -96,10 +80,12 @@ def download_recursive_files(
 
     google_drive_files = fetch_downloadable_files(service)
     if not google_drive_files:
-        print("No downloadable Google Drive files found.")
-        # do error handling here
+        print("No downloadable Google Drive files found for user.")
+
+        return []
 
     files = []
+    errors = []
     for google_drive_file in google_drive_files:
         file_id = google_drive_file.serviceFileId
         name = google_drive_file.name
@@ -121,6 +107,7 @@ def download_recursive_files(
                     google_drive_file,
                     google_drive_file.name,
                     content,
+                    datetime.now(),
                 )
 
                 files.append({
@@ -142,6 +129,7 @@ def download_recursive_files(
                     google_drive_file,
                     google_drive_file.name,
                     content,
+                    datetime.now(),
                 )
 
                 files.append({
@@ -150,7 +138,11 @@ def download_recursive_files(
                 })
 
         except RuntimeError as e:
-             # do error handling here
-            print(f"Failed to download {file_id} ({name}): {e}")
+            errors.append(f"Failed to download {file_id} ({name}): {e}")
+
+    if errors:
+        print("Errors occurred during Google Drive file downloads:")
+        for error in errors:
+            print(error)
 
     return files
