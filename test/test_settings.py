@@ -1,8 +1,10 @@
 """Test settings for the Django application."""
 import os
 SECRET_KEY = "test-secret-key"
+
 INSTALLED_APPS = [
     "repository",
+    "pgcrypto",
 ]
 
 DATABASES = {
@@ -15,3 +17,6 @@ DATABASES = {
         "PORT": os.getenv("DATABASE_PORT"),
     }
 }
+
+USE_PGCRYPTO = False
+PGCRYPTO_KEY = None

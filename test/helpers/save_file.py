@@ -6,7 +6,8 @@ from django.db import connection
 from p7.helpers import smart_extension
 from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
-
+from repository.file import remove_extension_from_ts_vector_smart
+from p7.search_files_by_filename.api import sanitize_user_search
 
 def assert_save_file_success(client, user_id, service_name):
     """Helper function to assert successful creation of a service.
@@ -64,8 +65,6 @@ def assert_save_file_success(client, user_id, service_name):
                 path=path,
                 link=link,
                 size=file.get("size"),
-                createdAt=file.get("client_modified"),
-                modifiedAt=file.get("server_modified"),
                 indexedAt=None,
                 snippet=None,
                 content=None,
@@ -98,8 +97,6 @@ def assert_save_file_success(client, user_id, service_name):
                 path=path,
                 link=file.get("webViewLink"),
                 size=file.get("size", 0),
-                createdAt=file.get("createdTime"),
-                modifiedAt=file.get("modifiedTime"),
                 indexedAt=None,
                 snippet=None,
                 content=None,
@@ -128,8 +125,6 @@ def assert_save_file_success(client, user_id, service_name):
                 path=path,
                 link=file.get("webUrl"),
                 size=file.get("size", 0),
-                createdAt=file.get("createdDateTime"),
-                modifiedAt=file.get("lastModifiedDateTime"),
                 indexedAt=None,
                 snippet=None,
                 content=None,
@@ -220,7 +215,7 @@ def assert_save_file_missing_user_id(client):
     }), True)
 
 
-def check_tokens_against_ts_vector(file: File):
+def check_tokens_against_ts_vector(file: File, type=None):
     """
     Checks tokenized file name against the tsvector stored in the database
     """
@@ -230,20 +225,28 @@ def check_tokens_against_ts_vector(file: File):
     # Check that each token in the name appears as a term in our tsvector
     # To produce the tokens PostgreSQL's tsvector parser is used
     # NOTE: this currently only takes into account the file name
-    name_tokens = ts_tokenize(file_name)
-    name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
-    for token in name_tokens:
-        check.equal(token in ts, True)
+    name_tokens = ts_tokenize(file_name, "simple")
+    if type == "content":
+        name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
+    else:
+        for i, token in enumerate(name_tokens):
+            token_extension = smart_extension(file.get().serviceId.name, file_name)
+            if token_extension and token.endswith(token_extension):
+                name_tokens[i] = token[: -len(token_extension)]
+        remove_extension_from_ts_vector_smart(file.get())
+    print(f"File name: {file_name}, tokens: {name_tokens}, ts vector: {ts}")
+    for token in name_tokens:    
+        if not token.lower() in ts:
+            print(f"Token '{token}' not found in ts vector")
+        check.equal(token.lower() in ts, True)
 
-
-def ts_tokenize(text):
+def ts_tokenize(text, config):
     "Tokenizes a string using PostgreSQL's tsvector parser"
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT unnest(tsvector_to_array(to_tsvector('english', %s)))", [text]
+            "SELECT unnest(tsvector_to_array(to_tsvector(%s, %s)))", [config, text]
         )
         return [row[0] for row in cursor.fetchall()]
-
 
 def ts_lexize(token):
     "Lexizes (stems) a token"

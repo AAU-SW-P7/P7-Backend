@@ -25,8 +25,9 @@ from helpers.search_filename_rank import (
     assert_overfitting_token_count,
     assert_partial_token_match
 )
-from repository.models import File, Service, User
 from django.contrib.postgres.search import SearchVector, Value
+from repository.models import File, Service, User
+
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 

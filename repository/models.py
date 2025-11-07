@@ -1,11 +1,11 @@
 """Defines the database models for users, services, files, terms, inverted index, and postings."""
 
-from django.db import models, connection
+from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
-
-from repository.managers import FileManager
 import pgcrypto
+from repository.managers import FileManager
+
 
 
 class User(models.Model):
@@ -16,12 +16,6 @@ class User(models.Model):
     """
 
     id = models.BigAutoField(primary_key=True)
-    salt = models.TextField()
-
-    def generate_salt(self):
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT gen_salt('bf')")
-            self.salt = cursor.fetchone()[0]
 
     class Meta:
         """Class defining metadata for the User model."""
@@ -44,16 +38,16 @@ class Service(models.Model):
         db_column="userId",
         related_name="services",
     )
-    oauthType = models.TextField()
-    oauthToken = models.TextField()
-    accessToken = models.TextField()
-    accessTokenExpiration = models.DateTimeField()
-    refreshToken = models.TextField()
-    name = models.TextField()
-    accountId = models.TextField()
-    email = models.TextField()
-    scopeName = models.TextField()
-    indexedAt = models.DateTimeField(null=True, blank=True)
+    oauthType = pgcrypto.EncryptedTextField()
+    oauthToken = pgcrypto.EncryptedTextField()
+    accessToken = pgcrypto.EncryptedTextField()
+    accessTokenExpiration = pgcrypto.EncryptedDateTimeField()
+    refreshToken = pgcrypto.EncryptedTextField()
+    name = pgcrypto.EncryptedTextField()
+    accountId = pgcrypto.EncryptedTextField()
+    email = pgcrypto.EncryptedTextField()
+    scopeName = pgcrypto.EncryptedTextField()
+    indexedAt = pgcrypto.EncryptedDateTimeField(null=True, blank=True)
 
     class Meta:
         """Class defining metadata for the Service model."""
@@ -84,10 +78,10 @@ class File(models.Model):
     link = pgcrypto.EncryptedTextField()
     size = models.BigIntegerField()
     createdAt = pgcrypto.EncryptedDateTimeField()
-    modifiedAt = models.DateTimeField()
-    indexedAt = models.DateTimeField(null=True, blank=True)
-    snippet = models.TextField(null=True, blank=True)
-    content = models.TextField(null=True, blank=True)
+    modifiedAt = pgcrypto.EncryptedDateTimeField()
+    indexedAt = pgcrypto.EncryptedDateTimeField(null=True, blank=True)
+    snippet = pgcrypto.EncryptedTextField(null=True, blank=True)
+    content = pgcrypto.EncryptedTextField(null=True, blank=True)
     ts = SearchVectorField(null=True)
 
     class Meta:
@@ -103,4 +97,3 @@ class File(models.Model):
         ]
         # GIN index over a weighted SearchVector expression
         indexes = [GinIndex(name="file_search_gin", fields=["ts"])]
-

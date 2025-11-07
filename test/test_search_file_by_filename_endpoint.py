@@ -27,7 +27,7 @@ from helpers.search_filename import (
     assert_search_filename_missing_search_string,
     assert_search_filename_missing_userid,
 )
-#ESlint: disable=C0411
+from django.contrib.postgres.search import SearchVector, Value
 from helpers.create_user import assert_create_user_success
 from repository.models import File, Service, User
 from p7.search_files_by_filename.api import search_files_by_filename_router
@@ -129,11 +129,12 @@ def test_search_filename_end_to_end(search_file):
         size=1024,
     	createdAt=timezone.now(),
     	modifiedAt=timezone.now(),
+        ts=SearchVector(Value("report-user1"), weight="A", config='simple')
     )
     test_file_2 = File.objects.create(
         serviceId=service1,
         serviceFileId="file-2",
-        name="another-file-with-different-name.docx",
+        name="another-file-with-different-name",
         extension="docx",
         downloadable=True,
         path="/another-file-with-different-name.docx",
@@ -141,6 +142,7 @@ def test_search_filename_end_to_end(search_file):
         size=1024,
     	createdAt=timezone.now(),
     	modifiedAt=timezone.now(),
+        ts=SearchVector(Value("another-file-with-different-name"), weight="A", config='simple')
     )
 
     # Perform a search for 'report'
@@ -165,7 +167,7 @@ def test_search_filename_end_to_end(search_file):
     created_dt = _parse_iso_with_z(file["createdAt"])
     modified_dt = _parse_iso_with_z(file["modifiedAt"])
 
-    # Compare endpoint timestamps to the model datetimes using a small tolerance 
+    # Compare endpoint timestamps to the model datetimes using a small tolerance
     # to avoid failures caused by timezone/formatting differences.
     assert abs(created_dt.timestamp() - test_file_1.createdAt.timestamp()) < 1
     assert abs(modified_dt.timestamp() - test_file_1.modifiedAt.timestamp()) < 1

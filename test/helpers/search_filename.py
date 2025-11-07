@@ -11,6 +11,7 @@ def assert_query_file_by_name(user_id, query, expected_name):
         query (str): Search string
         expected_name (list): The expected filename in results
     """
+    print(f"Searching files for user_id: {user_id} with query: {query}")
     results = query_files_by_name(query, user_id)
     expected_name_len = len(expected_name)
     for file in results:

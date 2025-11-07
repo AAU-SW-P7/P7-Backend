@@ -1,13 +1,11 @@
 """Repository functions for handling File model operations."""
 
-from django.db import transaction, connection
-from django.db.models import Value, Q, F
-from django.db.models.functions import Coalesce
+from django.db import transaction
+from django.db.models import Value, Q
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
-import hashlib
-import re
+from p7.helpers import smart_extension
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -61,90 +59,38 @@ def save_file(
         )
         
         # Remove extensions tag from name field
-        extension_list = ["pdf", "docx","gdocx", "doc", "txt", "md", "xlsx", "xls", "pptx", "ppt", "csv", "rtf", "odt"]
-        for ext in extension_list:
-            if file.name.lower().endswith('.' + ext):
-                name = file.name[:-(len(ext) + 1)]
-                file.extension = '.' + ext
-                file.save(update_fields=["extension"])
-                break
-                
+        name = remove_extension_from_ts_vector_smart(file)
         update_tsvector(file, name, None)
 
     return file
 
-def get_raw_tsvector(text: str, config: str = "simple", weight: str | None = None):
+def remove_extension_from_ts_vector_smart(file: File) -> str:
+    """Removes the file extension from the file name for tsvector indexing.
+
+    params:
+        file: File instance whose name is to be processed.
+    returns:
+        The file name without its extension.
     """
-    Return PostgreSQL's weighted tsvector (with A/B weights).
-    If no weight is provided, returns a normal tsvector.
-    """
-    if not text:
-        return ""
-    with connection.cursor() as cursor:
-        if weight:
-            cursor.execute(
-                "SELECT setweight(to_tsvector(%s, %s), %s)", [config, text, weight]
-            )
-        else:
-            cursor.execute("SELECT to_tsvector(%s, %s)", [config, text])
-        result = cursor.fetchone()
-    return result[0] if result else ""
+    extension = smart_extension(file.serviceId.name, file.name)
+    if extension and file.name.lower().endswith(extension.lower()):
+        name_without_extension = file.name[: -len(extension)]
+        return name_without_extension
+    return file.name
+    
+    
 
 def update_tsvector(file, name: str, content: str | None):
-    """Generate a tsvector from name + content and store salted-hashed tokens."""
-    user = file.serviceId.userId
-    salt = user.salt
+    """Update the tsvector field for full-text search on the given file instance."""
 
-    # 1️⃣ Generate both vectors normally via PostgreSQL
-    raw_name_vec = get_raw_tsvector(name, "simple", "A")
-    raw_content_vec = get_raw_tsvector(content or "", "english", "B")
-
-    # 2️⃣ Hash tokens in both, preserving weights/positions
-    hashed_name_vec = hash_tsvector(raw_name_vec, salt)
-    hashed_content_vec = hash_tsvector(raw_content_vec, salt)
-
-    # 3️⃣ Combine vectors — both remain valid TSVECTOR syntax
-    combined_tsvector = f"{hashed_name_vec} {hashed_content_vec}".strip()
-
-    # 4️⃣ Update DB directly using tsvector literal
-    with connection.cursor() as cursor:
-        cursor.execute(
-            'UPDATE "file" SET ts = %s::tsvector WHERE id = %s',
-            [combined_tsvector, file.id],
+    File.objects.filter(pk=file.pk).update(
+            ts=(
+                SearchVector(Value(name), weight="A", config='simple') +
+                SearchVector(Value(content or ""), weight="B", config='english')
+            )
         )
 
     file.refresh_from_db(fields=["ts"])
-
-
-def tokenize_and_hash_with_salt(name: str, salt: str):
-    """Tokenize, alphabetize, and hash each token with the given user salt."""
-    tokens = re.findall(r'\w+', name.lower())
-    tokens.sort()
-
-    hashed_tokens = [
-        hashlib.sha256((salt + token).encode('utf-8')).hexdigest()
-        for token in tokens
-    ]
-    return hashed_tokens
-
-def hash_tsvector(tsvector_str: str, salt: str):
-    """
-    Replace lexemes in a tsvector string with salted hashes,
-    preserving position and weight data (like :3A,21A).
-    """
-    if not tsvector_str:
-        return ""
-
-    pattern = r"'([^']+)'(:[0-9A,]+)"
-    hashed_entries = []
-
-    for match in re.finditer(pattern, tsvector_str):
-        token = match.group(1)
-        positions = match.group(2)
-        hashed_token = hashlib.sha256((salt + token).encode("utf-8")).hexdigest()
-        hashed_entries.append(f"'{hashed_token}'{positions}")
-
-    return " ".join(hashed_entries)
 
 def query_files_by_name(name_query, user_id):
     """Query for files by name containing any of the given tokens and user id.
@@ -156,7 +102,7 @@ def query_files_by_name(name_query, user_id):
         QuerySet of File objects matching the search criteria.
     """
     try:
-        user = User.objects.get(pk=user_id)  # Ensure user exists
+        User.objects.get(pk=user_id)  # Ensure user exists
     except User.DoesNotExist:
         return JsonResponse(
             {"error": f"Service ({user_id}) not found for user"}, status=404
@@ -173,9 +119,9 @@ def query_files_by_name(name_query, user_id):
     q &= Q(serviceId__userId=user_id)
 
     query_text = " ".join(name_query)
-    results = File.objects.ranking_based_on_file_name(query_text, base_filter=q, user_salt=user.salt)
-    for f in results:
-        print(f.rank, f.name)
+    results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
+    for file in results:
+        print (f"File: {file.name}, Rank: {file.rank}")
     return results
 
 def get_files_by_service(service):
@@ -183,7 +129,7 @@ def get_files_by_service(service):
     
     params:
         service: The service object for which to retrieve files.
-    
+
     returns:
         A list of File objects associated with the service.
     """

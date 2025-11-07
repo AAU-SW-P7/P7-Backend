@@ -3,7 +3,7 @@
 import os
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
 
 # Make the local backend package importable so `from p7...` works under pytest
@@ -28,6 +28,7 @@ from helpers.search_filename import (
     assert_tokenize_hypothesis,
     assert_tokenize_match,
 )
+from django.contrib.postgres.search import SearchVector, Value
 from repository.models import File, Service, User
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
@@ -51,7 +52,7 @@ def test_data_fixture():
     file1 = File.objects.create(
         serviceId=service1,
         serviceFileId="file-1",
-        name="report-user1.docx",
+        name="report-user1",
         extension="docx",
         downloadable=True,
         path="/report-user1.docx",
@@ -59,11 +60,12 @@ def test_data_fixture():
         size=1024,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
+        ts=SearchVector(Value("report-user1"), weight="A", config='simple')
     )
     file11 = File.objects.create(
         serviceId=service1,
         serviceFileId="file-11",
-        name="user1-file-other-11.docx",
+        name="user1-file-other-11",
         extension="docx",
         downloadable=True,
         path="/report-user1.docx",
@@ -71,6 +73,7 @@ def test_data_fixture():
         size=1024,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
+        ts=SearchVector(Value("user1-file-other-11"), weight="A", config='simple')
     )
 
     user2 = User.objects.create()
@@ -89,7 +92,7 @@ def test_data_fixture():
     file2 = File.objects.create(
         serviceId=service2,
         serviceFileId="file-2",
-        name="report-user2.pdf",
+        name="report-user2",
         extension="pdf",
         downloadable=True,
         path="/report-user2.pdf",
@@ -97,11 +100,12 @@ def test_data_fixture():
         size=2048,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
+        ts=SearchVector(Value("report-user2"), weight="A", config='simple')
     )
     file22 = File.objects.create(
         serviceId=service2,
         serviceFileId="file-22",
-        name="user2-random-report-file.pdf",
+        name="user2-random-report-file",
         extension="pdf",
         downloadable=True,
         path="/report-user2.pdf",
@@ -109,6 +113,7 @@ def test_data_fixture():
         size=2048,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
+        ts=SearchVector(Value("user2-random-report-file"), weight="A", config='simple')
     )
 
     return {

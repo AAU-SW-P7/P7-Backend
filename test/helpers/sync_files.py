@@ -7,7 +7,7 @@ import json
 from django.http import JsonResponse
 from p7.sync_files.service_sync_functions import (
     sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
-    )
+)
 from helpers.create_service import (assert_create_service_success)
 
 def assert_sync_files_invalid_auth(client, user_id):
