@@ -4,7 +4,6 @@ import pytest_check as check
 
 from repository.models import File
 
-
 def assert_get_exact_match(query: str, filename_exact_match: str, filename_partial_match: str):
     """Test exact match ranking higher than partial matches.
     params:
@@ -59,11 +58,7 @@ def assert_token_position(query_close: str, query_far_away: str, file_name: str)
     check.greater(close_rank, far_away_rank)
 
 
-def assert_overfitting_token_count(
-        query_exact_match: str,
-        query_more_tokens: str,
-        file_name: object
-        ):
+def assert_overfitting_token_count(query_exact_match: str, query_more_tokens: str, file_name: object):
     """Test that overfitting penalizes the ranking score.
     params: 
         query_exact_match: search query string that exactly matches the file name
@@ -82,7 +77,11 @@ def assert_overfitting_token_count(
             more_tokens_rank = result.rank
     check.greater(exact_rank, more_tokens_rank)
 
-def assert_partial_token_match(query_partial: str, query_more_tokens_partial: str, file_name: str):
+def assert_partial_token_match(
+    query_partial: str,
+    query_more_tokens_partial: str,
+    file_name: str,
+):
     """Test that partial token matches rank lower than full token matches.
     params:
         query_partial: search query string with partial token match

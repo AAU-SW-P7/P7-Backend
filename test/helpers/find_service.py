@@ -85,7 +85,11 @@ def assert_find_service_missing_header(client, user_id):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
@@ -93,7 +97,7 @@ def assert_find_service_missing_header(client, user_id):
                 'type': 'string_type',
                 'loc': ['header', 'x-internal-auth'],
                 'msg': 'Input should be a valid string'
-                }
+            }
         ]
     }), True)
 
@@ -114,8 +118,16 @@ def assert_find_service_missing_user_id(client):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
@@ -123,11 +135,11 @@ def assert_find_service_missing_user_id(client):
                 'type': 'string_type',
                 'loc': ['query', 'user_id'],
                 'msg': 'Input should be a valid string'
-             },
+            },
             {
                 'type': 'string_type',
                 'loc': ['header', 'x-internal-auth'],
                 'msg': 'Input should be a valid string'
-             }
+            }
         ]
     }), True)

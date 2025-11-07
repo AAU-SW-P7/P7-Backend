@@ -18,8 +18,8 @@ def assert_delete_user_success(client, user_number):
 
     response = client.post(
         f"/?user_id={user_number}",
-        headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
-        )
+        headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
+    )
 
     data = response.json()
 
@@ -54,7 +54,11 @@ def assert_delete_user_missing_header(client, user_number):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
@@ -62,7 +66,7 @@ def assert_delete_user_missing_header(client, user_number):
                 'type': 'string_type',
                 'loc': ['header', 'x-internal-auth'],
                 'msg': 'Input should be a valid string'
-                }
+            }
         ]
     }), True)
 
@@ -74,8 +78,8 @@ def assert_delete_user_invalid_user_id(client, user_number):
     """
     response = client.post(
         f"/?user_id={user_number}",
-        headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
-        )
+        headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
+    )
 
     check.equal(response.status_code, 404)
     check.equal(response.json(), {

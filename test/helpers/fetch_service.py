@@ -67,7 +67,11 @@ def assert_fetch_dropbox_files_missing_header(client, user_id):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
@@ -75,7 +79,7 @@ def assert_fetch_dropbox_files_missing_header(client, user_id):
                 'type': 'string_type',
                 'loc': ['header', 'x-internal-auth'],
                 'msg': 'Input should be a valid string'
-                }
+            }
         ]
     }), True)
 
@@ -90,19 +94,29 @@ def assert_fetch_dropbox_files_missing_userid(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type',
-             'loc': ['query', 'user_id'],
-             'msg': 'Input should be a valid string'
-             },
-            {'type': 'string_type',
-             'loc': ['header', 'x-internal-auth'],
-             'msg': 'Input should be a valid string'
-             }
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -166,7 +180,11 @@ def assert_fetch_google_files_missing_header(client, user_id):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
@@ -174,7 +192,7 @@ def assert_fetch_google_files_missing_header(client, user_id):
                 'type': 'string_type',
                 'loc': ['header', 'x-internal-auth'],
                 'msg': 'Input should be a valid string'
-                }
+            }
         ]
     }), True)
 
@@ -188,19 +206,29 @@ def assert_fetch_google_files_missing_userid(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type',
-             'loc': ['query', 'user_id'],
-             'msg': 'Input should be a valid string'
-             },
-            {'type': 'string_type',
-             'loc': ['header', 'x-internal-auth'],
-             'msg': 'Input should be a valid string'
-             }
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -263,14 +291,19 @@ def assert_fetch_onedrive_files_missing_header(client, user_id):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type',
-             'loc': ['header', 'x-internal-auth'],
-             'msg': 'Input should be a valid string'
-             }
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -284,18 +317,28 @@ def assert_fetch_onedrive_files_missing_userid(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type',
-             'loc': ['query', 'user_id'],
-             'msg': 'Input should be a valid string'
-             },
-            {'type': 'string_type',
-             'loc': ['header', 'x-internal-auth'],
-             'msg': 'Input should be a valid string'
-             }
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)

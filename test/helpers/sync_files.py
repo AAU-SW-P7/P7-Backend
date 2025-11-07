@@ -4,7 +4,9 @@ import json
 from datetime import datetime, timezone
 import pytest_check as check
 
+import pytest_check as check
 from django.http import JsonResponse
+from helpers.create_service import (assert_create_service_success)
 from p7.sync_files.service_sync_functions import (
     sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
     )
@@ -75,18 +77,26 @@ def assert_sync_files_missing_user_id(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'user_id'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'user_id'], 'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type',
-             'loc': ['query', 'user_id'],
-             'msg': 'Input should be a valid string'
-             },
-            {'type': 'string_type',
-             'loc': ['header', 'x-internal-auth'],
-             'msg': 'Input should be a valid string'
+            {
+                'type': 'string_type',
+                'loc': ['query', 'user_id'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
              }
         ]
     }), True)
