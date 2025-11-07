@@ -1,6 +1,7 @@
 """API for fetching and saving Google Drive files."""
 import io
 import os
+from datetime import datetime
 from ninja import Router, Header
 from django.http import JsonResponse
 # Google libs
@@ -12,8 +13,7 @@ from p7.helpers import validate_internal_auth
 from p7.get_google_drive_files.helper import (
     get_new_access_token
 )
-from p7.fetch_downloadable_files.api import fetch_downloadable_files
-from repository.file import update_tsvector
+from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 
@@ -67,23 +67,8 @@ def download_google_drive_files(
         )
 
         return JsonResponse(files, safe=False)
-    except KeyError as e:
-        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
-        return response
-    except ValueError as e:
-        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
-        return response
-    except ConnectionError as e:
-        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
-        return response
-    except RuntimeError as e:
-        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
-        return response
-    except TypeError as e:
-        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
-        return response
-    except OSError as e:
-        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
+    except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
+        response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response
 
 def download_recursive_files(
@@ -119,6 +104,7 @@ def download_recursive_files(
                     google_drive_file,
                     google_drive_file.name,
                     content,
+                    datetime.now(),
                 )
 
                 files.append({
@@ -140,6 +126,7 @@ def download_recursive_files(
                     google_drive_file,
                     google_drive_file.name,
                     content,
+                    datetime.now(),
                 )
 
                 files.append({
@@ -149,7 +136,7 @@ def download_recursive_files(
 
         except RuntimeError as e:
             errors.append(f"Failed to download {file_id} ({name}): {e}")
-            
+
     if errors:
         print("Errors occurred during Google Drive file downloads:")
         for error in errors:

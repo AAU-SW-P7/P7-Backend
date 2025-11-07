@@ -63,7 +63,7 @@ def download_recursive_files(
     dropbox_files = fetch_downloadable_files(service)
     if not dropbox_files:
         print("No downloadable Dropbox files found for user.")
-        
+
         return []
 
     files = []
