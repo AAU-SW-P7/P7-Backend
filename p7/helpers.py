@@ -134,9 +134,9 @@ def downloadable_file_extensions() -> set[str]:
 
         '.txt',
         '.hs',
+        '.docx',
         # '.pdf', # add libaries to do this
         # '.doc',
-        # '.docx',
         # '.xls',
         # '.xlsx',
         # '.ppt',

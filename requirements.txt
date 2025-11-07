@@ -16,3 +16,4 @@ pytest-check
 pylint
 pylint-django
 hypothesis
+python-docx==0.8.11

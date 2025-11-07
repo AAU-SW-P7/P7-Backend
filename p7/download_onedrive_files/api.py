@@ -5,6 +5,8 @@ import os
 from datetime import datetime
 import msal
 import requests
+from io import BytesIO
+from docx import Document
 
 from ninja import Router, Header
 from django.http import JsonResponse
@@ -97,16 +99,32 @@ def download_recursive_files(
             timeout=30,
         )
 
-        file_content = (
-            response.content.decode("utf-8", errors="ignore")
-            if response.content
-            else None
-        )
-
+        # Check HTTP status first
         if response.status_code != 200:
             raise RuntimeError(
                 f"Onedrive download failed for {file}: {response.status_code} - {response.text}"
             )
+
+        # Keep raw bytes so we can parse binary formats (like .docx) differently
+        content_bytes = response.content if response.content else None
+        file_content = None
+        print(file.name)
+        if content_bytes:
+            if file.name.endswith(".docx"):
+                try:
+                    doc = Document(BytesIO(content_bytes))
+                    # Join paragraphs with newlines; more advanced extraction could be added later
+                    file_content = "\n".join(p.text for p in doc.paragraphs)
+                except Exception as e:
+                    errors.append(f"Failed to parse docx {file.serviceFileId} ({file.name}): {e}")
+                    file_content = None
+            else:
+                # Default: try to decode as UTF-8 text
+                try:
+                    file_content = content_bytes.decode("utf-8", errors="ignore")
+                except Exception as e:
+                    errors.append(f"Failed to decode {file.serviceFileId} ({file.name}): {e}")
+                    file_content = None
 
         if file_content:
             try:
