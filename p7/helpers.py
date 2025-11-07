@@ -461,7 +461,7 @@ def downloadable_file_extensions() -> set[str]:
         '.yml',
         '.zsh',
         '.zshrc',
-        
+
         # '.pdf', # add libaries to do this
         # '.doc',
         # '.docx',
