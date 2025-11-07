@@ -247,7 +247,7 @@ def check_tokens_against_ts_vector(file: File):
     # To produce the tokens PostgreSQL's tsvector parser is used
     # NOTE: this currently only takes into account the file name
     name_tokens = ts_tokenize(file_name)
-    name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
+    name_tokens = list(name_tokens)
     for token in name_tokens:
         check.equal(token in ts, True)
 
@@ -259,11 +259,3 @@ def ts_tokenize(text):
             "SELECT unnest(tsvector_to_array(to_tsvector('english', %s)))", [text]
         )
         return [row[0] for row in cursor.fetchall()]
-
-
-def ts_lexize(token):
-    "Lexizes (stems) a token"
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT ts_lexize('english_stem', %s);", [token])
-        result_token = cursor.fetchone()
-        return result_token[0] if result_token and result_token[0] is not None else []
