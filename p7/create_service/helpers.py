@@ -1,3 +1,4 @@
+"""Helper functions for create_service module."""
 from django_q.tasks import async_task, schedule
 from p7.get_google_drive_files.api import process_google_drive_files
 from p7.get_dropbox_files.api import process_dropbox_files
@@ -5,6 +6,11 @@ from p7.get_onedrive_files.api import process_onedrive_files
 
 
 def schedule_fetching_files(cleaned):
+    """Schedule fetching files for the created service based on its name.
+
+    params:
+        cleaned (dict): The cleaned and validated payload containing service details.
+    """
     match cleaned["name"]:
         case "google":
             group = f"Google-Drive-{cleaned['userId']}"

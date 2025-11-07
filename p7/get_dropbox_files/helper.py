@@ -3,7 +3,6 @@
 from datetime import datetime, timezone, timedelta
 import os
 import requests
-from django.http import JsonResponse
 from repository.file import save_file
 from p7.helpers import fetch_api, smart_extension
 

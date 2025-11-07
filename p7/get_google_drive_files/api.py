@@ -98,6 +98,5 @@ def process_google_drive_files(user_id):
             update_or_create_file(file, service, file_by_id)
         return files
 
-        return JsonResponse(files, safe=False)
     except (ValueError, TypeError, KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
