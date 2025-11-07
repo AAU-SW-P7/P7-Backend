@@ -4,9 +4,7 @@ import json
 from datetime import datetime, timezone
 import pytest_check as check
 
-import pytest_check as check
 from django.http import JsonResponse
-from helpers.create_service import (assert_create_service_success)
 from p7.sync_files.service_sync_functions import (
     sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
     )
