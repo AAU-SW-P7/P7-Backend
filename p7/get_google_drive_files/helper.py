@@ -19,19 +19,18 @@ def update_or_create_file(file, service, file_by_id: Dict[str, dict]):
     path = build_google_drive_path(file, file_by_id)
 
     save_file(
-        service,
-        file["id"],
-        file["name"],
-        extension,
-        downloadable,
-        path,
-        file["webViewLink"],
-        file.get("size", 0), # Can be empty
-        file["createdTime"],
-        file["modifiedTime"],
-        None,
-        None,
-        None,
+        service_id=service,
+        service_file_id=file["id"],
+        name=file["name"],
+        extension=extension,
+        downloadable=downloadable,
+        path=path,
+        link=file["webViewLink"],
+        size=file.get("size", 0), # Can be empty
+        created_at=file["createdTime"],
+        modified_at=file["modifiedTime"],
+        indexed_at=None,
+        snippet=None,
     )
 
 def fetch_recursive_files(

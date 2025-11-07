@@ -76,11 +76,19 @@ def assert_find_user_by_email_missing_header(client, email):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
 
@@ -103,12 +111,28 @@ def assert_find_user_by_email_missing_email(client):
     check.equal(isinstance(response.json(), dict), True)
     check.equal(response.json() in ({
         'detail': [
-            {'type': 'missing', 'loc': ['query', 'email'], 'msg': 'Field required'},
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
+            {
+                'type': 'missing',
+                'loc': ['query', 'email'],
+                'msg': 'Field required'
+            },
+            {
+                'type': 'missing',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Field required'
+            }
         ]
     }, {
         'detail': [
-            {'type': 'string_type', 'loc': ['query', 'email'], 'msg': 'Input should be a valid string'},
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
+            {
+                'type': 'string_type',
+                'loc': ['query', 'email'],
+                'msg': 'Input should be a valid string'
+            },
+            {
+                'type': 'string_type',
+                'loc': ['header', 'x-internal-auth'],
+                'msg': 'Input should be a valid string'
+            }
         ]
     }), True)
