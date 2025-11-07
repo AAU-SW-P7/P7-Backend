@@ -94,10 +94,12 @@ def download_recursive_files(
 
     google_drive_files = fetch_downloadable_files(service)
     if not google_drive_files:
-        print("No downloadable Google Drive files found.")
-        # do error handling here
+        print("No downloadable Google Drive files found for user.")
+
+        return []
 
     files = []
+    errors = []
     for google_drive_file in google_drive_files:
         file_id = google_drive_file.serviceFileId
         name = google_drive_file.name
@@ -146,7 +148,11 @@ def download_recursive_files(
                 })
 
         except RuntimeError as e:
-             # do error handling here
-            print(f"Failed to download {file_id} ({name}): {e}")
+            errors.append(f"Failed to download {file_id} ({name}): {e}")
+            
+    if errors:
+        print("Errors occurred during Google Drive file downloads:")
+        for error in errors:
+            print(error)
 
     return files
