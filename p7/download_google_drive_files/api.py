@@ -1,18 +1,18 @@
 """API for fetching and saving Google Drive files."""
+
 import io
 import os
 from datetime import datetime
 from ninja import Router, Header
 from django.http import JsonResponse
+
 # Google libs
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
 from p7.helpers import validate_internal_auth
-from p7.get_google_drive_files.helper import (
-    get_new_access_token
-)
+from p7.get_google_drive_files.helper import get_new_access_token
 from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
@@ -71,6 +71,7 @@ def download_google_drive_files(
         response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response
 
+
 def download_recursive_files(
     drive_api,
     service,
@@ -91,7 +92,9 @@ def download_recursive_files(
 
         try:
             try:
-                request = drive_api.files().export(fileId=file_id, mimeType='text/plain')
+                request = drive_api.files().export(
+                    fileId=file_id, mimeType="text/plain"
+                )
                 fh = io.BytesIO()
                 downloader = MediaIoBaseDownload(fh, request)
                 done = False

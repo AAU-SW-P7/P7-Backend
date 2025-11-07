@@ -1,15 +1,20 @@
 """Helper functions for test_sync_files.py"""
+
 import os
 import json
 from datetime import datetime, timezone
 import pytest_check as check
 
 from django.http import JsonResponse
+from helpers.create_service import assert_create_service_success
 from p7.sync_files.service_sync_functions import (
-    sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
+    sync_dropbox_files,
+    sync_google_drive_files,
+    sync_onedrive_files,
     )
 from repository.user import get_user
 from repository.service import save_service
+
 
 def assert_sync_files_invalid_auth(client, user_id):
     """Helper function to assert syncing with invalid auth.
@@ -29,10 +34,8 @@ def assert_sync_files_invalid_auth(client, user_id):
     check.equal(response.status_code, 401)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json(), {
-            "error": "Unauthorized - invalid x-internal-auth"
-        }
-    )
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
 
 def assert_sync_files_missing_internal_auth(client, user_id):
     """Helper function to assert syncing by user_id with missing auth header.
@@ -50,18 +53,31 @@ def assert_sync_files_missing_internal_auth(client, user_id):
     check.equal(response.status_code, 422)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json() in ({
-        'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-        ]
-    }, {
-        'detail': [
-            {'type': 'string_type',
-             'loc': ['header', 'x-internal-auth'],
-             'msg': 'Input should be a valid string'
-             }
-        ]
-    }), True)
+    check.equal(
+        response.json()
+        in (
+            {
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    }
+                ]
+            },
+            {
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    }
+                ]
+            },
+        ),
+        True,
+    )
+
 
 def assert_sync_files_missing_user_id(client):
     """Helper function to assert syncing with missing user ID.
@@ -73,31 +89,41 @@ def assert_sync_files_missing_user_id(client):
 
     print(response.json())
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['query', 'user_id'], 'msg': 'Field required'
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["query", "user_id"],
+                        "msg": "Field required",
+                    },
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    },
+                ]
             },
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['query', 'user_id'],
-                'msg': 'Input should be a valid string'
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["query", "user_id"],
+                        "msg": "Input should be a valid string",
+                    },
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    },
+                ]
             },
-            {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-             }
-        ]
-    }), True)
+        ),
+        True,
+    )
+
 
 def assert_sync_files_function_missing_user_id(provider):
     """Helper function to assert behavior when called without user_id"""
@@ -158,7 +184,7 @@ def read_json_file(file_path):
         list: List of JSON objects, or JsonResponse error if file cannot be loaded.
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf8") as f:
             text = f.read()
         return json.loads(text)
     except (FileNotFoundError, json.JSONDecodeError):

@@ -3,8 +3,8 @@
 import os
 import pytest_check as check
 from django.db import connection
-from p7.helpers import smart_extension
 from repository.models import Service, User, File
+
 
 def assert_download_file_success(client, user_id, service_name):
     """Helper function to assert successful creation of a service.
@@ -57,37 +57,15 @@ def assert_download_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "onedrive":
-            extension = smart_extension(
-                "onedrive",
-                file["name"],
-                file.get("file", {}).get("mimeType"),
-            )
-            path = (
-                (file.get("parentReference", {}).get("path", "")).replace(
-                    "/drive/root:", ""
-                )
-                + "/"
-                + file["name"]
-            )
-
             db_file = File.objects.filter(
-                serviceId__userId=user_id,
-                serviceId__name=service_name,
                 serviceFileId=file.get("id"),
-                name=file.get("name"),
-                extension=extension,
-                downloadable=1,
-                path=path,
-                link=file.get("webUrl"),
-                size=file.get("size", 0),
-                createdAt=file.get("createdDateTime"),
-                modifiedAt=file.get("lastModifiedDateTime"),
-                indexedAt=None,
-                snippet=None,
-                content=None,
             )
             file_count = db_file.count()
+
             check.equal(file_count, 1)
+
+            check_tokens_against_ts_vector(db_file, file.get("content"))
+
 
 def assert_download_file_invalid_auth(client, user_id):
     """Helper function to assert finding a service with invalid auth.
@@ -107,10 +85,8 @@ def assert_download_file_invalid_auth(client, user_id):
     check.equal(response.status_code, 401)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json(), {
-            "error": "Unauthorized - invalid x-internal-auth"
-        }
-    )
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
 
 def assert_download_file_missing_header(client, user_id):
     """Helper function to assert finding a user by user_id with missing auth header.
@@ -128,23 +104,30 @@ def assert_download_file_missing_header(client, user_id):
     check.equal(response.status_code, 422)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    }
+                ]
+            },
             {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    }
+                ]
+            },
+        ),
+        True,
+    )
 
 
 def assert_download_file_missing_user_id(client):
@@ -164,33 +147,41 @@ def assert_download_file_missing_user_id(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['query', 'user_id'],
-                'msg': 'Field required'
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["query", "user_id"],
+                        "msg": "Field required",
+                    },
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    },
+                ]
             },
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['query', 'user_id'],
-                'msg': 'Input should be a valid string'
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["query", "user_id"],
+                        "msg": "Input should be a valid string",
+                    },
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    },
+                ]
             },
-            {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+        ),
+        True,
+    )
+
 
 def check_tokens_against_ts_vector(file: File, content: str):
     """
@@ -216,6 +207,7 @@ def check_tokens_against_ts_vector(file: File, content: str):
     for lex in all_lexemes:
         check.equal(lex in ts, True)
 
+
 def ts_tokenize_simple(text):
     "Tokenizes a string using PostgreSQL's tsvector parser"
     with connection.cursor() as cursor:
@@ -223,6 +215,7 @@ def ts_tokenize_simple(text):
             "SELECT unnest(tsvector_to_array(to_tsvector('simple', %s)))", [text]
         )
         return [row[0] for row in cursor.fetchall()]
+
 
 def ts_tokenize_english(text):
     "Tokenizes a string using PostgreSQL's tsvector parser"

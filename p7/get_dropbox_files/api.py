@@ -3,14 +3,18 @@
 from ninja import Router, Header
 from django.http import JsonResponse
 from django_q.tasks import async_task
-from p7.helpers import validate_internal_auth
-from p7.get_dropbox_files.helper import (
-    update_or_create_file, fetch_recursive_files, get_new_access_token
-)
 from repository.service import get_tokens, get_service
 from repository.user import get_user
+from p7.helpers import validate_internal_auth
+from p7.get_dropbox_files.helper import (
+    update_or_create_file,
+    fetch_recursive_files,
+    get_new_access_token,
+)
 
 fetch_dropbox_files_router = Router()
+
+
 @fetch_dropbox_files_router.get("/")
 def fetch_dropbox_files(
     request,

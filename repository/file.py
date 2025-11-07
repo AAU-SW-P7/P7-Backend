@@ -28,6 +28,7 @@ def fetch_downloadable_files(service):
 
     return JsonResponse({"error": "Invalid service parameter"}, status=400)
 
+
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
     service_file_id,
@@ -57,21 +58,21 @@ def save_file(
         modifiedAt: Timestamp when the file was last modified.
         indexedAt: Timestamp when the file was last indexed.
         snippet: Text snippet or preview of the file content.
-        """
+    """
 
     with transaction.atomic():
         # Insert the file
         defaults = {
-        "name": name,
-        "extension": extension,
-        "downloadable": downloadable,
-        "path": path,
-        "link": link,
-        "size": size,
-        "createdAt": created_at,
-        "modifiedAt": modified_at,
-        "indexedAt": indexed_at,
-        "snippet": snippet,
+            "name": name,
+            "extension": extension,
+            "downloadable": downloadable,
+            "path": path,
+            "link": link,
+            "size": size,
+            "createdAt": created_at,
+            "modifiedAt": modified_at,
+            "indexedAt": indexed_at,
+            "snippet": snippet,
         }
         file, _ = File.objects.update_or_create(
             serviceId=service_id,
@@ -96,6 +97,7 @@ def update_tsvector(file, name: str, content: str | None, indexed_at: datetime |
 
     file.refresh_from_db(fields=["ts"])
 
+
 def query_files_by_name(name_query, user_id):
     """Query for files by name containing any of the given tokens and user id.
 
@@ -112,7 +114,9 @@ def query_files_by_name(name_query, user_id):
             {"error": f"Service ({user_id}) not found for user"}, status=404
         )
 
-    assert isinstance(name_query, (list, tuple)), "name_query must be a list or tuple of tokens"
+    assert isinstance(
+        name_query, (list, tuple)
+    ), "name_query must be a list or tuple of tokens"
 
     # Q() object to combine queries
     q = Q()
@@ -127,12 +131,13 @@ def query_files_by_name(name_query, user_id):
 
     return results
 
+
 def get_files_by_service(service):
     """Retrieves all files associated with a given service.
-    
+
     params:
         service: The service object for which to retrieve files.
-    
+
     returns:
         A list of File objects associated with the service.
     """

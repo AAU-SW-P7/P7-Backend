@@ -1,16 +1,20 @@
 """API for syncing files from all services for a user."""
+
 from ninja import Router, Header
 from django.http import JsonResponse
 from django_q.tasks import async_task
-
-from p7.helpers import validate_internal_auth
-from p7.sync_files.service_sync_functions import (
-    sync_dropbox_files, sync_google_drive_files, sync_onedrive_files
-)
 from repository.service import get_service
 from repository.user import get_user
+from p7.helpers import validate_internal_auth
+from p7.sync_files.service_sync_functions import (
+    sync_dropbox_files,
+    sync_google_drive_files,
+    sync_onedrive_files,
+)
 
 sync_files_router = Router()
+
+
 @sync_files_router.get("/")
 def sync_files(
     request,
@@ -18,9 +22,9 @@ def sync_files(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ):
     """Sync files from all available services for a given user.
-        params:
-            x_internal_auth (str): The internal auth header for validating the request.
-            user_id (str): The ID of the user whose files are to be synced.
+    params:
+        x_internal_auth (str): The internal auth header for validating the request.
+        user_id (str): The ID of the user whose files are to be synced.
     """
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:

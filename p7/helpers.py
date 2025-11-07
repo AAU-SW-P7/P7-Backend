@@ -1,9 +1,11 @@
 """Helper functions for internal API calls and validation."""
+
 import os
 import mimetypes
 from typing import Optional
 import requests
 from django.http import JsonResponse
+
 
 def validate_internal_auth(x_internal_auth: str) -> JsonResponse | None:
     """
@@ -13,8 +15,11 @@ def validate_internal_auth(x_internal_auth: str) -> JsonResponse | None:
         x_internal_auth (str): The value of the x-internal-auth header to validate.
     """
     if x_internal_auth != os.getenv("INTERNAL_API_KEY"):
-        return JsonResponse({"error": "Unauthorized - invalid x-internal-auth"}, status=401)
+        return JsonResponse(
+            {"error": "Unauthorized - invalid x-internal-auth"}, status=401
+        )
     return None
+
 
 def fetch_api(url, headers, data):
     """
@@ -29,7 +34,7 @@ def fetch_api(url, headers, data):
     if not response.ok:
         return JsonResponse(
             {"error": "Failed to fetch files", "details": response.json()},
-            status=response.status_code
+            status=response.status_code,
         )
     return response
 
@@ -61,16 +66,16 @@ def smart_extension(provider: str, name: str, mime: Optional[str] = None) -> str
     google_file_extensions = {}
     if provider == "google":
         google_file_extensions = {
-            'application/vnd.google-apps.document': '.gdoc',
-            'application/vnd.google-apps.spreadsheet': '.gsheet',
-            'application/vnd.google-apps.presentation': '.gslides',
-            'application/vnd.google-apps.drawing': '.gdraw',
-            'application/vnd.google-apps.form': '.gform',
-            'application/vnd.google-apps.fusiontable': '.gtable',
-            'application/vnd.google-apps.map': '.gmap',
-            'application/vnd.google-apps.script': '.gscript',
-            'application/vnd.google-apps.site': '.gsite',
-            'application/vnd.google-apps.jam': '.gjam',
+            "application/vnd.google-apps.document": ".gdoc",
+            "application/vnd.google-apps.spreadsheet": ".gsheet",
+            "application/vnd.google-apps.presentation": ".gslides",
+            "application/vnd.google-apps.drawing": ".gdraw",
+            "application/vnd.google-apps.form": ".gform",
+            "application/vnd.google-apps.fusiontable": ".gtable",
+            "application/vnd.google-apps.map": ".gmap",
+            "application/vnd.google-apps.script": ".gscript",
+            "application/vnd.google-apps.site": ".gsite",
+            "application/vnd.google-apps.jam": ".gjam",
         }
 
     filename = (name or "").strip()
@@ -111,6 +116,7 @@ def smart_extension(provider: str, name: str, mime: Optional[str] = None) -> str
             return google_file_extensions.get(mime, "")
 
     return ""
+
 
 def downloadable_file_extensions() -> set[str]:
     """Return a set of file extensions considered downloadable."""

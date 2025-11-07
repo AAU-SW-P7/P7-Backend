@@ -1,7 +1,12 @@
-
 """Helper functions for testing search_files_by_name function."""
+
 import pytest_check as check
-from p7.search_files_by_filename.api import sanitize_user_search, query_files_by_name, tokenize
+from p7.search_files_by_filename.api import (
+    sanitize_user_search,
+    query_files_by_name,
+    tokenize,
+)
+
 
 def assert_query_file_by_name(user_id, query, expected_name):
     """Assert that searching by filename works correctly.
@@ -18,6 +23,7 @@ def assert_query_file_by_name(user_id, query, expected_name):
         check.equal(file.serviceId.userId.id, user_id)
 
     check.equal(results.count(), expected_name_len)
+
 
 def assert_query_matches_count(user_id, query, expected_count):
     """Assert that search returns no results for a missing query."""
@@ -41,6 +47,7 @@ def assert_search_filename_invalid_auth(client, user_id, search_string):
     check.equal(response.status_code, 401)
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
 
+
 def assert_search_filename_missing_header(client, user_id, search_string):
     """Helper function to assert bad request when auth header is missing.
     params:
@@ -50,23 +57,30 @@ def assert_search_filename_missing_header(client, user_id, search_string):
     response = client.get(f"/?user_id={user_id}&search_string={search_string}")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    }
+                ]
+            },
             {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    }
+                ]
+            },
+        ),
+        True,
+    )
 
 
 def assert_search_filename_missing_userid(client, search_string):
@@ -77,33 +91,41 @@ def assert_search_filename_missing_userid(client, search_string):
     response = client.get(f"/?search_string={search_string}")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['query', 'user_id'],
-                'msg': 'Field required'
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["query", "user_id"],
+                        "msg": "Field required",
+                    },
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    },
+                ]
             },
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['query', 'user_id'],
-                'msg': 'Input should be a valid string'
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["query", "user_id"],
+                        "msg": "Input should be a valid string",
+                    },
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    },
+                ]
             },
-            {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+        ),
+        True,
+    )
+
 
 def assert_search_filename_missing_search_string(client, user_id):
     """Helper function to assert bad request when userId query parameter is missing.
@@ -113,23 +135,30 @@ def assert_search_filename_missing_search_string(client, user_id):
     response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "p7"})
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['query', 'search_string'],
-                'msg': 'Field required'
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["query", "search_string"],
+                        "msg": "Field required",
+                    },
+                ]
             },
-        ]
-    }, {
-        'detail': [
             {
-                'type': 'string_type',
-                'loc': ['query', 'search_string'],
-                'msg': 'Input should be a valid string'
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["query", "search_string"],
+                        "msg": "Input should be a valid string",
+                    },
+                ]
             },
-        ]
-    }), True)
+        ),
+        True,
+    )
 
 
 def assert_search_filename_sanitization(input_str):
@@ -137,18 +166,27 @@ def assert_search_filename_sanitization(input_str):
     sanitized = sanitize_user_search(input_str)
     assert isinstance(sanitized, str)
     assert sanitized == sanitized.lower()
-    assert all(c.isalnum() or c.isspace() or c in "'-_" for c in sanitized)  # Check allowed chars
+    assert all(
+        c.isalnum() or c.isspace() or c in "'-_" for c in sanitized
+    )  # Check allowed chars
+
 
 def assert_search_filename_basic_sanitization():
     """Helper function to assert basic sanitization cases."""
-    assert sanitize_user_search("Aalborg's Bedste <script>") == "aalborg's bedste script"
-    assert sanitize_user_search('Hello "World" / Test') == 'hello world test'
+    assert (
+        sanitize_user_search("Aalborg's Bedste <script>") == "aalborg's bedste script"
+    )
+    assert sanitize_user_search('Hello "World" / Test') == "hello world test"
     assert sanitize_user_search("NoSpecialChars") == "nospecialchars"
     assert sanitize_user_search("<>'\"/|:;?") == "'"
     assert sanitize_user_search("") == ""
     assert sanitize_user_search("   Leading and trailing   ") == "leading and trailing"
     assert sanitize_user_search("Multiple   spaces") == "multiple spaces"
-    assert sanitize_user_search("Café-Del'Mar -  “Best of ’98”!!! ") == "café del'mar best of 98"
+    assert (
+        sanitize_user_search("Café-Del'Mar -  “Best of ’98”!!! ")
+        == "café del'mar best of 98"
+    )
+
 
 def assert_tokenize_match(input_str, expected_tokens):
     """Helper function to assert tokenization with numbers in the string.
@@ -158,6 +196,7 @@ def assert_tokenize_match(input_str, expected_tokens):
     """
     tokens = tokenize(input_str)
     assert tokens == expected_tokens
+
 
 def assert_tokenize_hypothesis(input_str):
     """Helper function to assert tokenization with various inputs using Hypothesis.

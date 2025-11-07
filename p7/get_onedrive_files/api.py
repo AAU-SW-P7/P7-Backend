@@ -6,13 +6,12 @@ from django.http import JsonResponse
 from django_q.tasks import async_task
 # Microsoft libs
 import msal
-
+from repository.service import get_tokens, get_service
+from repository.user import get_user
 from p7.helpers import validate_internal_auth
 from p7.get_onedrive_files.helper import (
     update_or_create_file, fetch_recursive_files
     )
-from repository.service import get_tokens, get_service
-from repository.user import get_user
 
 fetch_onedrive_files_router = Router()
 @fetch_onedrive_files_router.get("/")

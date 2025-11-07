@@ -1,16 +1,18 @@
 """Helper functions for fetching and processing Dropbox files."""
+
 from datetime import datetime, timezone, timedelta
 import os
 import requests
-
-from p7.helpers import fetch_api, smart_extension
+from django.http import JsonResponse
 from repository.file import save_file
+from p7.helpers import fetch_api, smart_extension
+
 
 def update_or_create_file(file, service):
-    """ Updates or creates a file record in the database based on Dropbox file metadata.
-        params:
-        file: A dictionary containing Dropbox file metadata.
-        service: The service object associated with the user.
+    """Updates or creates a file record in the database based on Dropbox file metadata.
+    params:
+    file: A dictionary containing Dropbox file metadata.
+    service: The service object associated with the user.
     """
     extension = smart_extension("dropbox", file["name"], file.get("mime_type"))
     path = file["path_display"]
@@ -31,6 +33,7 @@ def update_or_create_file(file, service):
         snippet=None,
     )
 
+
 def fetch_recursive_files(
     service,
     access_token: str,
@@ -40,7 +43,7 @@ def fetch_recursive_files(
     """Helper function to fetch the initial set of files from Dropbox."""
 
     response_json = fetch_api(
-        "https://api.dropboxapi.com/2/files/list_folder", 
+        "https://api.dropboxapi.com/2/files/list_folder",
         headers={
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
@@ -53,7 +56,7 @@ def fetch_recursive_files(
             "include_mounted_folders": True,
             "limit": 2000,
             "include_non_downloadable_files": True,
-        }
+        },
     ).json()
     files = response_json["entries"]
 
@@ -72,14 +75,14 @@ def fetch_recursive_files(
             )
 
             response = fetch_api(
-                "https://api.dropboxapi.com/2/files/list_folder/continue", 
+                "https://api.dropboxapi.com/2/files/list_folder/continue",
                 headers={
                     "Authorization": f"Bearer {access_token}",
                     "Content-Type": "application/json",
                 },
                 data={
                     "cursor": cursor,
-                }
+                },
             )
             response_json = response.json()
             cursor = response_json.get("cursor")
@@ -90,6 +93,7 @@ def fetch_recursive_files(
             if "has_more" in response_json and not response_json["has_more"]:
                 break
     return files
+
 
 def get_new_access_token(
     service,
@@ -118,7 +122,7 @@ def get_new_access_token(
         print("Refreshing Dropbox access token...")
         try:
             token_resp = requests.post(
-                "https://api.dropbox.com/oauth2/token", 
+                "https://api.dropbox.com/oauth2/token",
                 headers={},
                 data={
                     "grant_type": "refresh_token",
@@ -126,7 +130,7 @@ def get_new_access_token(
                     "client_id": os.getenv("DROPBOX_CLIENT_ID"),
                     "client_secret": os.getenv("DROPBOX_CLIENT_SECRET"),
                 },
-                timeout=10
+                timeout=10,
             )
         except requests.RequestException as e:
             raise ConnectionError("Failed to refresh Dropbox access token") from e
@@ -138,7 +142,9 @@ def get_new_access_token(
         new_access_token = token_json.get("access_token")
 
         expires_in = token_json.get("expires_in")
-        access_token_expiration = datetime.now(timezone.utc) + timedelta(seconds=int(expires_in))
+        access_token_expiration = datetime.now(timezone.utc) + timedelta(
+            seconds=int(expires_in)
+        )
 
         service.accessToken = new_access_token
         service.accessTokenExpiration = access_token_expiration
