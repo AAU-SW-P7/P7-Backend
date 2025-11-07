@@ -1,10 +1,32 @@
 """Repository functions for handling File model operations."""
 
+from datetime import datetime
 from django.db import transaction
-from django.db.models import Value, Q
+from django.db.models import Value, Q, F
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
+from p7.helpers import downloadable_file_extensions
+
+def fetch_downloadable_files(service):
+    """Fetches all downloadable files for a given service.
+
+    params:
+        service: The service object for which to fetch downloadable files.
+    returns:
+        A list of downloadable File objects associated with the service.
+    """
+    if isinstance(service, Service):
+        return list(
+            File.objects.filter(
+                serviceId=service,
+                extension__in=downloadable_file_extensions(),
+                downloadable=True,
+                modifiedAt__gt=F("indexedAt"),
+            )
+        )
+
+    return JsonResponse({"error": "Invalid service parameter"}, status=400)
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -57,18 +79,19 @@ def save_file(
             defaults=defaults,
         )
 
-        update_tsvector(file, name, None)
+        update_tsvector(file, name, None, indexed_at)
 
     return file
 
-def update_tsvector(file, name: str, content: str | None):
+def update_tsvector(file, name: str, content: str | None, indexed_at: datetime | None) -> None:
     """Update the tsvector field for full-text search on the given file instance."""
 
     File.objects.filter(pk=file.pk).update(
+        indexedAt=indexed_at,
         ts=(
             SearchVector(Value(name), weight="A", config='simple') +
             SearchVector(Value(content or ""), weight="B", config='english')
-        )
+        ),
     )
 
     file.refresh_from_db(fields=["ts"])
