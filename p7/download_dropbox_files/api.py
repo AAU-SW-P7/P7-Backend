@@ -1,14 +1,14 @@
 """API endpoint to download Dropbox files for a user."""
 
 import json
+from datetime import datetime
 import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
 from p7.helpers import validate_internal_auth
 from p7.get_dropbox_files.helper import get_new_access_token
-from p7.fetch_downloadable_files.api import fetch_downloadable_files
-from repository.file import update_tsvector
+from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 
@@ -50,23 +50,8 @@ def download_dropbox_files(
         )
 
         return JsonResponse(files, safe=False)
-    except KeyError as e:
-        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
-        return response
-    except ValueError as e:
-        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
-        return response
-    except ConnectionError as e:
-        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
-        return response
-    except RuntimeError as e:
-        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
-        return response
-    except TypeError as e:
-        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
-        return response
-    except OSError as e:
-        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
+    except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
+        response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response
 
 def download_recursive_files(
@@ -81,6 +66,7 @@ def download_recursive_files(
         # do error handling here
 
     files = []
+    errors = []
     for dropbox_file in dropbox_files:
         response = requests.post(
             "https://content.dropboxapi.com/2/files/download",
@@ -95,9 +81,8 @@ def download_recursive_files(
         dropbox_content = response.content.decode('utf-8', errors='ignore')
 
         if response.status_code != 200 and dropbox_result is None:
-            # do better error handling
-            raise ConnectionError(f"Dropbox download failed for {dropbox_file} \
-                                    : {response.status_code} - {response.text}")
+            errors.append(f"Dropbox download failed for {dropbox_file} \
+                            : {response.status_code} - {response.text}")
 
         if dropbox_content:
             try:
@@ -105,6 +90,7 @@ def download_recursive_files(
                     dropbox_file,
                     dropbox_result.get("name"),
                     dropbox_content,
+                    datetime.now(),
                 )
 
                 dropbox_result['content'] = dropbox_content
@@ -112,5 +98,10 @@ def download_recursive_files(
             except RuntimeError as e:
                 print(f"Error updating tsvector for file {dropbox_file}: {str(e)}")
                 # do error handling here
+
+    if errors:
+        print("Errors occurred during Dropbox file downloads:")
+        for error in errors:
+            print(error)
 
     return files

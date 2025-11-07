@@ -1,7 +1,7 @@
 """Helper functions for internal API calls and validation."""
 import os
 import mimetypes
-from pathlib import Path
+from typing import Optional
 import requests
 from django.http import JsonResponse
 
@@ -33,17 +33,30 @@ def fetch_api(url, headers, data):
         )
     return response
 
-def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
+def smart_extension(provider: str, name: str, mime: Optional[str] = None) -> str:
     """
     Determine the file extension based on provider, filename, and MIME type.
+
+    Rules:
+    - Dotfiles like ".gitignore" => no extension
+    - Names with multiple leading dots (e.g. "..docx", "...pdf") should still yield a real extension
+    - Preserve compression combos like ".tar.gz"
+    - Fallback to MIME (and Google Drive pseudo-types) when needed
     """
     # known compression endings
     compressed_file_extensions = {'.gz', '.bz2', '.xz', '.zst', '.lz', '.lzma', '.br'}
-    known_file_extensions = (
-      set(mimetypes.types_map) |    # platform-dependent
-      set(mimetypes.common_types) | # adds many common ones incl .docx on most installs
-      compressed_file_extensions
-    )
+
+    # some common modern extensions aren't in Python's built-in mimetypes table
+    extra_known_extensions = {
+        '.docx', '.xlsx', '.pptx', '.webp', '.md', '.json', '.yaml', '.yml', '.toml',
+        '.7z', '.rar', '.heic', '.heif', '.svg', '.ts', '.tsx', '.jsx', '.ipynb',
+        '.csv', '.tsv', '.parquet', '.rtf', '.odt', '.ods', '.odp', '.epub',
+        '.ttf', '.otf', '.woff', '.woff2'
+    }
+
+    known_file_extensions = set(mimetypes.types_map) \
+                            | compressed_file_extensions \
+                            | extra_known_extensions
 
     google_file_extensions = {}
     if provider == "google":
@@ -60,33 +73,42 @@ def smart_extension(provider: str, name: str, mime: str | None = None) -> str:
             'application/vnd.google-apps.jam': '.gjam',
         }
 
-    path = Path(name)
-    suffixes = [suffix.lower() for suffix in path.suffixes]
+    filename = (name or "").strip()
+    core = filename.lstrip(".")  # ignore any number of leading dots for extension detection
 
-    # dotfile like ".gitignore" -> no extension
-    if name.startswith(".") and len(suffixes) == 1 and not name.startswith(".."):
-        return ""
+    # If nothing remains after stripping, or there's no further dot, it's a dotfile/plain name.
+    if not core:
+        pass  # fall through to MIME fallback below
+    elif "." not in core:
+        # Handle names like "..docx" / "...pdf":
+        # if the remaining token itself is a known ext, use it.
+        candidate = f".{core.lower()}"
+        if candidate in known_file_extensions:
+            return candidate
+        # otherwise fall through to MIME fallback
+    else:
+        # Normal path: split and examine trailing parts
+        parts = core.lower().split(".")  # ['file','tar','gz'] or ['file','txt'] or ['','docx']
+        last = f".{parts[-1]}"
 
-    # keep only suffixes we recognize
-    recognized = [suffix for suffix in suffixes if suffix in known_file_extensions]
+        # Preserve combos like ".tar.gz" or ".csv.gz"
+        if last in compressed_file_extensions and len(parts) >= 2:
+            penult = f".{parts[-2]}"
+            if penult in known_file_extensions:
+                return f"{penult}{last}"
 
-    if recognized:
-        if len(recognized) >= 2 and recognized[-1] in compressed_file_extensions:
-            return "".join(recognized[-2:])
-        return recognized[-1]
+        # Single extension case
+        if last in known_file_extensions:
+            return last
 
-    # fallback: trust the filename if it has an apparent extension
-    if suffixes:
-        if len(suffixes) >= 2 and suffixes[-1] in compressed_file_extensions:
-            return "".join(s.lower() for s in suffixes[-2:])
-        return suffixes[-1]
-
-    # fallback to MIME type
+    # Fallback to MIME type
     if mime:
-        ext = mimetypes.guess_extension(mime)  # None for Google Docs
+        ext = mimetypes.guess_extension(mime)
         if ext:
             return ext.lower()
-        return google_file_extensions.get(mime, "") if provider == "google" else ""
+        # Google Drive pseudo-MIME types
+        if provider == "google":
+            return google_file_extensions.get(mime, "")
 
     return ""
 
