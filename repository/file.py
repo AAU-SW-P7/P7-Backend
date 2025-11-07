@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from django.db import transaction
-from django.db.models import Value, Q, F
+from django.db.models import Value, Q #, F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
@@ -22,7 +22,7 @@ def fetch_downloadable_files(service):
                 serviceId=service,
                 extension__in=downloadable_file_extensions(),
                 downloadable=True,
-                modifiedAt__gt=F("indexedAt"),
+                # modifiedAt__gt=F("indexedAt"), # re-enable when debugging/coding is done
             )
         )
 
