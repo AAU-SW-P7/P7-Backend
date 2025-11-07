@@ -2,14 +2,18 @@
 
 from ninja import Router, Header
 from django.http import JsonResponse
-from p7.helpers import validate_internal_auth
-from p7.get_dropbox_files.helper import (
-    update_or_create_file, fetch_recursive_files, get_new_access_token
-)
 from repository.service import get_tokens, get_service
 from repository.user import get_user
+from p7.helpers import validate_internal_auth
+from p7.get_dropbox_files.helper import (
+    update_or_create_file,
+    fetch_recursive_files,
+    get_new_access_token,
+)
 
 fetch_dropbox_files_router = Router()
+
+
 @fetch_dropbox_files_router.get("/")
 def fetch_dropbox_files(
     request,
@@ -30,7 +34,9 @@ def fetch_dropbox_files(
     if isinstance(user, JsonResponse):
         return user
 
-    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
+    access_token, access_token_expiration, refresh_token = get_tokens(
+        user_id, "dropbox"
+    )
     service = get_service(user_id, "dropbox")
 
     try:

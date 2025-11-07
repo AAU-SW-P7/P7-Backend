@@ -34,6 +34,7 @@ def assert_find_user_by_email_success(client, email, expected_user_id):
     check.equal(response.json().get("id") == expected_user_id, True)
     check.equal(response.json().get("email") == email, True)
 
+
 def assert_find_user_by_email_invalid_auth(client, email):
     """Helper function to assert finding a user by email with invalid auth.
 
@@ -43,9 +44,8 @@ def assert_find_user_by_email_invalid_auth(client, email):
     """
     try:
         response = client.get(
-            f"/?email={email}",
-            headers={"x-internal-auth": "invalid_token"}
-            )
+            f"/?email={email}", headers={"x-internal-auth": "invalid_token"}
+        )
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
@@ -53,10 +53,8 @@ def assert_find_user_by_email_invalid_auth(client, email):
     check.equal(response.status_code, 401)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json(), {
-            "error": "Unauthorized - invalid x-internal-auth"
-        }
-    )
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
 
 def assert_find_user_by_email_missing_header(client, email):
     """Helper function to assert finding a user by email with missing auth header.
@@ -74,23 +72,31 @@ def assert_find_user_by_email_missing_header(client, email):
     check.equal(response.status_code, 422)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    }
+                ]
+            },
             {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    }
+                ]
+            },
+        ),
+        True,
+    )
+
 
 def assert_find_user_by_email_missing_email(client):
     """Helper function to assert finding a user by email with missing email.
@@ -101,7 +107,7 @@ def assert_find_user_by_email_missing_email(client):
     try:
         response = client.get(
             "/",
-            )
+        )
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
@@ -109,30 +115,37 @@ def assert_find_user_by_email_missing_email(client):
     check.equal(response.status_code, 422)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), dict), True)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['query', 'email'],
-                'msg': 'Field required'
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["query", "email"],
+                        "msg": "Field required",
+                    },
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    },
+                ]
             },
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['query', 'email'],
-                'msg': 'Input should be a valid string'
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["query", "email"],
+                        "msg": "Input should be a valid string",
+                    },
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    },
+                ]
             },
-            {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+        ),
+        True,
+    )

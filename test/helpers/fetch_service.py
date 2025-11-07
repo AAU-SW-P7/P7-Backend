@@ -1,11 +1,13 @@
 """Helper functions for testing fetch service endpoints for Dropbox, Google, and OneDrive."""
+
 import os
 import pytest_check as check
 
 from repository.models import Service, User, File
 
+
 def assert_fetch_dropbox_files_success(client, user_id, service):
-    """Helper function to assert successful fetching of Dropbox files 
+    """Helper function to assert successful fetching of Dropbox files
     for a given user_id and service.
 
     params:
@@ -17,9 +19,8 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
     initial_user_count = User.objects.count()
     initial_service_count = Service.objects.count()
     initial_file_count = File.objects.filter(
-        serviceId__userId=user_id,
-        serviceId__name=service
-        ).count()
+        serviceId__userId=user_id, serviceId__name=service
+    ).count()
 
     # Assuming 3 users are already created for service creation
     check.equal(initial_user_count, 3)
@@ -30,8 +31,8 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
     try:
         response = client.get(
             f"/?user_id={user_id}",
-            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
-            )
+            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
+        )
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
@@ -39,6 +40,7 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
     check.equal(response.status_code, 200)
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), list), True)
+
 
 def assert_fetch_dropbox_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.
@@ -48,13 +50,13 @@ def assert_fetch_dropbox_files_invalid_auth(client, user_id):
         user_id: ID of the user whose files are to be fetched.
     """
     print(f"Fetching Dropbox files for user_id: {user_id}")
-    response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"})
+    response = client.get(
+        f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"}
+    )
 
     check.equal(response.status_code, 401)
-    check.equal(response.json(), {
-            "error": "Unauthorized - invalid x-internal-auth"
-        }
-    )
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
 
 def assert_fetch_dropbox_files_missing_header(client, user_id):
     """Helper function to assert bad request when auth header is missing.
@@ -65,23 +67,30 @@ def assert_fetch_dropbox_files_missing_header(client, user_id):
     response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    }
+                ]
+            },
             {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    }
+                ]
+            },
+        ),
+        True,
+    )
 
 
 def assert_fetch_dropbox_files_missing_userid(client):
@@ -92,33 +101,41 @@ def assert_fetch_dropbox_files_missing_userid(client):
     response = client.get("/")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['query', 'user_id'],
-                'msg': 'Field required'
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["query", "user_id"],
+                        "msg": "Field required",
+                    },
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    },
+                ]
             },
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['query', 'user_id'],
-                'msg': 'Input should be a valid string'
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["query", "user_id"],
+                        "msg": "Input should be a valid string",
+                    },
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    },
+                ]
             },
-            {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+        ),
+        True,
+    )
+
 
 def assert_fetch_google_files_success(client, user_id, service):
     """Helper function to assert successful fetching of Google files
@@ -132,9 +149,8 @@ def assert_fetch_google_files_success(client, user_id, service):
     initial_user_count = User.objects.count()
     initial_service_count = Service.objects.count()
     initial_file_count = File.objects.filter(
-        serviceId__userId=user_id,
-        serviceId__name=service
-        ).count()
+        serviceId__userId=user_id, serviceId__name=service
+    ).count()
 
     # Assuming 3 users are already created for service creation
     check.equal(initial_user_count, 3)
@@ -145,7 +161,7 @@ def assert_fetch_google_files_success(client, user_id, service):
     try:
         response = client.get(
             f"/?user_id={user_id}",
-            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
+            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
         )
     except Exception as e:
         print(f"Exception during GET request: {e}")
@@ -155,19 +171,20 @@ def assert_fetch_google_files_success(client, user_id, service):
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), list), True)
 
+
 def assert_fetch_google_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.
     params:
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
-    response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"})
+    response = client.get(
+        f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"}
+    )
 
     check.equal(response.status_code, 401)
-    check.equal(response.json(), {
-            "error": "Unauthorized - invalid x-internal-auth"
-        }
-    )
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
 
 def assert_fetch_google_files_missing_header(client, user_id):
     """Helper function to assert bad request when auth header is missing.
@@ -178,23 +195,31 @@ def assert_fetch_google_files_missing_header(client, user_id):
     response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    }
+                ]
+            },
             {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    }
+                ]
+            },
+        ),
+        True,
+    )
+
 
 def assert_fetch_google_files_missing_userid(client):
     """Helper function to assert bad request when userId query parameter is missing.
@@ -204,33 +229,41 @@ def assert_fetch_google_files_missing_userid(client):
     response = client.get("/")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['query', 'user_id'],
-                'msg': 'Field required'
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["query", "user_id"],
+                        "msg": "Field required",
+                    },
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    },
+                ]
             },
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['query', 'user_id'],
-                'msg': 'Input should be a valid string'
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["query", "user_id"],
+                        "msg": "Input should be a valid string",
+                    },
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    },
+                ]
             },
-            {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+        ),
+        True,
+    )
+
 
 def assert_fetch_onedrive_files_success(client, user_id, service):
     """Helper function to assert successful fetching of OneDrive files
@@ -243,8 +276,7 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     initial_user_count = User.objects.count()
     initial_service_count = Service.objects.count()
     initial_file_count = File.objects.filter(
-        serviceId__userId=user_id,
-        serviceId__name=service
+        serviceId__userId=user_id, serviceId__name=service
     ).count()
 
     # Assuming 3 users are already created for service creation
@@ -256,7 +288,7 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     try:
         response = client.get(
             f"/?user_id={user_id}",
-            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
+            headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
         )
     except Exception as e:
         print(f"Exception during GET request: {e}")
@@ -266,19 +298,20 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     check.equal(response.json() is not None, True)
     check.equal(isinstance(response.json(), list), True)
 
+
 def assert_fetch_onedrive_files_invalid_auth(client, user_id):
     """Helper function to assert unauthorized access when invalid auth token is provided.
     params:
         client: Test client to make requests.
         user_id: ID of the user whose files are to be fetched.
     """
-    response = client.get(f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"})
+    response = client.get(
+        f"/?user_id={user_id}", headers={"x-internal-auth": "invalid_token"}
+    )
 
     check.equal(response.status_code, 401)
-    check.equal(response.json(), {
-            "error": "Unauthorized - invalid x-internal-auth"
-        }
-    )
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
 
 def assert_fetch_onedrive_files_missing_header(client, user_id):
     """Helper function to assert bad request when auth header is missing.
@@ -289,23 +322,31 @@ def assert_fetch_onedrive_files_missing_header(client, user_id):
     response = client.get(f"/?user_id={user_id}")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    }
+                ]
+            },
             {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    }
+                ]
+            },
+        ),
+        True,
+    )
+
 
 def assert_fetch_onedrive_files_missing_userid(client):
     """Helper function to assert bad request when userId query parameter is missing.
@@ -315,30 +356,37 @@ def assert_fetch_onedrive_files_missing_userid(client):
     response = client.get("/")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
+    check.equal(
+        response.json()
+        in (
             {
-                'type': 'missing',
-                'loc': ['query', 'user_id'],
-                'msg': 'Field required'
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["query", "user_id"],
+                        "msg": "Field required",
+                    },
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    },
+                ]
             },
             {
-                'type': 'missing',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Field required'
-            }
-        ]
-    }, {
-        'detail': [
-            {
-                'type': 'string_type',
-                'loc': ['query', 'user_id'],
-                'msg': 'Input should be a valid string'
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["query", "user_id"],
+                        "msg": "Input should be a valid string",
+                    },
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    },
+                ]
             },
-            {
-                'type': 'string_type',
-                'loc': ['header', 'x-internal-auth'],
-                'msg': 'Input should be a valid string'
-            }
-        ]
-    }), True)
+        ),
+        True,
+    )

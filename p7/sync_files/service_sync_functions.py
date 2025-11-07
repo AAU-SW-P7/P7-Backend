@@ -1,4 +1,5 @@
 """Service functions for syncing files from different services."""
+
 import os
 from datetime import datetime, timezone
 
@@ -10,37 +11,40 @@ from googleapiclient.discovery import build
 
 # Microsoft libs
 import msal
+from repository.service import get_tokens, get_service
+from repository.file import get_files_by_service
+from repository.user import get_user
 
 from p7.get_dropbox_files.helper import (
     update_or_create_file as update_or_create_file_dropbox,
     fetch_recursive_files as fetch_recursive_files_dropbox,
-    get_new_access_token as get_new_access_token_dropbox
-    )
+    get_new_access_token as get_new_access_token_dropbox,
+)
 from p7.get_google_drive_files.helper import (
     update_or_create_file as update_or_create_file_google_drive,
     fetch_recursive_files as fetch_recursive_files_google_drive,
-    get_new_access_token as get_new_access_token_google_drive)
+    get_new_access_token as get_new_access_token_google_drive,
+)
 from p7.get_onedrive_files.helper import (
     update_or_create_file as update_or_create_file_onedrive,
-    fetch_recursive_files as fetch_recursive_files_onedrive
-    )
-from repository.service import get_tokens, get_service
-from repository.file import get_files_by_service
-from repository.user import get_user
+    fetch_recursive_files as fetch_recursive_files_onedrive,
+)
 
 def sync_dropbox_files(
     user_id: str = None,
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
-        params: 
-        user_id: The id of the user whose files are to be synced.
+    params:
+    user_id: The id of the user whose files are to be synced.
     """
 
     user = get_user(user_id)
     if isinstance(user, JsonResponse):
         return user
 
-    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
+    access_token, access_token_expiration, refresh_token = get_tokens(
+        user_id, "dropbox"
+    )
     service = get_service(user_id, "dropbox")
 
     try:
@@ -64,10 +68,14 @@ def sync_dropbox_files(
                 continue
             if (
                 datetime.fromisoformat(
-                    file.get("server_modified").replace("Z", "+00:00")) <= service.indexedAt
+                    file.get("server_modified").replace("Z", "+00:00")
+                )
+                <= service.indexedAt
                 and datetime.fromisoformat(
-                    file.get("client_modified").replace("Z", "+00:00")) <= service.indexedAt
-                ):
+                    file.get("client_modified").replace("Z", "+00:00")
+                )
+                <= service.indexedAt
+            ):
                 continue  # No changes since last sync
 
             # updated_files should be used, when we want to index the updated files
@@ -87,15 +95,23 @@ def sync_dropbox_files(
                 dropbox_file.delete()
 
         return updated_files
-    except (ValueError, TypeError, RuntimeError, KeyError, ConnectionError, OSError) as e:
+    except (
+        ValueError,
+        TypeError,
+        RuntimeError,
+        KeyError,
+        ConnectionError,
+        OSError,
+    ) as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 def sync_google_drive_files(
     user_id: str = None,
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
-        params:
-        user_id: The id of the user whose files are to be synced.
+    params:
+    user_id: The id of the user whose files are to be synced.
     """
 
     user = get_user(user_id)
@@ -145,19 +161,23 @@ def sync_google_drive_files(
             mime_type_set = {
                 "application/vnd.google-apps.folder",
                 "application/vnd.google-apps.shortcut",
-                "application/vnd.google-apps.drive-sdk"}
-            if (mime_type in mime_type_set
+                "application/vnd.google-apps.drive-sdk",
+            }
+            if (
+                mime_type in mime_type_set
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
             if file.get("trashed"):
                 trashed_files.append(file)
                 continue
             if (
-                datetime.fromisoformat(
-                    file.get("modifiedTime").replace("Z", "+00:00")) <= service.indexedAt
+                datetime.fromisoformat(file.get("modifiedTime").replace("Z", "+00:00"))
+                <= service.indexedAt
                 and datetime.fromisoformat(
-                    file.get("createdTime").replace("Z", "+00:00")) <= service.indexedAt
-                ):
+                    file.get("createdTime").replace("Z", "+00:00")
+                )
+                <= service.indexedAt
+            ):
                 continue  # No changes since last sync
 
             # updated_files should be used, when we want to index the updated files
@@ -173,31 +193,36 @@ def sync_google_drive_files(
         for google_drive_file in google_drive_files:
             # Checks if any of the fetched files match the serviceFileId of the stored file
             # If not, it means the file has been deleted in Google Drive
-            if  not any(file["id"] == google_drive_file.serviceFileId for file in files):
+            if not any(file["id"] == google_drive_file.serviceFileId for file in files):
                 google_drive_file.delete()
                 continue
-            if  any(file["id"] == google_drive_file.serviceFileId for file in trashed_files):
+            if any(
+                file["id"] == google_drive_file.serviceFileId for file in trashed_files
+            ):
                 google_drive_file.delete()
                 continue
 
         return updated_files
 
-    except (ValueError,TypeError,KeyError, RuntimeError) as e:
+    except (ValueError, TypeError, KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 def sync_onedrive_files(
     user_id: str = None,
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
-        params:
-        user_id: The id of the user whose files are to be synced.
+    params:
+    user_id: The id of the user whose files are to be synced.
     """
 
     user = get_user(user_id)
     if isinstance(user, JsonResponse):
         return user
 
-    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "onedrive")
+    access_token, access_token_expiration, refresh_token = get_tokens(
+        user_id, "onedrive"
+    )
     service = get_service(user_id, "onedrive")
 
     try:
@@ -221,8 +246,12 @@ def sync_onedrive_files(
         for file in files:
             if "folder" in file:  # Skip folders
                 continue
-            if datetime.fromisoformat(
-                file["lastModifiedDateTime"].replace("Z", "+00:00")) <= service.indexedAt:
+            if (
+                datetime.fromisoformat(
+                    file["lastModifiedDateTime"].replace("Z", "+00:00")
+                )
+                <= service.indexedAt
+            ):
                 continue  # No changes since last sync
 
             # updated_files should be used, when we want to index the updated files

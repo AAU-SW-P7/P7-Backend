@@ -1,5 +1,4 @@
 """API endpoint to download Dropbox files for a user."""
-
 import json
 from datetime import datetime
 import requests
@@ -33,7 +32,9 @@ def download_dropbox_files(
     if isinstance(user, JsonResponse):
         return user
 
-    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
+    access_token, access_token_expiration, refresh_token = get_tokens(
+        user_id, "dropbox"
+    )
     service = get_service(user_id, "dropbox")
 
     try:
@@ -53,6 +54,7 @@ def download_dropbox_files(
     except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
         response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response
+
 
 def download_recursive_files(
     service,

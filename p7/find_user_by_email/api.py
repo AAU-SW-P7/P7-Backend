@@ -1,11 +1,13 @@
 """API endpoint for finding a user by email."""
+
 from ninja import Router, Header
 from django.http import JsonResponse
-
-from p7.helpers import validate_internal_auth
 from repository.service import get_user_service_related_to_email
+from p7.helpers import validate_internal_auth
 
 find_user_by_email_router = Router()
+
+
 @find_user_by_email_router.get("/")
 def find_user_by_email(
     request,
