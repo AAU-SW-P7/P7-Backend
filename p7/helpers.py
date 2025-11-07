@@ -1,7 +1,9 @@
 """Helper functions for internal API calls and validation."""
 
 import os
+import json
 import mimetypes
+from pathlib import Path
 from typing import Optional
 import requests
 from django.http import JsonResponse
@@ -120,25 +122,21 @@ def smart_extension(provider: str, name: str, mime: Optional[str] = None) -> str
 
 def downloadable_file_extensions() -> set[str]:
     """Return a set of file extensions considered downloadable."""
-    return {
-        '.gdoc',
-        '.gsheet',
-        '.gslides',
-        '.gdraw',
-        '.gform',
-        '.gtable',
-        '.gmap',
-        '.gscript',
-        '.gsite',
-        '.gjam',
 
-        '.txt',
-        '.hs',
-        # '.pdf', # add libaries to do this
-        # '.doc',
-        # '.docx',
-        # '.xls',
-        # '.xlsx',
-        # '.ppt',
-        # '.pptx',
+    file_extensions_path = Path(__file__).resolve().parent / "json/downloadable_txt_extensions.json"
+
+    with file_extensions_path.open("r", encoding="utf-8") as fh:
+        downloadable_text_extensions = set(json.load(fh))
+
+    google_file_extensions = {
+        ".gdoc", ".gsheet", ".gslides", ".gdraw", ".gform",
+        ".gtable", ".gmap", ".gscript", ".gsite", ".gjam",
     }
+
+    # other_file_extensions = { # Uncomment to add more types
+    #     ".pdf",
+    #     ".doc",
+    #     ".docx",
+    # }
+
+    return downloadable_text_extensions | google_file_extensions # | other_file_extensions
