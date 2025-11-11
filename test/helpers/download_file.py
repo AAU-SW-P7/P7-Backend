@@ -3,6 +3,7 @@
 import os
 import pytest_check as check
 from django.db import connection
+from django_q.tasks import result
 from repository.models import Service, User, File
 
 
@@ -30,8 +31,9 @@ def assert_download_file_success(client, user_id, service_name):
     )
 
     data = response.json()
+    data = result(task_id=response.json().get("task_id")) if response.status_code == 202 else data
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
     check.is_instance(data, list)
 
     for file in data:

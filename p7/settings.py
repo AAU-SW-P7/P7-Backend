@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from math import ceil, floor
+import multiprocessing
 import os
 from pathlib import Path
 
@@ -30,7 +32,7 @@ DEBUG = True
 
 INSTALLED_APPS = [
     #'django.contrib.admin',
-    #'django.contrib.auth', -Creates default tables which we do not want
+    #'django.contrib.auth',  # Creates default tables which we do not want
     #'django.contrib.contenttypes',
     #'django.contrib.sessions',
     #'django.contrib.messages',
@@ -38,6 +40,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # "repository.apps.RepositoryConfig",
     "repository",
+    "django_q",
 ]
 
 MIDDLEWARE = [
@@ -123,6 +126,29 @@ DATABASES = {
         "PORT": os.getenv("DATABASE_PORT"),
     }
 }
+# DJANGO_Q database config. Docs: https://django-q2.readthedocs.io/en/master/configure.html
+Q_CLUSTER = {
+    'name': 'default',
+    'workers': multiprocessing.cpu_count(),
+    'retry': 3600,
+    'timeout': 600,
+    'recycle': 250,
+    'save_limit': 10,
+    'queue_limit': 100,
+    'cpu_affinity': 1,
+    'label': 'Django Q2',
+    'orm': 'default',
+    'ALT_CLUSTERS':{
+        'low': {
+            'workers': ceil(multiprocessing.cpu_count()*0.25),
+        },
+        'high': {
+            'workers': floor(multiprocessing.cpu_count()*0.75),
+        },
+   }
+}
+
+
 
 
 # Password validation

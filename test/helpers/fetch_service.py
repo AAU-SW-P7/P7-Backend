@@ -37,9 +37,9 @@ def assert_fetch_dropbox_files_success(client, user_id, service):
         print(f"Exception during GET request: {e}")
         raise
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
     check.equal(response.json() is not None, True)
-    check.equal(isinstance(response.json(), list), True)
+    check.equal(isinstance(response.json(), dict), True)
 
 
 def assert_fetch_dropbox_files_invalid_auth(client, user_id):
@@ -167,9 +167,9 @@ def assert_fetch_google_files_success(client, user_id, service):
         print(f"Exception during GET request: {e}")
         raise
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
     check.equal(response.json() is not None, True)
-    check.equal(isinstance(response.json(), list), True)
+    check.equal(isinstance(response.json(), dict), True)
 
 
 def assert_fetch_google_files_invalid_auth(client, user_id):
@@ -293,10 +293,10 @@ def assert_fetch_onedrive_files_success(client, user_id, service):
     except Exception as e:
         print(f"Exception during GET request: {e}")
         raise
-
-    check.equal(response.status_code, 200)
+    print(f"Response received: {response.json()}")
+    check.equal(response.status_code, 202)
     check.equal(response.json() is not None, True)
-    check.equal(isinstance(response.json(), list), True)
+    check.equal(isinstance(response.json(), dict), True)
 
 
 def assert_fetch_onedrive_files_invalid_auth(client, user_id):

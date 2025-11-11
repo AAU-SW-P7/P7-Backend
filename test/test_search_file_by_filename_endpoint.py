@@ -4,7 +4,6 @@ import os
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
-from django.utils import timezone
 
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
@@ -17,6 +16,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 import django
 
 django.setup()
+from django.utils import timezone
 
 import pytest
 from ninja.testing import TestClient
@@ -29,7 +29,6 @@ from helpers.search_filename import (
     assert_search_filename_missing_userid,
 )
 
-# ESlint: disable=C0411
 from helpers.create_user import assert_create_user_success
 from repository.models import File, Service, User
 from p7.search_files_by_filename.api import search_files_by_filename_router

@@ -1,13 +1,17 @@
-name: pytest
+name: Pytest
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: 
     - '**'
   
 jobs: 
-  build-test:
+  run-pytest:
+    name: Run Pytest
     runs-on: ubuntu-latest
+    # Skip for draft PRs
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     steps:
       - name: Checkout root repository
         uses: actions/checkout@v4
@@ -39,7 +43,7 @@ jobs:
         run: |
           docker compose -f compose.dev.yml up -d --force-recreate --build
 
-      - name: Run tests inside Docker
+      - name: Run Pytest inside Docker
         run: |
+          sleep 10
           docker compose -f compose.dev.yml run --rm backend pytest
-          

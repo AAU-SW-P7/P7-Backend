@@ -79,7 +79,7 @@ def test_delete_user_missing_header(d_user_client):
     for user_number in range(3, 0, -1):  # 3 to 1
         assert_delete_user_missing_header(d_user_client, user_number)
 
-def test_delete_user_invalid_user_id(c_user_client, d_user_client):
+def test_delete_user_invalid_user_id(d_user_client):
     """Test deleting a user with invalid user_id.
     params:
         c_user_client: Fixture for creating a test client for the create_user endpoint.

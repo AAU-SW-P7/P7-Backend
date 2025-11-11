@@ -3,7 +3,6 @@
 from datetime import datetime, timezone, timedelta
 import os
 import requests
-from django.http import JsonResponse
 from repository.file import save_file
 from p7.helpers import fetch_api, smart_extension
 
@@ -132,13 +131,11 @@ def get_new_access_token(
                 },
                 timeout=10,
             )
-        except requests.RequestException:
-            return JsonResponse({"error": "Refreshing access token failed"}, status=400)
+        except requests.RequestException as e:
+            raise ConnectionError("Failed to refresh Dropbox access token") from e
 
         if token_resp.status_code != 200:
-            return JsonResponse(
-                {"error": "Token response not 200"}, status=token_resp.status_code
-            )
+            raise ConnectionError("Token response not 200") from e
 
         token_json = token_resp.json()
         new_access_token = token_json.get("access_token")
