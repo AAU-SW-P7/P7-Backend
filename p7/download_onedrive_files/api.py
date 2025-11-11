@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
-from p7.helpers import validate_internal_auth
+from p7.helpers import validate_internal_auth, parse_file_content
 from p7.get_onedrive_files.helper import get_new_access_token
 
 download_onedrive_files_router = Router()
@@ -59,7 +59,10 @@ def download_onedrive_files(
 
         files = download_recursive_files(
             service,
+            app,
             access_token,
+            access_token_expiration,
+            refresh_token,
         )
 
         return JsonResponse(files, safe=False)
@@ -70,7 +73,10 @@ def download_onedrive_files(
 
 def download_recursive_files(
     service,
-    access_token: str,
+    app,
+    access_token,
+    access_token_expiration,
+    refresh_token,
 ):
     """Download files recursively from a user's OneDrive account.
 
@@ -87,44 +93,55 @@ def download_recursive_files(
 
     files = []
     errors = []
-    for file in onedrive_files:
-        # `file` is expected to be an instance of `repository.models.File`.
-        response = requests.post(
-            f"https://graph.microsoft.com/v1.0/me/drive/items/{file.serviceFileId}/content",
-            headers={
-                "Authorization": f"Bearer {access_token}",
-            },
-            timeout=30,
+    for onedrive_file in onedrive_files:
+        file_id = onedrive_file.serviceFileId
+
+        access_token = get_new_access_token(
+            service,
+            app,
+            access_token,
+            access_token_expiration,
+            refresh_token,
         )
 
-        file_content = (
-            response.content.decode("utf-8", errors="ignore")
-            if response.content
-            else None
-        )
-
-        if response.status_code != 200:
-            raise RuntimeError(
-                f"Onedrive download failed for {file}: {response.status_code} - {response.text}"
+        try:
+            response = requests.post(
+                f"https://graph.microsoft.com/v1.0/me/drive/items/{file_id}/content",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                },
+                timeout=30,
             )
 
-        if file_content:
+            if response.status_code != 200:
+                raise RuntimeError(
+                    f"Onedrive download failed for {file_id}: \
+                    {response.status_code} - {response.text}"
+                )
+        except RuntimeError as e:
+            errors.append(f"Failed to download {file_id}: {e}")
+            continue
+
+        onedrive_content = parse_file_content(
+            response.content,
+            onedrive_file.extension,
+        )
+
+        if onedrive_content:
             try:
                 update_tsvector(
-                    file,
-                    file.name,
-                    file_content,
+                    onedrive_file,
+                    onedrive_file.name,
+                    onedrive_content,
                     datetime.now(),
                 )
-                files.append(
-                    {
-                        "id": file.serviceFileId,
-                        "name": file.name,
-                        "content": file_content,
-                    }
-                )
+
+                files.append({
+                    "id": onedrive_file.serviceFileId,
+                    "content": onedrive_content,
+                })
             except RuntimeError as e:
-                errors.append(f"Failed to download {file.serviceFileId} ({file.name}): {e}")
+                errors.append(f"Error updating tsvector for file {file_id}: {str(e)}")
 
     if errors:
         print("Errors occurred during OneDrive file downloads:")

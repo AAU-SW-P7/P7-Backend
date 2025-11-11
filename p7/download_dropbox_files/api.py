@@ -5,7 +5,7 @@ import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
-from p7.helpers import validate_internal_auth
+from p7.helpers import validate_internal_auth, parse_file_content
 from p7.get_dropbox_files.helper import get_new_access_token
 from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
@@ -48,6 +48,8 @@ def download_dropbox_files(
         files = download_recursive_files(
             service,
             access_token,
+            access_token_expiration,
+            refresh_token,
         )
 
         return JsonResponse(files, safe=False)
@@ -59,6 +61,8 @@ def download_dropbox_files(
 def download_recursive_files(
     service,
     access_token,
+    access_token_expiration,
+    refresh_token,
 ):
     """Download files recursively from a user's Dropbox account."""
 
@@ -71,21 +75,38 @@ def download_recursive_files(
     files = []
     errors = []
     for dropbox_file in dropbox_files:
-        response = requests.post(
-            "https://content.dropboxapi.com/2/files/download",
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Dropbox-API-Arg": json.dumps({"path": dropbox_file.serviceFileId}),
-            },
-            timeout=30,
+        file_id = dropbox_file.serviceFileId
+
+        access_token, access_token_expiration = get_new_access_token(
+            service,
+            access_token,
+            access_token_expiration,
+            refresh_token,
         )
 
-        dropbox_result = json.loads(response.headers.get("Dropbox-API-Result"))
-        dropbox_content = response.content.decode('utf-8', errors='ignore')
+        try:
+            response = requests.post(
+                "https://content.dropboxapi.com/2/files/download",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Dropbox-API-Arg": json.dumps({"path": file_id}),
+                },
+                timeout=30,
+            )
 
-        if response.status_code != 200 and dropbox_result is None:
-            errors.append(f"Dropbox download failed for {dropbox_file} \
-                            : {response.status_code} - {response.text}")
+            dropbox_result = json.loads(response.headers.get("Dropbox-API-Result"))
+
+            if response.status_code != 200 and dropbox_result is None:
+                errors.append(f"Dropbox download failed for {file_id} \
+                                : {response.status_code} - {response.text}")
+        except RuntimeError as e:
+            errors.append(f"Failed to download {file_id}: {e}")
+            continue
+
+        dropbox_content = parse_file_content(
+            response.content,
+            dropbox_file.extension,
+        )
 
         if dropbox_content:
             try:
@@ -96,11 +117,12 @@ def download_recursive_files(
                     datetime.now(),
                 )
 
-                dropbox_result['content'] = dropbox_content
-                files.append(dropbox_result)
+                files.append({
+                    "id": file_id,
+                    "content": dropbox_content,
+                })
             except RuntimeError as e:
-                print(f"Error updating tsvector for file {dropbox_file}: {str(e)}")
-                # do error handling here
+                errors.append(f"Error updating tsvector for file {file_id}: {str(e)}")
 
     if errors:
         print("Errors occurred during Dropbox file downloads:")
