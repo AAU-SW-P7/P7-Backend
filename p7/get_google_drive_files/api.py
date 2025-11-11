@@ -15,6 +15,7 @@ from p7.get_google_drive_files.helper import (
     fetch_recursive_files,
     get_new_access_token,
 )
+from p7.download_google_drive_files.api import process_download_google_drive_files
 
 fetch_google_drive_files_router = Router()
 
@@ -96,6 +97,14 @@ def process_google_drive_files(user_id):
                 continue
 
             update_or_create_file(file, service, file_by_id)
+
+        task_id = async_task(
+        process_download_google_drive_files,
+        user_id,
+        cluster="high",
+        group=f"Google-Drive-{user_id}"
+        )
+
         return files
 
     except (ValueError, TypeError, KeyError, RuntimeError) as e:

@@ -12,6 +12,7 @@ from p7.helpers import validate_internal_auth
 from p7.get_onedrive_files.helper import (
     update_or_create_file, fetch_recursive_files
     )
+from p7.download_onedrive_files.api import process_download_onedrive_files
 
 fetch_onedrive_files_router = Router()
 @fetch_onedrive_files_router.get("/")
@@ -68,6 +69,13 @@ def process_onedrive_files(user_id):
                 continue
 
             update_or_create_file(file, service)
+        
+        task_id = async_task(
+            process_download_onedrive_files,
+            user_id,
+            cluster="high",
+            group=f"Onedrive-{user_id}"
+            )
         return files
 
     except KeyError as e:
