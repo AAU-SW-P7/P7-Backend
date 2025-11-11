@@ -122,7 +122,7 @@ def download_recursive_files(
 
             google_drive_content = parse_file_content(
                 fh.getvalue(),
-                google_drive_file.extension,
+                google_drive_file,
             )
 
             update_tsvector(

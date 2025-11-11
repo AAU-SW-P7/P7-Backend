@@ -158,7 +158,7 @@ def downloadable_file_extensions() -> set[str]:
 
     return downloadable_text_extensions | google_file_extensions | other_file_extensions
 
-def parse_file_content(content_bytes: bytes, extension: str) -> str | None:
+def parse_file_content(content_bytes: bytes, file) -> str | None:
     """
     Parse file content to extract text from different file types.
 
@@ -166,39 +166,46 @@ def parse_file_content(content_bytes: bytes, extension: str) -> str | None:
         content (bytes): The raw file content in bytes.
     """
 
-    if content_bytes:
-        match extension:
+    content_bytes = BytesIO(content_bytes)
+    content_bytes_decoded = content_bytes.decode("utf-8-sig", errors="ignore").strip()
+
+    if content_bytes_decoded:
+        match file.extension:
             case ".pdf":
                 try:
-                    reader = PdfReader(BytesIO(content_bytes))
+                    reader = PdfReader(content_bytes)
                     return "\n".join(page.extract_text() or "" for page in reader.pages)
                 except RuntimeError as e:
                     print(f"Failed to parse pdf: {e}")
                     return None
             case ".docx":
                 try:
-                    doc = Document(BytesIO(content_bytes))
+                    doc = Document(content_bytes)
                     return "\n".join(p.text for p in doc.paragraphs)
                 except RuntimeError as e:
                     print(f"Failed to parse docx: {e}")
                     return None
             case ".pptx":
                 try:
-                    prs = Presentation(BytesIO(content_bytes))
+                    prs = Presentation(content_bytes)
                     slide_text = []
                     for slide in prs.slides:
                         for shape in slide.shapes:
-                            if hasattr(shape, "text"):
-                                slide_text.append(shape.text)
-                    text = "\n".join(slide_text)
+                            if not shape.has_text_frame:
+                                continue
+                            for paragraph in shape.text_frame.paragraphs:
+                                for run in paragraph.runs:
+                                    slide_text.append(run.text)
+                    return "\n".join(slide_text)
                 except RuntimeError as e:
                     print(f"Failed to parse pptx: {e}")
                     return None
             case ".xlsx":
                 try:
-                    wb = load_workbook(filename=BytesIO(content_bytes), data_only=True)
+                    wb = load_workbook(content_bytes, data_only=True)
                     ws = wb.active
-                    rows = [[cell.value for cell in row] for row in ws.iter_rows(values_only=True)]
+                    # iter_rows(..., values_only=True) yields tuples of raw values, not cell objects
+                    rows = [list(row) for row in ws.iter_rows(values_only=True)]
                     text = "\n".join(
                         "\t".join(str(cell) if cell is not None else "" for cell in row)
                         for row in rows
@@ -209,7 +216,7 @@ def parse_file_content(content_bytes: bytes, extension: str) -> str | None:
                     return None
             case _: # Default: try to decode as UTF-8 text
                 try:
-                    return content_bytes.decode("utf-8", errors="ignore")
+                    return content_bytes_decoded
                 except RuntimeError as e:
                     print(f"Failed to decode: {e}")
                     return None

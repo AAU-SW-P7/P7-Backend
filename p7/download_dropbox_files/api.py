@@ -105,7 +105,7 @@ def download_recursive_files(
 
         dropbox_content = parse_file_content(
             response.content,
-            dropbox_file.extension,
+            dropbox_file,
         )
 
         if dropbox_content:

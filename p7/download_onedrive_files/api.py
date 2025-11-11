@@ -124,7 +124,7 @@ def download_recursive_files(
 
         onedrive_content = parse_file_content(
             response.content,
-            onedrive_file.extension,
+            onedrive_file,
         )
 
         if onedrive_content:
