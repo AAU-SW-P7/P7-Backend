@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from ninja import Router, Header
 from django.http import JsonResponse
+from django_q.tasks import async_task
 
 # Google libs
 from google.oauth2.credentials import Credentials
@@ -24,7 +25,7 @@ def download_google_drive_files(
     user_id: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ):
-    """Download Google Drive files for a given user.
+    """Schedule download Google Drive files for a given user.
 
     params:
         x_internal_auth (str): The internal auth header for validating the request.
@@ -38,6 +39,19 @@ def download_google_drive_files(
     if isinstance(user, JsonResponse):
         return user
 
+    task_id = async_task(
+        process_download_google_drive_files,
+        user_id,
+        cluster="high",
+        group=f"Google-Drive-{user_id}"
+    )
+    return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
+
+def process_download_google_drive_files(user_id):
+    """Download Google Drive files for a given user.
+    params:
+        user_id: The ID of the user whose Google Drive files are to be downloaded.
+    """
     access_token, _, refresh_token = get_tokens(user_id, "google")
     service = get_service(user_id, "google")
 
@@ -66,7 +80,7 @@ def download_google_drive_files(
             service,
         )
 
-        return JsonResponse(files, safe=False)
+        return files
     except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
         response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response

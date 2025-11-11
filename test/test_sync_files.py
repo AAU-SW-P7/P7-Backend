@@ -30,7 +30,6 @@ from helpers.sync_files import (
 
 from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router
-from p7.create_service.api import create_service_router
 from p7.get_dropbox_files.helper import (update_or_create_file as update_or_create_file_dropbox)
 from p7.get_google_drive_files.helper import (
     update_or_create_file as update_or_create_file_google_drive
@@ -51,14 +50,6 @@ def create_user_client():
          TestClient: A test client for the create_user endpoint.
      """
     return TestClient(create_user_router)
-
-@pytest.fixture(name="service_client", scope='module', autouse=True)
-def create_service_client():
-    """Fixture for creating a test client for the create_service endpoint.
-    Returns:
-        TestClient: A test client for the create_service endpoint.
-    """
-    return TestClient(create_service_router)
 
 @pytest.fixture(name="sync_files_client_fixture", scope='module', autouse=True)
 def sync_file_client():
@@ -95,12 +86,11 @@ def test_sync_files_functions():
     assert_sync_files_function_missing_user_id("onedrive")
 
 def test_sync_dropbox_files(
-    service_client: TestClient,
     sync_files_client_fixture: TestClient,
     ):
     """Test syncing Dropbox files for a user."""
     user_id = 1
-    create_service(service_client, "DROPBOX", user_id, 0)
+    create_service("DROPBOX", user_id)
 
     test_files = read_json_file("test/json/user_1_dropbox.json")
     service = get_service(user_id, "dropbox")
@@ -115,7 +105,7 @@ def test_sync_dropbox_files(
                 headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
                 )
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
 
     files = get_files_by_service(service)
 
@@ -138,12 +128,11 @@ def test_sync_dropbox_files(
             check.equal(file.name, test_files[1]["name"])
 
 def test_sync_google_drive_files(
-    service_client: TestClient,
     sync_files_client_fixture: TestClient,
     ):
     """Test syncing google Drive files for a user."""
     user_id = 2
-    create_service(service_client, "GOOGLE", user_id, 1)
+    create_service("GOOGLE", user_id)
 
     test_files = read_json_file("test/json/user_2_google_drive.json")
 
@@ -170,7 +159,7 @@ def test_sync_google_drive_files(
                 headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
                 )
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
 
     files = get_files_by_service(service)
 
@@ -193,12 +182,11 @@ def test_sync_google_drive_files(
             check.equal(file.name, test_files[2]["name"])
 
 def test_sync_onedrive_files(
-    service_client: TestClient,
     sync_files_client_fixture: TestClient,
     ):
     """Test syncing onedrive files for a user."""
     user_id = 3
-    create_service(service_client, "ONEDRIVE", 3, 2)
+    create_service("ONEDRIVE", user_id)
 
     test_files = read_json_file("test/json/user_3_onedrive.json")
 
@@ -216,7 +204,7 @@ def test_sync_onedrive_files(
                 headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
                 )
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
 
     files = get_files_by_service(service)
 

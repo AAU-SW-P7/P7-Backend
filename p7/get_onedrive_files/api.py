@@ -3,7 +3,7 @@ import os
 
 from ninja import Router, Header
 from django.http import JsonResponse
-
+from django_q.tasks import async_task
 # Microsoft libs
 import msal
 from repository.service import get_tokens, get_service
@@ -35,6 +35,16 @@ def fetch_onedrive_files(
     if isinstance(user, JsonResponse):
         return user
 
+    task_id = async_task(
+        process_onedrive_files,
+        user_id,
+        cluster="high",
+        group=f"Onedrive-{user_id}"
+        )
+    return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
+
+def process_onedrive_files(user_id):
+    """Process and sync OneDrive files for a given user."""
     access_token, access_token_expiration, refresh_token = get_tokens(user_id, "onedrive")
     service = get_service(user_id, "onedrive")
 
@@ -45,7 +55,6 @@ def fetch_onedrive_files(
             authority="https://login.microsoftonline.com/common",
             client_credential=os.getenv("MICROSOFT_CLIENT_SECRET"),
         )
-
         files = fetch_recursive_files(
             app,
             service,
@@ -55,11 +64,12 @@ def fetch_onedrive_files(
         )
 
         for file in files:
-            if "folder" in file:  # Skip folders
+            if not file.get("file"):
                 continue
 
             update_or_create_file(file, service)
+        return files
 
-        return JsonResponse(files, safe=False)
-    except (ValueError, TypeError, RuntimeError) as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except KeyError as e:
+        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
+        return response

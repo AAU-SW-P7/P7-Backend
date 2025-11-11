@@ -20,10 +20,7 @@ import pytest
 from ninja.testing import TestClient
 from helpers.create_user import assert_create_user_success
 from helpers.create_service import assert_create_service_success
-from helpers.fetch_service import (
-    assert_fetch_dropbox_files_success,
-    assert_fetch_google_files_success,
-)
+
 from helpers.download_file import (
     assert_download_file_success,
     assert_download_file_invalid_auth,
@@ -169,22 +166,6 @@ def test_create_service_success(service_client):
             service_count += 1
 
 # --- TESTS FOR DROPBOX ---
-
-def test_fetch_dropbox_files_success(fetch_dropbox_files_client):
-    """Test fetching Dropbox files successfully for 3 users.
-    params:
-        fetch_dropbox_files_client:
-            Fixture for creating a test client for the fetch_dropbox_files endpoint.
-    """
-    for user_number in range(1, 3 + 1):  # 3 users
-
-        assert_fetch_dropbox_files_success(
-            fetch_dropbox_files_client,
-            user_number,
-            "dropbox",
-        )
-
-
 def test_download_dropbox_file_success(download_dropbox_files_client_fixture):
     """Test downloading a Dropbox file."""
 
@@ -221,20 +202,6 @@ def test_download_dropbox_file_missing_user_id(download_dropbox_files_client_fix
     assert_download_file_missing_user_id(download_dropbox_files_client_fixture)
 
 # --- TESTS FOR GOOGLE DRIVE ---
-
-def test_fetch_google_drive_files_success(fetch_google_files_client):
-    """Test fetching Google Drive files successfully for 3 users.
-    params:
-        fetch_google_drive_files_client:
-            Fixture for creating a test client for the fetch_google_drive_files endpoint.
-    """
-    for user_number in range(1, 3 + 1):  # 3 users
-
-        assert_fetch_google_files_success(
-            fetch_google_files_client,
-            user_number,
-            "google",
-        )
 
 
 def test_download_google_drive_file_success(download_google_drive_files_client_fixture):
@@ -282,23 +249,6 @@ def test_download_google_drive_file_missing_user_id(
 
 
 # --- TESTS FOR ONEDRIVE ---
-
-
-def test_fetch_onedrive_files_success(fetch_onedrive_files_client):
-    """Test fetching OneDrive files successfully for 3 users.
-    params:
-        fetch_onedrive_files_client:
-            Fixture for creating a test client for the fetch_onedrive_files endpoint.
-    """
-    for user_number in range(1, 3 + 1):  # 3 users
-
-        assert_fetch_google_files_success(
-            fetch_onedrive_files_client,
-            user_number,
-            "onedrive",
-        )
-
-
 def test_download_onedrive_file_success(download_onedrive_files_client_fixture):
     """Test downloading a OneDrive file."""
 

@@ -8,6 +8,7 @@ import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
+from django_q.tasks import async_task
 from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
@@ -21,7 +22,7 @@ def download_onedrive_files(
     user_id: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ):
-    """Download OneDrive files for a given user.
+    """Schedule download OneDrive files for a given user.
 
     params:
         x_internal_auth (str): The internal auth header for validating the request.
@@ -37,6 +38,21 @@ def download_onedrive_files(
     if isinstance(user, JsonResponse):
         return user
 
+    task_id = async_task(
+        process_download_onedrive_files,
+        user_id,
+        cluster="high",
+        group=f"Onedrive-{user_id}"
+        )
+    return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
+
+
+def process_download_onedrive_files(user_id):
+    """Download OneDrive files for a given user.
+    
+    params:
+        user_id: The ID of the user whose OneDrive files are to be fetched.
+    """
     access_token, access_token_expiration, refresh_token = get_tokens(
         user_id, "onedrive"
     )
@@ -62,7 +78,7 @@ def download_onedrive_files(
             access_token,
         )
 
-        return JsonResponse(files, safe=False)
+        return files
     except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
         response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response

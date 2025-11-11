@@ -2,6 +2,7 @@
 
 from ninja import Router, Header
 from django.http import JsonResponse
+from django_q.tasks import async_task
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
@@ -33,10 +34,21 @@ def fetch_dropbox_files(
     user = get_user(user_id)
     if isinstance(user, JsonResponse):
         return user
+    task_id = async_task(process_dropbox_files, user_id, cluster="high", group=f"Dropbox-{user_id}")
 
-    access_token, access_token_expiration, refresh_token = get_tokens(
-        user_id, "dropbox"
-    )
+    return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
+
+def process_dropbox_files(user_id):
+    """Process and sync Dropbox files for a given user.
+
+    params:
+        user_id (str): The ID of the user whose Dropbox files are to be processed.
+
+    Returns:
+        list: A list of processed Dropbox files or a JsonResponse with an error message.
+    
+    """
+    access_token, access_token_expiration, refresh_token = get_tokens(user_id, "dropbox")
     service = get_service(user_id, "dropbox")
 
     try:
@@ -59,23 +71,8 @@ def fetch_dropbox_files(
                 continue
 
             update_or_create_file(file, service)
+        return files
 
-        return JsonResponse(files, safe=False, status=200)
-    except KeyError as e:
-        response = JsonResponse({"error": f"Missing key: {str(e)}"}, status=500)
-        return response
-    except ValueError as e:
-        response = JsonResponse({"error": f"Value error: {str(e)}"}, status=500)
-        return response
-    except ConnectionError as e:
-        response = JsonResponse({"error": f"Connection error: {str(e)}"}, status=500)
-        return response
-    except RuntimeError as e:
-        response = JsonResponse({"error": f"Runtime error: {str(e)}"}, status=500)
-        return response
-    except TypeError as e:
-        response = JsonResponse({"error": f"Type error: {str(e)}"}, status=500)
-        return response
-    except OSError as e:
-        response = JsonResponse({"error": f"OS error: {str(e)}"}, status=500)
+    except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
+        response = JsonResponse({"error": {str(e)}}, status=500)
         return response

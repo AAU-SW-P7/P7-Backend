@@ -1,5 +1,6 @@
 Django>=5.0,<6.0
 django-ninja
+django-q2
 gunicorn
 psycopg2-binary
 django-cors-headers
@@ -17,3 +18,4 @@ pylint
 pylint-django
 hypothesis
 django-pgcrypto
+setuptools

@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from repository.service import save_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
+from p7.create_service.helpers import schedule_fetching_files
 
 create_service_router = Router()
 
@@ -50,6 +51,8 @@ def create_service(
     # save_service returns either a Service or JsonResponse on error
     if isinstance(service, JsonResponse):
         return service
+    # Schedule fetching files from the new servic
+    schedule_fetching_files(cleaned)
 
     return {"id": service.id, "name": service.name}
 

@@ -3,6 +3,7 @@
 import os
 import pytest_check as check
 from django.db import connection
+from django_q.tasks import result
 from p7.helpers import smart_extension
 from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
@@ -33,24 +34,14 @@ def assert_save_file_success(client, user_id, service_name):
     )
 
     data = response.json()
+    data = result(task_id=response.json().get("task_id")) if response.status_code == 202 else data
 
-    check.equal(response.status_code, 200)
+    check.equal(response.status_code, 202)
     check.is_instance(data, list)
 
     for file in data:
         check.is_instance(file, dict)
         if service_name == "dropbox":
-            # check.is_instance(file.get('.tag'), str)
-            # check.is_instance(file.get('name'), str)
-            # check.is_instance(file.get('path_display'), str)
-            # check.is_instance(file.get('id'), str)
-            # check.is_instance(file.get('client_modified'), str)
-            # check.is_instance(file.get('server_modified'), str)
-            # check.is_instance(file.get('size'), int)
-            # check.is_instance(file.get('is_downloadable'), bool)
-
-            # check.equal(file.get('.etag'), 'file')
-
             extension = smart_extension("dropbox", file["name"], file.get("mime_type"))
             path = file["path_display"]
             link = "https://www.dropbox.com/preview" + path
@@ -75,11 +66,12 @@ def assert_save_file_success(client, user_id, service_name):
 
         elif service_name == "google":
             # Skip non-files (folders, shortcuts, etc)
-            mime_type = file.get("mimeType", "")
-            if mime_type in (
-                "application/vnd.google-apps.folder",
-                "application/vnd.google-apps.shortcut",
-                "application/vnd.google-apps.drive-sdk",
+            if (
+                file.get("mimeType", "") in (
+                'application/vnd.google-apps.folder',
+                'application/vnd.google-apps.shortcut',
+                'application/vnd.google-apps.drive-sdk',
+            )
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
             file_by_id = {file["id"]: file for file in data}
