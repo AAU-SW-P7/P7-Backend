@@ -1,5 +1,6 @@
 Django>=5.0,<6.0
 django-ninja
+django-q2
 gunicorn
 psycopg2-binary
 django-cors-headers
@@ -20,3 +21,4 @@ python-docx
 python-pptx
 openpyxl
 pypdf
+setuptools

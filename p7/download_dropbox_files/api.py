@@ -5,6 +5,7 @@ import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
+from django_q.tasks import async_task
 from p7.helpers import validate_internal_auth, parse_file_content
 from p7.get_dropbox_files.helper import get_new_access_token
 from repository.file import update_tsvector, fetch_downloadable_files
@@ -18,7 +19,7 @@ def download_dropbox_files(
     user_id: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ):
-    """Download Dropbox files for a given user.
+    """Schedule task to download Dropbox files for a given user.
 
     params:
         x_internal_auth (str): The internal auth header for validating the request.
@@ -32,6 +33,20 @@ def download_dropbox_files(
     if isinstance(user, JsonResponse):
         return user
 
+    task_id = async_task(
+        process_download_dropbox_files,
+        user_id, cluster="high",
+        group=f"Dropbox-{user_id}"
+        )
+
+    return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
+
+def process_download_dropbox_files(user_id):
+    """Download Dropbox files for a given user.
+
+    params:
+        user_id (str): The ID of the user whose Dropbox files are to be processed.
+    """
     access_token, access_token_expiration, refresh_token = get_tokens(
         user_id, "dropbox"
     )
@@ -52,7 +67,7 @@ def download_dropbox_files(
             refresh_token,
         )
 
-        return JsonResponse(files, safe=False)
+        return files
     except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
         response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response

@@ -56,6 +56,7 @@ def assert_token_position(query_close: str, query_far_away: str, file_name: str)
     """
     result_close = File.objects.ranking_based_on_file_name(query_close)
     close_rank = None
+    far_away_rank = None
     for result in result_close:
         if result.name == file_name:
             close_rank = result.rank
@@ -69,9 +70,12 @@ def assert_token_position(query_close: str, query_far_away: str, file_name: str)
     check.greater(close_rank, far_away_rank)
 
 
+
 def assert_overfitting_token_count(
-    query_exact_match: str, query_more_tokens: str, file_name: object
-):
+        query_exact_match: str,
+        query_more_tokens: str,
+        file_name: object
+        ):
     """Test that overfitting penalizes the ranking score.
     params:
         query_exact_match: search query string that exactly matches the file name
@@ -80,6 +84,7 @@ def assert_overfitting_token_count(
     """
     result_exact = File.objects.ranking_based_on_file_name(query_exact_match)
     exact_rank = None
+    more_tokens_rank = None
     for result in result_exact:
         if result.name == file_name:
             exact_rank = result.rank
@@ -103,6 +108,7 @@ def assert_partial_token_match(
         file_name: name of the file being tested
     """
     result_partial = File.objects.ranking_based_on_file_name(query_partial)
+    more_partial_rank = None
     partial_rank = None
     for result in result_partial:
         if result.name == file_name:

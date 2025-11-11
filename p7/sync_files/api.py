@@ -2,6 +2,7 @@
 
 from ninja import Router, Header
 from django.http import JsonResponse
+from django_q.tasks import async_task
 from repository.service import get_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
@@ -37,36 +38,27 @@ def sync_files(
     google_drive_service = get_service(user_id, "google")
     onedrive_service = get_service(user_id, "onedrive")
 
-    dropbox_updated_files = []
-    google_drive_updated_files = []
-    onedrive_updated_files = []
-
     # Check if services exist before syncing
     if dropbox_service and not isinstance(dropbox_service, JsonResponse):
-        print("Syncing Dropbox files...")
-        dropbox_updated_files = sync_dropbox_files(user_id)
+        async_task(
+            sync_dropbox_files,
+            user_id,
+            cluster="high",
+            group=f"Dropbox-{user_id}"
+        )
     if google_drive_service and not isinstance(google_drive_service, JsonResponse):
-        print("Syncing Google Drive files...")
-        google_drive_updated_files = sync_google_drive_files(user_id)
+        async_task(
+            sync_google_drive_files,
+            user_id,
+            cluster="high",
+            group=f"Google-Drive-{user_id}"
+            )
     if onedrive_service and not isinstance(onedrive_service, JsonResponse):
-        print("Syncing OneDrive files...")
-        onedrive_updated_files = sync_onedrive_files(user_id)
-
-    if (
-        isinstance(dropbox_updated_files, JsonResponse)
-        or isinstance(google_drive_updated_files, JsonResponse)
-        or isinstance(onedrive_updated_files, JsonResponse)
-    ):
-        print(dropbox_updated_files)
-        print(google_drive_updated_files)
-        print(onedrive_updated_files)
-        return JsonResponse(
-            {"error": "Error syncing files from one or more services."}, status=500
+        async_task(
+            sync_onedrive_files,
+            user_id,
+            cluster="high",
+            group=f"Onedrive-{user_id}"
         )
 
-    # This array is for when we want to download all updated files from all services to index them
-    # combined_updated_files = (
-    #     dropbox_updated_files + google_drive_updated_files + onedrive_updated_files
-    # )
-
-    return JsonResponse({"ok": True}, status=200)
+    return JsonResponse({"Status": "Processing"}, status=202)

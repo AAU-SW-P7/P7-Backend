@@ -10,7 +10,8 @@ from django.db import IntegrityError
 from django.http import JsonResponse
 
 from repository.models import User
-
+from repository.queue import delete_user_queued_tasks
+from repository.schedule import delete_user_schedules
 
 def get_user(user_id: int) -> Union[User, JsonResponse]:
     """
@@ -60,6 +61,8 @@ def delete_user(user_id: int) -> Union[User, JsonResponse]:
 
     try:
         user = User.objects.get(pk=user_id)
+        delete_user_queued_tasks(user_id)
+        delete_user_schedules(user_id)
         user.delete()
         return {"status": 200}
     except User.DoesNotExist:
