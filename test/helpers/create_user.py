@@ -1,8 +1,10 @@
 """Helper functions for testing user creation."""
+
 import os
 import pytest_check as check
 
 from repository.models import User
+
 
 def assert_create_user_success(client, user_number):
     """Test the successful creation of a user.
@@ -16,7 +18,9 @@ def assert_create_user_success(client, user_number):
 
     check.equal(initial_count, user_number - 1)
 
-    response = client.post("/", headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")})
+    response = client.post(
+        "/", headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")}
+    )
 
     data = response.json()
 
@@ -33,19 +37,18 @@ def assert_create_user_success(client, user_number):
     check.is_not_none(created_user)
     check.equal(created_user.id, data["id"])
 
+
 def assert_create_user_invalid_auth(client):
     """Test the creation of a user with invalid authentication.
-    
+
     params:
         client: The test client to make requests.
     """
     response = client.post("/", headers={"x-internal-auth": "invalid_token"})
 
     check.equal(response.status_code, 401)
-    check.equal(response.json(), {
-            "error": "Unauthorized - invalid x-internal-auth"
-        }
-    )
+    check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
+
 
 def assert_create_user_missing_header(client):
     """Test the creation of a user with a missing authentication header.
@@ -56,12 +59,27 @@ def assert_create_user_missing_header(client):
     response = client.post("/")
 
     check.equal(response.status_code, 422)
-    check.equal(response.json() in ({
-        'detail': [
-            {'type': 'missing', 'loc': ['header', 'x-internal-auth'], 'msg': 'Field required'}
-        ]
-    }, {
-        'detail': [
-            {'type': 'string_type', 'loc': ['header', 'x-internal-auth'], 'msg': 'Input should be a valid string'}
-        ]
-    }), True)
+    check.equal(
+        response.json()
+        in (
+            {
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Field required",
+                    }
+                ]
+            },
+            {
+                "detail": [
+                    {
+                        "type": "string_type",
+                        "loc": ["header", "x-internal-auth"],
+                        "msg": "Input should be a valid string",
+                    }
+                ]
+            },
+        ),
+        True,
+    )

@@ -1,14 +1,16 @@
 """API endpoint to search files by filename."""
+
 import re
 from ninja import Router, Header
 from django.http import JsonResponse
-
-from p7.helpers import validate_internal_auth
 from repository.file import query_files_by_name
 from repository.user import get_user
 from repository.service import get_service_name
+from p7.helpers import validate_internal_auth
 
 search_files_by_filename_router = Router()
+
+
 def sanitize_user_search(text: str) -> str:
     """
     Sanitizes the user input by removing potentially harmful content and normalizing the text.
@@ -31,6 +33,7 @@ def sanitize_user_search(text: str) -> str:
 
     return text
 
+
 def tokenize(input_str: str) -> list[str]:
     """
     Tokenizes the input string.
@@ -40,6 +43,7 @@ def tokenize(input_str: str) -> list[str]:
         list[str]: A list of processed tokens.
     """
     return list(input_str.split())
+
 
 @search_files_by_filename_router.get("/")
 def search_files_by_filename(
@@ -70,14 +74,13 @@ def search_files_by_filename(
     tokens = tokenize(sanitized_input)
     results = query_files_by_name(tokens, user_id)
 
-
     # Cache service lookups to avoid repeated DB calls
     service_name_cache: dict = {}
 
     files_data = []
 
     for file in results:
-        #Extract id as file.serviceId is a service object
+        # Extract id as file.serviceId is a service object
         service_ref = file.serviceId
         service_id = getattr(service_ref, "id", service_ref)
 

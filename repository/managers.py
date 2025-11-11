@@ -78,17 +78,24 @@ class FileQuerySet(models.QuerySet):
                     output_field=FloatField(),
                 ),
             )
+            # STEP 1: compute raw rank first
             .annotate(
-                rank=(
-                    # heavier weight for phrase matches
+                raw_rank=(
                     (F("phrase_rank") + F("plain_rank"))
                     + F("token_ratio") * 1.5
-                    - (F("token_penalty") *
-                    (token_count + 3 - F("matched_tokens")))  # small penalty for missing tokens
+                    - (F("token_penalty") * (token_count + 3 - F("matched_tokens")))
                     + F('ordered_bonus') * 2
                 )
             )
-            .filter(rank__gte=-10)
+            # STEP 2: clamp negatives to 0
+            .annotate(
+                rank=models.Case(
+                    models.When(raw_rank__lt=0, then=Value(0.0)),
+                    default=F("raw_rank"),
+                    output_field=FloatField(),
+                )
+            )
+            .filter(rank__gte=0)
             .order_by("-rank")
         )
 

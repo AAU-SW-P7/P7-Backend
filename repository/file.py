@@ -1,11 +1,34 @@
 """Repository functions for handling File model operations."""
 
+from datetime import datetime
 from django.db import transaction
+from django.db.models import Value, Q #, F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
 from django.db.models import Value, Q
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
+from p7.helpers import downloadable_file_extensions
 from p7.helpers import smart_extension
+
+def fetch_downloadable_files(service):
+    """Fetches all downloadable files for a given service.
+
+    params:
+        service: The service object for which to fetch downloadable files.
+    returns:
+        A list of downloadable File objects associated with the service.
+    """
+    if isinstance(service, Service):
+        return list(
+            File.objects.filter(
+                serviceId=service,
+                extension__in=downloadable_file_extensions(),
+                downloadable=True,
+                # modifiedAt__gt=F("indexedAt"), # re-enable when debugging/coding is done
+            )
+        )
+
+    return JsonResponse({"error": "Invalid service parameter"}, status=400)
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -35,12 +58,23 @@ def save_file(
         createdAt: Timestamp when the file was created.
         modifiedAt: Timestamp when the file was last modified.
         indexedAt: Timestamp when the file was last indexed.
+        indexedAt: Timestamp when the file was last indexed.
         snippet: Text snippet or preview of the file content.
         """
 
     with transaction.atomic():
         # Insert the file
         defaults = {
+            "name": name,
+            "extension": extension,
+            "downloadable": downloadable,
+            "path": path,
+            "link": link,
+            "size": size,
+            "createdAt": created_at,
+            "modifiedAt": modified_at,
+            "indexedAt": indexed_at,
+            "snippet": snippet,
         "name": name,
         "extension": extension,
         "downloadable": downloadable,
@@ -60,7 +94,7 @@ def save_file(
         
         # Remove extensions tag from name field
         name = remove_extension_from_ts_vector_smart(file)
-        update_tsvector(file, name, None)
+        update_tsvector(file, name, None, indexed_at)
 
     return file
 
@@ -92,6 +126,22 @@ def update_tsvector(file, name: str, content: str | None):
 
     file.refresh_from_db(fields=["ts"])
 
+    return file
+
+def update_tsvector(file, name: str, content: str | None, indexed_at: datetime | None) -> None:
+    """Update the tsvector field for full-text search on the given file instance."""
+
+    File.objects.filter(pk=file.pk).update(
+        indexedAt=indexed_at,
+        ts=(
+            SearchVector(Value(name), weight="A", config='simple') +
+            SearchVector(Value(content or ""), weight="B", config='english')
+        ),
+    )
+
+    file.refresh_from_db(fields=["ts"])
+
+
 def query_files_by_name(name_query, user_id):
     """Query for files by name containing any of the given tokens and user id.
 
@@ -108,7 +158,9 @@ def query_files_by_name(name_query, user_id):
             {"error": f"Service ({user_id}) not found for user"}, status=404
         )
 
-    assert isinstance(name_query, (list, tuple)), "name_query must be a list or tuple of tokens"
+    assert isinstance(
+        name_query, (list, tuple)
+    ), "name_query must be a list or tuple of tokens"
 
     # Q() object to combine queries
     q = Q()
@@ -124,9 +176,10 @@ def query_files_by_name(name_query, user_id):
         print (f"File: {file.name}, Rank: {file.rank}")
     return results
 
+
 def get_files_by_service(service):
     """Retrieves all files associated with a given service.
-    
+
     params:
         service: The service object for which to retrieve files.
 

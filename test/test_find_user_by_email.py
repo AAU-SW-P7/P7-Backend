@@ -79,14 +79,12 @@ def test_create_user_success(user_client):
 
         assert_create_user_success(user_client, user_number)
 
-
 def test_create_user_invalid_auth(user_client):
     """Test creating a user with invalid auth token.
     params:
         user_client: Fixture for creating a test client for the create_user endpoint.
     """
     assert_create_user_invalid_auth(user_client)
-
 
 def test_create_user_missing_header(user_client):
     """Test creating a user with missing auth header.
@@ -210,25 +208,28 @@ def test_find_user_by_email_success(find_user_by_email_client):
         email = f"p7swtest{user_number}@gmail.com"
         assert_find_user_by_email_success(find_user_by_email_client, email, user_number)
 
+
 def test_find_user_by_email_invalid_auth(find_user_by_email_client):
     """Test finding a user by email with invalid auth token.
     params:
         find_user_by_email_client: Fixture for the find_user_by_email endpoint.
     """
-    for user_number in range(1, 3+1): # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
 
         email = f"p7swtest{user_number}@gmail.com"
         assert_find_user_by_email_invalid_auth(find_user_by_email_client, email)
+
 
 def test_find_user_by_email_missing_header(find_user_by_email_client):
     """Test finding a user by email with missing auth header.
     params:
         find_user_by_email_client: Fixture for the find_user_by_email endpoint.
     """
-    for user_number in range(1, 3+1): # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
 
         email = f"p7swtest{user_number}@gmail.com"
         assert_find_user_by_email_missing_header(find_user_by_email_client, email)
+
 
 def test_find_user_by_email_missing_email(find_user_by_email_client):
     """Test finding a user by email with missing email parameter.

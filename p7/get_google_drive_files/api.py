@@ -1,19 +1,24 @@
 """API for fetching and saving Google Drive files."""
+
 import os
 from ninja import Router, Header
 from django.http import JsonResponse
+
 # Google libs
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-
-from p7.helpers import validate_internal_auth
-from p7.get_google_drive_files.helper import (
-    update_or_create_file, fetch_recursive_files, get_new_access_token
-)
 from repository.service import get_tokens, get_service
 from repository.user import get_user
+from p7.helpers import validate_internal_auth
+from p7.get_google_drive_files.helper import (
+    update_or_create_file,
+    fetch_recursive_files,
+    get_new_access_token,
+)
 
 fetch_google_drive_files_router = Router()
+
+
 @fetch_google_drive_files_router.get("/")
 def fetch_google_drive_files(
     request,
@@ -70,14 +75,14 @@ def fetch_google_drive_files(
         for file in files:
             # Skip non-files (folders, shortcuts, etc)
             if file.get("mimeType", "") in (
-                'application/vnd.google-apps.folder',
-                'application/vnd.google-apps.shortcut',
-                'application/vnd.google-apps.drive-sdk',
-            ): # https://developers.google.com/workspace/drive/api/guides/mime-types
+                "application/vnd.google-apps.folder",
+                "application/vnd.google-apps.shortcut",
+                "application/vnd.google-apps.drive-sdk",
+            ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
 
             update_or_create_file(file, service, file_by_id)
 
         return JsonResponse(files, safe=False)
-    except (ValueError,TypeError,KeyError, RuntimeError) as e:
+    except (ValueError, TypeError, KeyError, RuntimeError) as e:
         return JsonResponse({"error": str(e)}, status=500)

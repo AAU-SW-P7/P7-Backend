@@ -1,15 +1,16 @@
 """Helper functions for Google Drive file operations."""
+
 from datetime import datetime, timezone
 import requests
-
-from p7.helpers import smart_extension
 from repository.file import save_file
+from p7.helpers import smart_extension
+
 
 def update_or_create_file(file, service):
     """Updates or creates a File entry in the database based on OneDrive file metadata.
-        params:
-        file: A dictionary containing OneDrive file metadata.
-        service: The service object associated with the user.
+    params:
+    file: A dictionary containing OneDrive file metadata.
+    service: The service object associated with the user.
     """
     extension = smart_extension(
         "onedrive",
@@ -17,27 +18,27 @@ def update_or_create_file(file, service):
         file.get("file", {}).get("mimeType"),
     )
     path = (
-        (file.get("parentReference", {}).get("path", "")).replace(
-            "/drive/root:", ""
-        )
+        (file.get("parentReference", {}).get("path", "")).replace("/drive/root:", "")
         + "/"
         + file["name"]
     )
 
     save_file(
-        service,
-        file["id"],
-        file["name"],
-        extension,
-        True,
-        path,
-        file["webUrl"],
-        file.get("size", 0),
-        file["createdDateTime"],
-        file["lastModifiedDateTime"],
-        None,
-        None,
+        service_id=service,
+        service_file_id=file["id"],
+        name=file["name"],
+        extension=extension,
+        downloadable=True,
+        path=path,
+        link=file["webUrl"],
+        size=file.get("size", 0),
+        created_at=file["createdDateTime"],
+        modified_at=file["lastModifiedDateTime"],
+        indexed_at=None,
+        snippet=None,
     )
+
+
 
 def fetch_recursive_files(
     app,
@@ -90,13 +91,13 @@ def fetch_recursive_files(
                     if "folder" in obj:
                         child_id = obj["id"]
                         print(
-                            f"Recursing into folder "\
+                            f"Recursing into folder "
                             f"{obj.get('name')} (id={child_id}) at depth {depth}"
                         )
                         results.extend(
                             walk(
-                                f"https://graph.microsoft.com/"\
-                                f"v1.0/me/drive/items/{child_id}/children"\
+                                f"https://graph.microsoft.com/"
+                                f"v1.0/me/drive/items/{child_id}/children"
                                 f"?$top={page_limit}",
                                 depth + 1,
                                 access_token,
@@ -117,6 +118,7 @@ def fetch_recursive_files(
         access_token=access_token,
     )
 
+
 def get_new_access_token(
     service,
     app,
@@ -128,7 +130,7 @@ def get_new_access_token(
 
     params:
         refresh_token (str): The refresh token to use for obtaining a new access token.
-    
+
     returns:
         str: A string with the new access token.
     """
@@ -145,9 +147,7 @@ def get_new_access_token(
         )
 
         new_access_token = result["access_token"]
-        new_refresh_token = result.get(
-            "refresh_token"
-        )
+        new_refresh_token = result.get("refresh_token")
 
         # Optionally update the refresh token in the database
         if new_access_token or new_refresh_token:

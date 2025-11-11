@@ -3,13 +3,10 @@
 import os
 import pytest_check as check
 from django.db import connection
-from p7.helpers import smart_extension
-from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
-from repository.file import remove_extension_from_ts_vector_smart
-from p7.search_files_by_filename.api import sanitize_user_search
 
-def assert_save_file_success(client, user_id, service_name):
+
+def assert_download_file_success(client, user_id, service_name):
     """Helper function to assert successful creation of a service.
     params:
         client: Test client to make requests.
@@ -40,103 +37,37 @@ def assert_save_file_success(client, user_id, service_name):
     for file in data:
         check.is_instance(file, dict)
         if service_name == "dropbox":
-            # check.is_instance(file.get('.tag'), str)
-            # check.is_instance(file.get('name'), str)
-            # check.is_instance(file.get('path_display'), str)
-            # check.is_instance(file.get('id'), str)
-            # check.is_instance(file.get('client_modified'), str)
-            # check.is_instance(file.get('server_modified'), str)
-            # check.is_instance(file.get('size'), int)
-            # check.is_instance(file.get('is_downloadable'), bool)
-
-            # check.equal(file.get('.etag'), 'file')
-
-            extension = smart_extension("dropbox", file["name"], file.get("mime_type"))
-            path = file["path_display"]
-            link = "https://www.dropbox.com/preview" + path
-
             db_file = File.objects.filter(
-                serviceId__userId=user_id,
-                serviceId__name=service_name,
                 serviceFileId=file.get("id"),
-                name=file.get("name"),
-                extension=extension,
-                downloadable=file.get("is_downloadable"),
-                path=path,
-                link=link,
-                size=file.get("size"),
-                indexedAt=None,
-                snippet=None,
-                
             )
             file_count = db_file.count()
+
             check.equal(file_count, 1)
-            check_tokens_against_ts_vector(db_file)
+
+            check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "google":
-            # Skip non-files (folders, shortcuts, etc)
-            mime_type = file.get("mimeType", "")
-            if mime_type in (
-                "application/vnd.google-apps.folder",
-                "application/vnd.google-apps.shortcut",
-                "application/vnd.google-apps.drive-sdk",
-            ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
-                continue
-            file_by_id = {file["id"]: file for file in data}
-            extension = smart_extension("google", file["name"], file.get("mimeType"))
-            downloadable = file.get("capabilities", {}).get("canDownload")
-            path = build_google_drive_path(file, file_by_id)
-
             db_file = File.objects.filter(
-                serviceId__userId=user_id,
-                serviceId__name=service_name,
                 serviceFileId=file.get("id"),
-                name=file.get("name"),
-                extension=extension,
-                downloadable=downloadable,
-                path=path,
-                link=file.get("webViewLink"),
-                size=file.get("size", 0),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
+
             check.equal(file_count, 1)
-            check_tokens_against_ts_vector(db_file)
+
+            check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "onedrive":
-            extension = smart_extension(
-                "onedrive",
-                file["name"],
-                file.get("file", {}).get("mimeType"),
-            )
-            path = (
-                (file.get("parentReference", {}).get("path", "")).replace(
-                    "/drive/root:", ""
-                )
-                + "/"
-                + file["name"]
-            )
-
             db_file = File.objects.filter(
-                serviceId__userId=user_id,
-                serviceId__name=service_name,
                 serviceFileId=file.get("id"),
-                name=file.get("name"),
-                extension=extension,
-                downloadable=1,
-                path=path,
-                link=file.get("webUrl"),
-                size=file.get("size", 0),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
+
             check.equal(file_count, 1)
-            check_tokens_against_ts_vector(db_file)
+
+            check_tokens_against_ts_vector(db_file, file.get("content"))
 
 
-def assert_save_file_invalid_auth(client, user_id):
+def assert_download_file_invalid_auth(client, user_id):
     """Helper function to assert finding a service with invalid auth.
 
     params:
@@ -157,7 +88,7 @@ def assert_save_file_invalid_auth(client, user_id):
     check.equal(response.json(), {"error": "Unauthorized - invalid x-internal-auth"})
 
 
-def assert_save_file_missing_header(client, user_id):
+def assert_download_file_missing_header(client, user_id):
     """Helper function to assert finding a user by user_id with missing auth header.
 
     params:
@@ -199,7 +130,7 @@ def assert_save_file_missing_header(client, user_id):
     )
 
 
-def assert_save_file_missing_user_id(client):
+def assert_download_file_missing_user_id(client):
     """Helper function to assert finding a service by user ID with missing user ID.
 
     params:
@@ -252,42 +183,44 @@ def assert_save_file_missing_user_id(client):
     )
 
 
-def check_tokens_against_ts_vector(file: File, type=None):
+def check_tokens_against_ts_vector(file: File, content: str):
     """
-    Checks tokenized file name against the tsvector stored in the database
+    Checks tokenized file name and content against the tsvector stored in the database
     """
     # Get produced ts vector for the file
     ts = file.get().ts
     file_name = file.get().name
-    # Check that each token in the name appears as a term in our tsvector
-    # To produce the tokens PostgreSQL's tsvector parser is used
-    # NOTE: this currently only takes into account the file name
-    name_tokens = ts_tokenize(file_name, "simple")
-    if type == "content":
-        name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
-    else:
-        for i, token in enumerate(name_tokens):
-            token_extension = smart_extension(file.get().serviceId.name, file_name)
-            if token_extension and token.endswith(token_extension):
-                name_tokens[i] = token[: -len(token_extension)]
-        remove_extension_from_ts_vector_smart(file.get())
-    print(f"File name: {file_name}, tokens: {name_tokens}, ts vector: {ts}")
-    for token in name_tokens:    
-        if not token.lower() in ts:
-            print(f"Token '{token}' not found in ts vector")
-        check.equal(token.lower() in ts, True)
 
-def ts_tokenize(text, config):
+    # Tokenize & lexize file name
+    name_tokens = ts_tokenize_simple(file_name)
+
+    # Tokenize & lexize content (if any)
+    content_lexemes = []
+    if content:
+        content_tokens = ts_tokenize_english(content)
+        content_lexemes = list(content_tokens)
+
+    # Combine and dedupe lexemes from name and content
+    all_lexemes = set(name_tokens + content_lexemes)
+
+    # Ensure each lexeme appears in the stored tsvector
+    for lex in all_lexemes:
+        check.equal(lex in ts, True)
+
+
+def ts_tokenize_simple(text):
     "Tokenizes a string using PostgreSQL's tsvector parser"
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT unnest(tsvector_to_array(to_tsvector(%s, %s)))", [config, text]
+            "SELECT unnest(tsvector_to_array(to_tsvector('simple', %s)))", [text]
         )
         return [row[0] for row in cursor.fetchall()]
 
-def ts_lexize(token):
-    "Lexizes (stems) a token"
+
+def ts_tokenize_english(text):
+    "Tokenizes a string using PostgreSQL's tsvector parser"
     with connection.cursor() as cursor:
-        cursor.execute("SELECT ts_lexize('english_stem', %s);", [token])
-        result = cursor.fetchone()
-        return result[0] if result and result[0] is not None else []
+        cursor.execute(
+            "SELECT unnest(tsvector_to_array(to_tsvector('english', %s)))", [text]
+        )
+        return [row[0] for row in cursor.fetchall()]

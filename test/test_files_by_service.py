@@ -100,9 +100,8 @@ def test_get_files_by_service_success(
                 "size": 1024 * i,
                 "createdAt": now,
                 "modifiedAt": now,
-                "lastIndexed": None,
+                "indexedAt": None,
                 "snippet": f"Snippet for document {i}",
-                "content": f"Full content for document {i}",
             }
         )
     service_list = []

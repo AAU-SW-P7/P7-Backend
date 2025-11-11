@@ -8,10 +8,10 @@ from repository.service import get_all_user_services, serialize_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
 
-find_services_router = Router()
+find_services_tokens_router = Router()
 
 
-@find_services_router.get("/")
+@find_services_tokens_router.get("/")
 def find_services(
     request,
     user_id: str,
@@ -42,6 +42,11 @@ def find_services(
         serialized_services.append(
             {
                 "id": ser.get("id"),
+                "oauthType": ser.get("oauthType"),
+                "oauthToken": ser.get("oauthToken"),
+                "accessToken": ser.get("accessToken"),
+                "accessTokenExpiration": ser.get("accessTokenExpiration"),
+                "refreshToken": ser.get("refreshToken"),
                 "userId": ser.get("userId"),
                 "name": ser.get("name"),
                 "email": ser.get("email"),
