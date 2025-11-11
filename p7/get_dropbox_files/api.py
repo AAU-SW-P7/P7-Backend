@@ -73,11 +73,11 @@ def process_dropbox_files(user_id):
 
             update_or_create_file(file, service)
 
-        task_id = async_task(
+        async_task(
             process_download_dropbox_files,
             user_id, cluster="high",
             group=f"Dropbox-{user_id}"
-            )
+        )
         return files
 
     except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:

@@ -69,13 +69,14 @@ def process_onedrive_files(user_id):
                 continue
 
             update_or_create_file(file, service)
-        
-        task_id = async_task(
+
+        async_task(
             process_download_onedrive_files,
             user_id,
             cluster="high",
             group=f"Onedrive-{user_id}"
-            )
+        )
+
         return files
 
     except KeyError as e:

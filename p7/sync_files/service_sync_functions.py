@@ -36,6 +36,7 @@ from p7.download_dropbox_files.api import process_download_dropbox_files
 
 def sync_dropbox_files(
     user_id: str = None,
+    priority: str = "high",
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
     params:
@@ -98,11 +99,12 @@ def sync_dropbox_files(
             if not any(file["id"] == dropbox_file.serviceFileId for file in files):
                 dropbox_file.delete()
 
-        task_id = async_task(
+        async_task(
             process_download_dropbox_files,
-            user_id, cluster="high",
+            user_id,
+            cluster=priority,
             group=f"Dropbox-{user_id}"
-            )
+        )
 
         return updated_files
     except (
@@ -118,6 +120,7 @@ def sync_dropbox_files(
 
 def sync_google_drive_files(
     user_id: str = None,
+    priority: str = "high",
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
     params:
@@ -211,11 +214,11 @@ def sync_google_drive_files(
             ):
                 google_drive_file.delete()
                 continue
-        task_id = async_task(
-        process_download_google_drive_files,
-        user_id,
-        cluster="high",
-        group=f"Google-Drive-{user_id}"
+        async_task(
+            process_download_google_drive_files,
+            user_id,
+            cluster=priority,
+            group=f"Google-Drive-{user_id}"
         )
         return updated_files
 
@@ -225,6 +228,7 @@ def sync_google_drive_files(
 
 def sync_onedrive_files(
     user_id: str = None,
+    priority: str = "high",
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
     params:
@@ -285,12 +289,12 @@ def sync_onedrive_files(
             if not any(file["id"] == onedrive_file.serviceFileId for file in files):
                 onedrive_file.delete()
 
-        task_id = async_task(
+        async_task(
             process_download_onedrive_files,
             user_id,
-            cluster="high",
+            cluster=priority,
             group=f"Onedrive-{user_id}"
-            )
+        )
 
         return updated_files
     except (ValueError, TypeError, RuntimeError) as e:

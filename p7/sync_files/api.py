@@ -43,6 +43,7 @@ def sync_files(
         async_task(
             sync_dropbox_files,
             user_id,
+            priority="high",
             cluster="high",
             group=f"Dropbox-{user_id}"
         )
@@ -50,6 +51,7 @@ def sync_files(
         async_task(
             sync_google_drive_files,
             user_id,
+            priority="high",
             cluster="high",
             group=f"Google-Drive-{user_id}"
             )
@@ -57,6 +59,7 @@ def sync_files(
         async_task(
             sync_onedrive_files,
             user_id,
+            priority="high",
             cluster="high",
             group=f"Onedrive-{user_id}"
         )

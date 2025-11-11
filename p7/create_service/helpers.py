@@ -24,6 +24,7 @@ def schedule_fetching_files(cleaned):
                 schedule_type="D",
                 name=group,
                 user_id=cleaned["userId"],
+                priority="low",
                 cluster="low",
             )
         case "dropbox":
@@ -36,6 +37,7 @@ def schedule_fetching_files(cleaned):
                 schedule_type="D",
                 name=group,
                 user_id=cleaned["userId"],
+                priority="low",
                 cluster="low",
             )
         case "onedrive":
@@ -48,6 +50,7 @@ def schedule_fetching_files(cleaned):
                 schedule_type="D",
                 name=group,
                 user_id=cleaned["userId"],
+                priority="low",
                 cluster="low",
             )
         case _:

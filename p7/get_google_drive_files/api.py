@@ -98,11 +98,11 @@ def process_google_drive_files(user_id):
 
             update_or_create_file(file, service, file_by_id)
 
-        task_id = async_task(
-        process_download_google_drive_files,
-        user_id,
-        cluster="high",
-        group=f"Google-Drive-{user_id}"
+        async_task(
+            process_download_google_drive_files,
+            user_id,
+            cluster="high",
+            group=f"Google-Drive-{user_id}"
         )
 
         return files
