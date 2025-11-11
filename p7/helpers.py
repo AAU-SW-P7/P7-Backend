@@ -166,8 +166,8 @@ def parse_file_content(content_bytes: bytes, file) -> str | None:
         content (bytes): The raw file content in bytes.
     """
 
-    content_bytes = BytesIO(content_bytes)
     content_bytes_decoded = content_bytes.decode("utf-8-sig", errors="ignore").strip()
+    content_bytes = BytesIO(content_bytes)
 
     if content_bytes_decoded:
         match file.extension:
