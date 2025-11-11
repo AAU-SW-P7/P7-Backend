@@ -218,12 +218,12 @@ def test_save_dropbox_file_missing_user_id(save_dropbox_file_client_fixture):
 
     assert_save_file_missing_user_id(save_dropbox_file_client_fixture)
 
-# def test_save_google_drive_file_success(save_google_drive_file_client_fixture):
-#     """Test saving a Google Drive file."""
+def test_save_google_drive_file_success(save_google_drive_file_client_fixture):
+    """Test saving a Google Drive file."""
 
-#     for user_number in range(1, 3+1):  # 3 users
+    for user_number in range(1, 3+1):  # 3 users
 
-#         assert_save_file_success(save_google_drive_file_client_fixture, user_number, 'google')
+        assert_save_file_success(save_google_drive_file_client_fixture, user_number, 'google')
 
 def test_save_google_drive_file_invalid_auth(save_google_drive_file_client_fixture):
     """Test saving a Google Drive file."""
@@ -244,16 +244,16 @@ def test_save_google_drive_file_missing_user_id(save_google_drive_file_client_fi
 
     assert_save_file_missing_user_id(save_google_drive_file_client_fixture)
 
-# def test_save_onedrive_file_success(save_onedrive_file_client_fixture):
-#     """Test saving a OneDrive file."""
+def test_save_onedrive_file_success(save_onedrive_file_client_fixture):
+    """Test saving a OneDrive file."""
 
-#     for user_number in range(1, 3+1):  # 3 users
+    for user_number in range(1, 3+1):  # 3 users
 
-#         assert_save_file_success(
-#             save_onedrive_file_client_fixture,
-#             user_number,
-#             'onedrive',
-#         )
+        assert_save_file_success(
+            save_onedrive_file_client_fixture,
+            user_number,
+            'onedrive',
+        )
 
 def test_save_onedrive_file_invalid_auth(save_onedrive_file_client_fixture):
     """Test saving a OneDrive file."""

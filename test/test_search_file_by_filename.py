@@ -16,6 +16,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 import django
 django.setup()
 from django.utils import timezone
+from django.contrib.postgres.search import SearchVector, Value
 import pytest
 from hypothesis import given, strategies as st
 from helpers.search_filename import (
@@ -26,7 +27,6 @@ from helpers.search_filename import (
     assert_tokenize_hypothesis,
     assert_tokenize_match,
 )
-from django.contrib.postgres.search import SearchVector, Value
 from repository.models import File, Service, User
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")

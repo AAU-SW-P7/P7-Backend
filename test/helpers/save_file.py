@@ -8,7 +8,6 @@ from p7.helpers import smart_extension
 from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
 from repository.file import remove_extension_from_ts_vector_smart
-from p7.search_files_by_filename.api import sanitize_user_search
 
 def assert_save_file_success(client, user_id, service_name):
     """Helper function to assert successful creation of a service.
@@ -58,7 +57,6 @@ def assert_save_file_success(client, user_id, service_name):
                 size=file.get("size"),
                 indexedAt=None,
                 snippet=None,
-                
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -244,9 +242,9 @@ def assert_save_file_missing_user_id(client):
     )
 
 
-def check_tokens_against_ts_vector(file: File, type=None):
+def check_tokens_against_ts_vector(file: File, ts_type: str = None):
     """
-    Checks tokenized file name against the tsvector stored in the database
+    Checks tokenized file name against the ts_vector stored in the database
     """
     # Get produced ts vector for the file
     ts = file.get().ts
@@ -255,7 +253,7 @@ def check_tokens_against_ts_vector(file: File, type=None):
     # To produce the tokens PostgreSQL's tsvector parser is used
     # NOTE: this currently only takes into account the file name
     name_tokens = ts_tokenize(file_name, "simple")
-    if type == "content":
+    if ts_type == "content":
         name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
     else:
         for i, token in enumerate(name_tokens):
@@ -264,7 +262,7 @@ def check_tokens_against_ts_vector(file: File, type=None):
                 name_tokens[i] = token[: -len(token_extension)]
         remove_extension_from_ts_vector_smart(file.get())
     print(f"File name: {file_name}, tokens: {name_tokens}, ts vector: {ts}")
-    for token in name_tokens:    
+    for token in name_tokens:
         if not token.lower() in ts:
             print(f"Token '{token}' not found in ts vector")
         check.equal(token.lower() in ts, True)
@@ -281,5 +279,5 @@ def ts_lexize(token):
     "Lexizes (stems) a token"
     with connection.cursor() as cursor:
         cursor.execute("SELECT ts_lexize('english_stem', %s);", [token])
-        result = cursor.fetchone()
-        return result[0] if result and result[0] is not None else []
+        results = cursor.fetchone()
+        return results[0] if results and results[0] is not None else []

@@ -13,17 +13,17 @@ class RepositoryConfig(AppConfig):
     name = "repository"
 
     def ready(self):
-            # Skip during migrations, tests, collectstatic, etc.
-            if any(cmd in sys.argv for cmd in ("makemigrations", "migrate", "test", "collectstatic")):
-                return
+        # Skip during migrations, tests, collectstatic, etc.
+        if any(cmd in sys.argv for cmd in ("makemigrations", "migrate", "test", "collectstatic")):
+            return
 
-            # List of PostgreSQL extensions you want enabled
-            extensions = ["pg_trgm", "pgcrypto"]
+        # List of PostgreSQL extensions you want enabled
+        extensions = ["pg_trgm", "pgcrypto"]
 
-            try:
-                with connection.cursor() as cursor:
-                    for ext in extensions:
-                        cursor.execute(f"CREATE EXTENSION IF NOT EXISTS {ext};")
-            except (OperationalError, RuntimeError):
-                # Database might not be available (e.g., during startup)
-                return
+        try:
+            with connection.cursor() as cursor:
+                for ext in extensions:
+                    cursor.execute(f"CREATE EXTENSION IF NOT EXISTS {ext};")
+        except (OperationalError, RuntimeError):
+            # Database might not be available (e.g., during startup)
+            return

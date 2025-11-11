@@ -17,7 +17,7 @@ import django
 
 django.setup()
 from django.utils import timezone
-
+from django.contrib.postgres.search import SearchVector, Value
 import pytest
 from ninja.testing import TestClient
 
@@ -28,7 +28,6 @@ from helpers.search_filename import (
     assert_search_filename_missing_search_string,
     assert_search_filename_missing_userid,
 )
-from django.contrib.postgres.search import SearchVector, Value
 from helpers.create_user import assert_create_user_success
 from repository.models import File, Service, User
 from p7.search_files_by_filename.api import search_files_by_filename_router

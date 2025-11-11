@@ -3,7 +3,6 @@
 from datetime import datetime
 from django.db import transaction
 from django.db.models import Value, Q #, F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
-from django.db.models import Value, Q
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
@@ -75,23 +74,13 @@ def save_file(
             "modifiedAt": modified_at,
             "indexedAt": indexed_at,
             "snippet": snippet,
-        "name": name,
-        "extension": extension,
-        "downloadable": downloadable,
-        "path": path,
-        "link": link,
-        "size": size,
-        "createdAt": created_at,
-        "modifiedAt": modified_at,
-        "indexedAt": indexed_at,
-        "snippet": snippet,
         }
         file, _ = File.objects.update_or_create(
             serviceId=service_id,
             serviceFileId=service_file_id,
             defaults=defaults,
         )
-        
+
         # Remove extensions tag from name field
         name = remove_extension_from_ts_vector_smart(file)
         update_tsvector(file, name, None, indexed_at)
@@ -111,22 +100,6 @@ def remove_extension_from_ts_vector_smart(file: File) -> str:
         name_without_extension = file.name[: -len(extension)]
         return name_without_extension
     return file.name
-    
-    
-
-def update_tsvector(file, name: str, content: str | None):
-    """Update the tsvector field for full-text search on the given file instance."""
-
-    File.objects.filter(pk=file.pk).update(
-            ts=(
-                SearchVector(Value(name), weight="A", config='simple') +
-                SearchVector(Value(content or ""), weight="B", config='english')
-            )
-        )
-
-    file.refresh_from_db(fields=["ts"])
-
-    return file
 
 def update_tsvector(file, name: str, content: str | None, indexed_at: datetime | None) -> None:
     """Update the tsvector field for full-text search on the given file instance."""

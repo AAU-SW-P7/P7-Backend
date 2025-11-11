@@ -16,6 +16,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 import django
 django.setup()
 from django.utils import timezone
+from django.contrib.postgres.search import SearchVector, Value
 import pytest
 
 from helpers.search_filename_rank import (
@@ -25,7 +26,6 @@ from helpers.search_filename_rank import (
     assert_overfitting_token_count,
     assert_partial_token_match
 )
-from django.contrib.postgres.search import SearchVector, Value
 from repository.models import File, Service, User
 
 
