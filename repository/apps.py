@@ -1,4 +1,5 @@
 """Configuration for the repository app."""
+import os
 import sys
 from django.apps import AppConfig
 from django.db import connection, OperationalError
@@ -13,6 +14,11 @@ class RepositoryConfig(AppConfig):
     name = "repository"
 
     def ready(self):
+
+         # Skip if no DB (e.g., during pylint or migrations)
+        if os.environ.get("RUN_MAIN") != "true" or not connection.settings_dict.get("ENGINE"):
+            return
+
         # Skip during migrations, tests, collectstatic, etc.
         if any(cmd in sys.argv for cmd in ("makemigrations", "migrate", "test", "collectstatic")):
             return
