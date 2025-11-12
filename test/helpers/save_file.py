@@ -55,8 +55,6 @@ def assert_save_file_success(client, user_id, service_name):
                 path=path,
                 link=link,
                 size=file.get("size"),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -87,8 +85,6 @@ def assert_save_file_success(client, user_id, service_name):
                 path=path,
                 link=file.get("webViewLink"),
                 size=file.get("size", 0),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -118,8 +114,6 @@ def assert_save_file_success(client, user_id, service_name):
                 path=path,
                 link=file.get("webUrl"),
                 size=file.get("size", 0),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -253,18 +247,13 @@ def check_tokens_against_ts_vector(file: File, ts_type: str = None):
     # To produce the tokens PostgreSQL's tsvector parser is used
     # NOTE: this currently only takes into account the file name
     name_tokens = ts_tokenize(file_name, "simple")
-    if ts_type == "content":
-        name_tokens = [lex for token in name_tokens for lex in ts_lexize(token)]
-    else:
-        for i, token in enumerate(name_tokens):
-            token_extension = smart_extension(file.get().serviceId.name, file_name)
-            if token_extension and token.endswith(token_extension):
-                name_tokens[i] = token[: -len(token_extension)]
-        remove_extension_from_ts_vector_smart(file.get())
-    print(f"File name: {file_name}, tokens: {name_tokens}, ts vector: {ts}")
+
+    for i, token in enumerate(name_tokens):
+        token_extension = smart_extension(file.get().serviceId.name, file_name)
+        if token_extension and token.endswith(token_extension):
+            name_tokens[i] = token[: -len(token_extension)]
+    remove_extension_from_ts_vector_smart(file.get())
     for token in name_tokens:
-        if not token.lower() in ts:
-            print(f"Token '{token}' not found in ts vector")
         check.equal(token.lower() in ts, True)
 
 def ts_tokenize(text, config):
