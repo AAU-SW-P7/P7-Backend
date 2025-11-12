@@ -60,6 +60,7 @@ ALLOWED_HOSTS = [
     "api.localhost",
     "127.0.0.1", 
     "130.225.39.162", 
+    "swp7.dpdns.org",
     "backend", 
     "frontend"
 ]
@@ -72,6 +73,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://127.0.0.1",
     "http://130.225.39.162",
     "https://130.225.39.162",
+    "http://swp7.dpdns.org",
+    "https://swp7.dpdns.org",
     "http://frontend:3000", 
     "https://frontend:3000", 
     "http://backend:8000", 
@@ -86,6 +89,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://127.0.0.1",
     "http://130.225.39.162",
     "https://130.225.39.162",
+    "http://swp7.dpdns.org",
+    "https://swp7.dpdns.org",
     "http://frontend:3000", 
     "https://frontend:3000", 
     "http://backend:8000", 
