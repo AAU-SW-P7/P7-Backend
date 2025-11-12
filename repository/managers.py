@@ -22,18 +22,7 @@ class FileQuerySet(models.QuerySet):
 
         # Search vector on the ts vector
         query_text_search_vector = F("ts")
-
-        # Evaluate the expression per row and capture it as text
-        debug_rows = list(
-            self.annotate(tsv=query_text_search_vector)
-                .values("id", "name", "tsv")[:50]   # limit to keep it small
-        )
-
-        Path("query_text_search_vector.json").write_text(
-            json.dumps(debug_rows, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
-
+        
         # Search type phrase favors exact phrase matches
         # Search type plain favors individual token matches
         phrase_q = SearchQuery(query_text, search_type="phrase", config="simple")

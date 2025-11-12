@@ -91,7 +91,6 @@ def assert_overfitting_token_count(
     result_more_tokens = File.objects.ranking_based_on_file_name(query_more_tokens)
     more_tokens_rank = None
     for result in result_more_tokens:
-        print(result.name, result.rank)
         if result.name == file_name:
             more_tokens_rank = result.rank
     check.is_true(exact_rank is not None, "file not found in exact results")
