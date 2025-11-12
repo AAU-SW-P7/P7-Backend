@@ -1,7 +1,5 @@
 """" Manager for ranking files based on query matches. """
 
-import json
-from pathlib import Path
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Value, FloatField
@@ -22,7 +20,7 @@ class FileQuerySet(models.QuerySet):
 
         # Search vector on the ts vector
         query_text_search_vector = F("ts")
-        
+
         # Search type phrase favors exact phrase matches
         # Search type plain favors individual token matches
         phrase_q = SearchQuery(query_text, search_type="phrase", config="simple")
