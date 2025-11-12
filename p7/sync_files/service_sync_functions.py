@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 
 from django.http import JsonResponse
+from django_q.tasks import async_task
 
 # Google libs
 from google.oauth2.credentials import Credentials
@@ -29,9 +30,13 @@ from p7.get_onedrive_files.helper import (
     update_or_create_file as update_or_create_file_onedrive,
     fetch_recursive_files as fetch_recursive_files_onedrive,
 )
+from p7.download_google_drive_files.api import process_download_google_drive_files
+from p7.download_onedrive_files.api import process_download_onedrive_files
+from p7.download_dropbox_files.api import process_download_dropbox_files
 
 def sync_dropbox_files(
     user_id: str = None,
+    priority: str = "high",
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
     params:
@@ -94,6 +99,13 @@ def sync_dropbox_files(
             if not any(file["id"] == dropbox_file.serviceFileId for file in files):
                 dropbox_file.delete()
 
+        async_task(
+            process_download_dropbox_files,
+            user_id,
+            cluster=priority,
+            group=f"Dropbox-{user_id}"
+        )
+
         return updated_files
     except (
         ValueError,
@@ -108,6 +120,7 @@ def sync_dropbox_files(
 
 def sync_google_drive_files(
     user_id: str = None,
+    priority: str = "high",
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
     params:
@@ -201,7 +214,12 @@ def sync_google_drive_files(
             ):
                 google_drive_file.delete()
                 continue
-
+        async_task(
+            process_download_google_drive_files,
+            user_id,
+            cluster=priority,
+            group=f"Google-Drive-{user_id}"
+        )
         return updated_files
 
     except (ValueError, TypeError, KeyError, RuntimeError) as e:
@@ -210,6 +228,7 @@ def sync_google_drive_files(
 
 def sync_onedrive_files(
     user_id: str = None,
+    priority: str = "high",
 ):
     """Fetches file metadata and updates files that have been modified since the last sync.
     params:
@@ -269,6 +288,13 @@ def sync_onedrive_files(
             # If not, it means the file has been deleted in Onedrive
             if not any(file["id"] == onedrive_file.serviceFileId for file in files):
                 onedrive_file.delete()
+
+        async_task(
+            process_download_onedrive_files,
+            user_id,
+            cluster=priority,
+            group=f"Onedrive-{user_id}"
+        )
 
         return updated_files
     except (ValueError, TypeError, RuntimeError) as e:

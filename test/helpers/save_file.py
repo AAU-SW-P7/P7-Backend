@@ -57,8 +57,6 @@ def assert_save_file_success(client, user_id, service_name):
                 size=file.get("size"),
                 createdAt=file.get("client_modified"),
                 modifiedAt=file.get("server_modified"),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -91,8 +89,6 @@ def assert_save_file_success(client, user_id, service_name):
                 size=file.get("size", 0),
                 createdAt=file.get("createdTime"),
                 modifiedAt=file.get("modifiedTime"),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
@@ -124,8 +120,6 @@ def assert_save_file_success(client, user_id, service_name):
                 size=file.get("size", 0),
                 createdAt=file.get("createdDateTime"),
                 modifiedAt=file.get("lastModifiedDateTime"),
-                indexedAt=None,
-                snippet=None,
             )
             file_count = db_file.count()
             check.equal(file_count, 1)
