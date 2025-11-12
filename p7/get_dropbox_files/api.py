@@ -11,6 +11,7 @@ from p7.get_dropbox_files.helper import (
     fetch_recursive_files,
     get_new_access_token,
 )
+from p7.download_dropbox_files.api import process_download_dropbox_files
 
 fetch_dropbox_files_router = Router()
 
@@ -71,6 +72,12 @@ def process_dropbox_files(user_id):
                 continue
 
             update_or_create_file(file, service)
+
+        async_task(
+            process_download_dropbox_files,
+            user_id, cluster="high",
+            group=f"Dropbox-{user_id}"
+        )
         return files
 
     except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
