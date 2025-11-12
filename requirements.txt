@@ -18,4 +18,8 @@ pylint
 pylint-django
 hypothesis
 django-pgcrypto
+python-docx
+python-pptx
+openpyxl
+pypdf
 setuptools
