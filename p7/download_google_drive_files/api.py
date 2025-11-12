@@ -11,8 +11,9 @@ from django_q.tasks import async_task
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.errors import HttpError
 
-from p7.helpers import validate_internal_auth
+from p7.helpers import validate_internal_auth, parse_file_content
 from p7.get_google_drive_files.helper import get_new_access_token
 from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
@@ -77,7 +78,9 @@ def process_download_google_drive_files(user_id):
 
         files = download_recursive_files(
             drive_api,
+            creds,
             service,
+            access_token,
         )
 
         return files
@@ -88,7 +91,9 @@ def process_download_google_drive_files(user_id):
 
 def download_recursive_files(
     drive_api,
+    creds,
     service,
+    access_token,
 ):
     """Download files recursively from a user's Google Drive account."""
 
@@ -102,57 +107,52 @@ def download_recursive_files(
     errors = []
     for google_drive_file in google_drive_files:
         file_id = google_drive_file.serviceFileId
-        name = google_drive_file.name
+
+        access_token = get_new_access_token(
+            service,
+            creds,
+            access_token,
+        )
 
         try:
             try:
                 request = drive_api.files().export(
                     fileId=file_id, mimeType="text/plain"
                 )
+
                 fh = io.BytesIO()
                 downloader = MediaIoBaseDownload(fh, request)
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                # decode with utf-8-sig to remove BOM if present
-                content = fh.getvalue().decode('utf-8-sig', errors='ignore')
-
-                update_tsvector(
-                    google_drive_file,
-                    google_drive_file.name,
-                    content,
-                    datetime.now(),
-                )
-
-                files.append({
-                    "id": file_id,
-                    "content": content,
-                })
-            except RuntimeError:
-                # Regular binary file -> get_media
+            except (HttpError, RuntimeError):
                 request = drive_api.files().get_media(fileId=file_id)
+
                 fh = io.BytesIO()
                 downloader = MediaIoBaseDownload(fh, request)
                 done = False
                 while not done:
                     _, done = downloader.next_chunk()
-                # decode with utf-8-sig to remove BOM if present
-                content = fh.getvalue().decode('utf-8-sig', errors='ignore')
 
-                update_tsvector(
-                    google_drive_file,
-                    google_drive_file.name,
-                    content,
-                    datetime.now(),
-                )
+            google_drive_content = parse_file_content(
+                fh.getvalue(),
+                google_drive_file,
+            )
 
-                files.append({
-                    "id": file_id,
-                    "content": content,
-                })
+            update_tsvector(
+                google_drive_file,
+                google_drive_file.name,
+                google_drive_content,
+                datetime.now(),
+            )
+
+            files.append({
+                "id": file_id,
+                "content": google_drive_content,
+            })
 
         except RuntimeError as e:
-            errors.append(f"Failed to download {file_id} ({name}): {e}")
+            errors.append(f"Error updating tsvector for file {file_id}: {str(e)}")
 
     if errors:
         print("Errors occurred during Google Drive file downloads:")

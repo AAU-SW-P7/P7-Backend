@@ -17,4 +17,8 @@ pytest-check
 pylint
 pylint-django
 hypothesis
+python-docx
+python-pptx
+openpyxl
+pypdf
 setuptools
