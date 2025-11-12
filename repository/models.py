@@ -81,10 +81,6 @@ class File(models.Model):
     modifiedAt = pgcrypto.EncryptedDateTimeField()
     indexedAt = pgcrypto.EncryptedDateTimeField(null=True, blank=True)
     snippet = pgcrypto.EncryptedTextField(null=True, blank=True)
-    createdAt = models.DateTimeField()
-    modifiedAt = models.DateTimeField()
-    indexedAt = models.DateTimeField(null=True, blank=True)
-    snippet = models.TextField(null=True, blank=True)
     ts = SearchVectorField(null=True)
 
     class Meta:
