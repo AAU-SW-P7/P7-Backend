@@ -5,8 +5,13 @@ import json
 import mimetypes
 from pathlib import Path
 from typing import Optional
+from io import BytesIO
 import requests
 from django.http import JsonResponse
+from pypdf import PdfReader
+from docx import Document
+from pptx import Presentation
+from openpyxl import load_workbook
 
 
 def validate_internal_auth(x_internal_auth: str) -> JsonResponse | None:
@@ -129,14 +134,91 @@ def downloadable_file_extensions() -> set[str]:
         downloadable_text_extensions = set(json.load(fh))
 
     google_file_extensions = {
-        ".gdoc", ".gsheet", ".gslides", ".gdraw", ".gform",
-        ".gtable", ".gmap", ".gscript", ".gsite", ".gjam",
+        ".gdoc",
+        ".gsheet",
+        ".gslides",
+        ".gdraw",
+        ".gform",
+        ".gtable",
+        ".gmap",
+        ".gscript",
+        ".gsite",
+        ".gjam",
     }
 
-    # other_file_extensions = { # Uncomment to add more types
-    #     ".pdf",
-    #     ".doc",
-    #     ".docx",
-    # }
+    other_file_extensions = {
+        ".pdf",
+    #   ".doc", # legacy Word format (unsupported)
+    #   ".ppt",  # legacy PowerPoint format (unsupported)
+    #   ".xls",  # legacy Excel format (unsupported)
+        ".docx",
+        ".pptx",
+        ".xlsx",
+    }
 
-    return downloadable_text_extensions | google_file_extensions # | other_file_extensions
+    return downloadable_text_extensions | google_file_extensions | other_file_extensions
+
+def parse_file_content(content_bytes: bytes, file) -> str | None:
+    """
+    Parse file content to extract text from different file types.
+
+    params:
+        content (bytes): The raw file content in bytes.
+    """
+
+    content_bytes_decoded = content_bytes.decode("utf-8-sig", errors="ignore").strip()
+    content_bytes = BytesIO(content_bytes)
+
+    if content_bytes_decoded:
+        match file.extension:
+            case ".pdf":
+                try:
+                    reader = PdfReader(content_bytes)
+                    return "\n".join(page.extract_text() or "" for page in reader.pages)
+                except RuntimeError as e:
+                    print(f"Failed to parse pdf: {e}")
+                    return None
+            case ".docx":
+                try:
+                    doc = Document(content_bytes)
+                    return "\n".join(p.text for p in doc.paragraphs)
+                except RuntimeError as e:
+                    print(f"Failed to parse docx: {e}")
+                    return None
+            case ".pptx":
+                try:
+                    prs = Presentation(content_bytes)
+                    slide_text = []
+                    for slide in prs.slides:
+                        for shape in slide.shapes:
+                            if not shape.has_text_frame:
+                                continue
+                            for paragraph in shape.text_frame.paragraphs:
+                                for run in paragraph.runs:
+                                    slide_text.append(run.text)
+                    return "\n".join(slide_text)
+                except RuntimeError as e:
+                    print(f"Failed to parse pptx: {e}")
+                    return None
+            case ".xlsx":
+                try:
+                    wb = load_workbook(content_bytes, data_only=True)
+                    ws = wb.active
+                    # iter_rows(..., values_only=True) yields tuples of raw values, not cell objects
+                    rows = [list(row) for row in ws.iter_rows(values_only=True)]
+                    text = "\n".join(
+                        "\t".join(str(cell) if cell is not None else "" for cell in row)
+                        for row in rows
+                    )
+                    return text
+                except RuntimeError as e:
+                    print(f"Failed to parse xlsx: {e}")
+                    return None
+            case _: # Default: try to decode as UTF-8 text
+                try:
+                    return content_bytes_decoded
+                except RuntimeError as e:
+                    print(f"Failed to decode: {e}")
+                    return None
+
+    return None
