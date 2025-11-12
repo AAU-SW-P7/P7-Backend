@@ -80,7 +80,6 @@ class File(models.Model):
     modifiedAt = models.DateTimeField()
     indexedAt = models.DateTimeField(null=True, blank=True)
     snippet = models.TextField(null=True, blank=True)
-    content = models.TextField(null=True, blank=True)
     ts = SearchVectorField(null=True)
 
     class Meta:
