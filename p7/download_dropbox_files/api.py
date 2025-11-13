@@ -127,7 +127,6 @@ def download_recursive_files(
             try:
                 update_tsvector(
                     dropbox_file,
-                    dropbox_result.get("name"),
                     dropbox_content,
                     datetime.now(),
                 )
