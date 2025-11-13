@@ -5,12 +5,13 @@ from datetime import datetime, timezone
 
 from repository.user import get_user
 from repository.service import save_service
-from p7.create_user.api import create_user
+from repository.user import save_user
+from ninja import Header
 
 def create_x_users(count: int):
     """Create multiple users using the create_user function."""
     for _ in range(count):
-        create_user("p7")
+        save_user()
 
 def create_service(provider, user_id):
     """Helper function to create a service"""
