@@ -23,7 +23,7 @@ from ninja.testing import TestClient
 from helpers.create_user import (
     assert_create_user_success
 )
-from helpers.general_helper_functions import create_service
+from helpers.general_helper_functions import (create_x_users, create_service)
 
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
@@ -51,21 +51,14 @@ def create_service_client():
     return TestClient(create_service_router)
 
 
-def test_get_files_by_service_success(
-    user_client: TestClient,
-):
+def test_get_files_by_service_success():
     """Test getting files by service for Google Drive."""
-    for user_id in range(1, 3+1):
-        # Create users
-        assert_create_user_success(user_client, user_id)
+    create_x_users(3)
 
-    service_count = 0
     for user_id in range(1, 3+1):
         # Create a service for each provider for each user
         for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
             create_service(provider, user_id)
-
-            service_count += 1
 
     # Save files for users
     now = datetime.now(timezone.utc)
@@ -113,13 +106,11 @@ def test_get_files_by_service_success(
             check.equal(file.snippet, f"Snippet for document {service.id + service_count * i}")
             check.equal(file.content, f"Full content for document {service.id + service_count * i}")
 
-def test_get_files_by_service_no_files(
-    user_client: TestClient,
-):
+def test_get_files_by_service_no_files():
     """Test getting files by service when no files exist for the service."""
     # Create a user
     user_id = 4
-    assert_create_user_success(user_client, user_id)
+    create_x_users(1)
     user = get_user(user_id)
     # # Create a service for the user
     payload = {
@@ -161,7 +152,7 @@ def test_get_files_by_service_no_service(
     """Test getting files by service when the service does not exist."""
     # Create a user
     user_id = 5
-    assert_create_user_success(user_client, user_id)
+    create_x_users(1)
 
     # Attempt to get files for a non-existent service
     service = get_service(user_id, "non_existent_service")

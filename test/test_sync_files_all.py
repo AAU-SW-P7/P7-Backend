@@ -18,12 +18,10 @@ import django
 django.setup()
 
 from ninja.testing import TestClient
-from helpers.create_user import (assert_create_user_success)
 from helpers.sync_files import read_json_file
-from helpers.general_helper_functions import create_service
+from helpers.general_helper_functions import (create_x_users, create_service)
 
 from p7.sync_files.api import sync_files_router
-from p7.create_user.api import create_user_router
 from p7.get_dropbox_files.helper import (update_or_create_file as update_or_create_file_dropbox)
 from p7.get_google_drive_files.helper import (
     update_or_create_file as update_or_create_file_google_drive
@@ -36,15 +34,6 @@ from repository.service import get_service
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
 
-
-@pytest.fixture(name="user_client", scope='module', autouse=True)
-def create_user_client():
-    """Fixture for creating a test client for the create_user endpoint.
-     Returns:
-         TestClient: A test client for the create_user endpoint.
-     """
-    return TestClient(create_user_router)
-
 @pytest.fixture(name="sync_files_client_fixture", scope='module', autouse=True)
 def sync_file_client():
     """Fixture for creating a test client for the save_file endpoint.
@@ -53,12 +42,9 @@ def sync_file_client():
     """
     return TestClient(sync_files_router)
 
-def test_create_user_success(user_client):
-    """Test creating a users successfully.
-    params:
-        user_client: Fixture for creating a test client for the create_user endpoint.
-    """
-    assert_create_user_success(user_client, 1)
+def test_create_user_success():
+    """Test creating a users successfully."""
+    create_x_users(1)
 
 def test_sync_files_all(
     sync_files_client_fixture: TestClient,

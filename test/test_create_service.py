@@ -16,28 +16,17 @@ django.setup()
 
 import pytest
 from ninja.testing import TestClient
-from helpers.create_user import (
-    assert_create_user_success,
-)
 from helpers.create_service import (
     assert_create_service_success,
     assert_create_service_invalid_auth,
     assert_create_service_missing_header,
     assert_create_service_missing_payload,
 )
-from p7.create_user.api import create_user_router
+from helpers.general_helper_functions import create_x_users
 from p7.create_service.api import create_service_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 #pytestmark = pytest.mark.django_db
-
-@pytest.fixture(name="user_client", scope='module', autouse=True)
-def create_user_client():
-    """Fixture for creating a test client for the create_user endpoint.
-     Returns:
-         TestClient: A test client for the create_user endpoint.
-     """
-    return TestClient(create_user_router)
 
 @pytest.fixture(name="service_client", scope='module', autouse=True)
 def create_service_client():
@@ -47,13 +36,9 @@ def create_service_client():
     """
     return TestClient(create_service_router)
 
-def test_create_user_success(user_client):
-    """Test creating 3 users successfully.
-    params:
-        user_client: Fixture for creating a test client for the create_user endpoint.
-    """
-    for user_number in range(1, 3+1):  # 3 users
-        assert_create_user_success(user_client, user_number)
+def test_create_user_success():
+    """Create 3 users."""
+    create_x_users(3)
 
 def test_create_service_success(service_client):
     """Test creating 9 services successfully (3 each for Dropbox, Google, OneDrive).
