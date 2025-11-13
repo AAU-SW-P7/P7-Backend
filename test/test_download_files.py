@@ -18,6 +18,8 @@ django.setup()
 
 import pytest
 from ninja.testing import TestClient
+from helpers.create_user import assert_create_user_success
+from helpers.create_service import assert_create_service_success
 
 from helpers.download_file import (
     assert_download_file_success,
@@ -25,13 +27,9 @@ from helpers.download_file import (
     assert_download_file_missing_header,
     assert_download_file_missing_user_id,
 )
-from helpers.fetch_service import (
-    assert_fetch_dropbox_files_success,
-    assert_fetch_google_files_success,
-    assert_fetch_onedrive_files_success,
-)
-from helpers.general_helper_functions import (create_x_users, create_service)
 
+from p7.create_user.api import create_user_router
+from p7.create_service.api import create_service_router
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
 from p7.get_google_drive_files.api import fetch_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router
@@ -41,6 +39,25 @@ from p7.download_onedrive_files.api import download_onedrive_files_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 # pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture(name="user_client", scope="module", autouse=True)
+def create_user_client():
+    """Fixture for creating a test client for the create_user endpoint.
+    Returns:
+        TestClient: A test client for the create_user endpoint.
+    """
+    return TestClient(create_user_router)
+
+
+@pytest.fixture(name="service_client", scope="module", autouse=True)
+def create_service_client():
+    """Fixture for creating a test client for the create_service endpoint.
+    Returns:
+        TestClient: A test client for the create_service endpoint.
+    """
+    return TestClient(create_service_router)
+
 
 @pytest.fixture(name="fetch_dropbox_files_client", scope="module", autouse=True)
 def create_fetch_dropbox_files_client():
@@ -101,31 +118,54 @@ def download_onedrive_files_client():
     return TestClient(download_onedrive_files_router)
 
 
-def test_create_user_success():
-    """Create 3 users."""
-    create_x_users(3)
-
-def test_create_service_success():
-    """Creating 9 services (3 each for Dropbox, Google, OneDrive)."""
-    for user_number in range(1, 3 + 1):  # 3 users
-        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]: # 3 services
-            create_service(provider, user_number)
-
-# --- TESTS FOR DROPBOX ---
-def test_fetch_dropbox_files_success(fetch_dropbox_files_client):
-    """Test fetching Dropbox files successfully for 3 users.
+def test_create_user_success(user_client):
+    """Test creating 3 users successfully.
     params:
-        fetch_dropbox_files_client:
-            Fixture for creating a test client for the fetch_dropbox_files endpoint.
+        user_client: Fixture for creating a test client for the create_user endpoint.
     """
     for user_number in range(1, 3 + 1):  # 3 users
+        assert_create_user_success(user_client, user_number)
 
-        assert_fetch_dropbox_files_success(
-            fetch_dropbox_files_client,
-            user_number,
-            "dropbox",
-        )
+def test_create_service_success(service_client):
+    """Test creating 9 services successfully (3 each for Dropbox, Google, OneDrive).
+    params:
+        service_client: Fixture for creating a test client for the create_service endpoint.
+    """
+    service_count = 0
+    for service_number in range(1, 3 + 1):  # 3 services
+        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
+            payload = {
+                "userId": os.getenv(f"TEST_USER_{provider}_ID_{service_number}"),
+                "oauthType": os.getenv(
+                    f"TEST_USER_{provider}_OAUTHTYPE_{service_number}"
+                ),
+                "oauthToken": os.getenv(
+                    f"TEST_USER_{provider}_OAUTHTOKEN_{service_number}"
+                ),
+                "accessToken": os.getenv(
+                    f"TEST_USER_{provider}_ACCESSTOKEN_{service_number}"
+                ),
+                "accessTokenExpiration": os.getenv(
+                    f"TEST_USER_{provider}_ACCESSTOKENEXPIRATION_{service_number}"
+                ),
+                "refreshToken": os.getenv(
+                    f"TEST_USER_{provider}_REFRESHTOKEN_{service_number}"
+                ),
+                "name": os.getenv(f"TEST_USER_{provider}_NAME_{service_number}"),
+                "accountId": os.getenv(
+                    f"TEST_USER_{provider}_ACCOUNTID_{service_number}"
+                ),
+                "email": os.getenv(f"TEST_USER_{provider}_EMAIL_{service_number}"),
+                "scopeName": os.getenv(
+                    f"TEST_USER_{provider}_SCOPENAME_{service_number}"
+                ),
+            }
 
+            assert_create_service_success(service_client, payload, service_count)
+
+            service_count += 1
+
+# --- TESTS FOR DROPBOX ---
 def test_download_dropbox_file_success(download_dropbox_files_client_fixture):
     """Test downloading a Dropbox file."""
 
@@ -161,21 +201,8 @@ def test_download_dropbox_file_missing_user_id(download_dropbox_files_client_fix
 
     assert_download_file_missing_user_id(download_dropbox_files_client_fixture)
 
-
 # --- TESTS FOR GOOGLE DRIVE ---
-def test_fetch_google_drive_files_success(fetch_google_files_client):
-    """Test fetching Google Drive files successfully for 3 users.
-    params:
-        fetch_google_drive_files_client:
-            Fixture for creating a test client for the fetch_google_drive_files endpoint.
-    """
-    for user_number in range(1, 3 + 1):  # 3 users
 
-        assert_fetch_google_files_success(
-            fetch_google_files_client,
-            user_number,
-            "google",
-        )
 
 def test_download_google_drive_file_success(download_google_drive_files_client_fixture):
     """Test downloading a Google Drive file."""
@@ -222,20 +249,6 @@ def test_download_google_drive_file_missing_user_id(
 
 
 # --- TESTS FOR ONEDRIVE ---
-def test_fetch_onedrive_files_success(fetch_onedrive_files_client):
-    """Test fetching OneDrive files successfully for 3 users.
-    params:
-        fetch_onedrive_files_client:
-            Fixture for creating a test client for the fetch_onedrive_files endpoint.
-    """
-    for user_number in range(1, 3 + 1):  # 3 users
-
-        assert_fetch_onedrive_files_success(
-            fetch_onedrive_files_client,
-            user_number,
-            "onedrive",
-        )
-
 def test_download_onedrive_file_success(download_onedrive_files_client_fixture):
     """Test downloading a OneDrive file."""
 
