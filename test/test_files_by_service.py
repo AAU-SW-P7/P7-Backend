@@ -23,7 +23,7 @@ from ninja.testing import TestClient
 from helpers.create_user import (
     assert_create_user_success
 )
-from helpers.general_helper_functions import create_service
+from helpers.sync_files import create_service
 
 from p7.create_user.api import create_user_router
 from p7.create_service.api import create_service_router
