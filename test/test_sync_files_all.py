@@ -19,7 +19,8 @@ django.setup()
 
 from ninja.testing import TestClient
 from helpers.create_user import (assert_create_user_success)
-from helpers.sync_files import (create_service, read_json_file)
+from helpers.sync_files import read_json_file
+from helpers.general_helper_functions import create_service
 
 from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router

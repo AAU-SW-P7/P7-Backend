@@ -18,8 +18,6 @@ import pytest
 from ninja.testing import TestClient
 from helpers.create_user import (
     assert_create_user_success,
-    assert_create_user_invalid_auth,
-    assert_create_user_missing_header,
 )
 from helpers.create_service import (
     assert_create_service_success,
@@ -56,20 +54,6 @@ def test_create_user_success(user_client):
     """
     for user_number in range(1, 3+1):  # 3 users
         assert_create_user_success(user_client, user_number)
-
-def test_create_user_invalid_auth(user_client):
-    """Test creating a user with invalid auth token.
-    params:
-        user_client: Fixture for creating a test client for the create_user endpoint.
-    """
-    assert_create_user_invalid_auth(user_client)
-
-def test_create_user_missing_header(user_client):
-    """Test creating a user with missing auth header.
-    params:
-        user_client: Fixture for creating a test client for the create_user endpoint.
-    """
-    assert_create_user_missing_header(user_client)
 
 def test_create_service_success(service_client):
     """Test creating 9 services successfully (3 each for Dropbox, Google, OneDrive).

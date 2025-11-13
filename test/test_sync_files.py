@@ -24,9 +24,9 @@ from helpers.sync_files import (
     assert_sync_files_missing_internal_auth,
     assert_sync_files_missing_user_id,
     assert_sync_files_function_missing_user_id,
-    create_service,
     read_json_file
 )
+from helpers.general_helper_functions import create_service
 
 from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router

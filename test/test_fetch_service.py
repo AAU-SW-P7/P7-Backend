@@ -26,7 +26,7 @@ from helpers.fetch_service import (
     assert_fetch_onedrive_files_missing_header,
     assert_fetch_onedrive_files_missing_userid,
 )
-from helpers.sync_files import create_service
+from helpers.general_helper_functions import create_service
 import pytest
 
 # Make the local backend package importable so `from p7...` works under pytest
