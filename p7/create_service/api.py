@@ -3,7 +3,7 @@
 from typing import Dict, Any, Tuple
 from ninja import Router, Body, Header
 from django.http import JsonResponse
-from django.utils import timezone as timezone
+from django.utils import timezone
 from repository.service import save_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
