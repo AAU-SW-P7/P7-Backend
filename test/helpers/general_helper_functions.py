@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from repository.user import get_user
 from repository.service import save_service
 from repository.user import save_user
-from ninja import Header
 
 def create_x_users(count: int):
     """Create multiple users using the create_user function."""

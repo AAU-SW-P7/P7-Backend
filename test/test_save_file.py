@@ -59,12 +59,12 @@ def test_create_user_success():
     create_x_users(3)
 
 
-def test_create_service_success(service_client):
+def test_create_service_success():
     """Test creating 9 services successfully (3 each for Dropbox, Google, OneDrive).
     params:
         service_client: Fixture for creating a test client for the create_service endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 services
+    for user_number in range(1, 3+1):  # 3 users
         for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
             create_service(provider, user_number)
 

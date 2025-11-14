@@ -88,6 +88,8 @@ def process_google_drive_files(user_id):
         file_by_id = {file["id"]: file for file in files}
 
         for file in files:
+            if file.get("trashed"): # If the file is in the trash, it should be skipped
+                continue
             # Skip non-files (folders, shortcuts, etc)
             if file.get("mimeType", "") in (
                 "application/vnd.google-apps.folder",
