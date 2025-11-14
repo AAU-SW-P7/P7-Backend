@@ -13,17 +13,13 @@ class FileQuerySet(models.QuerySet):
         - query_text: the original user query ("file name with spaces")
         - base_filter: optional Q object with prefilter logic
         """
-
-
         tokens = query_text.split()
         token_count = len(tokens)
-
+        
         # Search vector on the ts vector
         query_text_search_vector = F("ts")
 
-        # Search type phrase favors exact phrase matches
         # Search type plain favors individual token matches
-        phrase_q = SearchQuery(query_text, search_type="phrase", config="simple")
         plain_q = SearchQuery(query_text, search_type="plain", config="simple")
 
         # Apply base filter if provided
@@ -50,13 +46,12 @@ class FileQuerySet(models.QuerySet):
         return (
             query_set
             .annotate(
-                phrase_rank=SearchRank(query_text_search_vector, phrase_q, normalization=2),
                 plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=2),
                 matched_tokens=token_match_expr,
             )
             .annotate(
                 token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
-                token_penalty=1.0 - F("token_ratio"),
+                token_penalty= 1.0 - F("token_ratio"),
             )
             .annotate(
                 ordered_bonus=models.Case(
@@ -65,24 +60,15 @@ class FileQuerySet(models.QuerySet):
                     output_field=FloatField(),
                 ),
             )
-            # STEP 1: compute raw rank first
             .annotate(
-                raw_rank=(
-                    (F("phrase_rank") + F("plain_rank"))
-                    + F("token_ratio") * 1.5
-                    - (F("token_penalty") * (token_count + 3 - F("matched_tokens")))
-                    + F('ordered_bonus') * 2
+                rank=(
+                    # heavier weight for phrase matches
+                    F("plain_rank") * F("token_penalty")
+                    + F("token_ratio")   # moderate boost for token coverage
+                    + F('ordered_bonus') # large boost for exact ordered phrase
                 )
             )
-            # STEP 2: clamp negatives to 0
-            .annotate(
-                rank=models.Case(
-                    models.When(raw_rank__lt=0, then=Value(0.0)),
-                    default=F("raw_rank"),
-                    output_field=FloatField(),
-                )
-            )
-            .filter(rank__gte=0)
+            .filter(rank__gt=0.0)
             .order_by("-rank")
         )
 

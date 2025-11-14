@@ -73,7 +73,8 @@ def search_files_by_filename(
     sanitized_input = sanitize_user_search(search_string)
     tokens = tokenize(sanitized_input)
     results = query_files_by_name(tokens, user_id)
-
+    for file in results:
+        print (f"Found file: {file.name} with rank {file.rank}")
     # Cache service lookups to avoid repeated DB calls
     service_name_cache: dict = {}
 
