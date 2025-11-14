@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Value, FloatField
 from repository.helpers import ts_tokenize
+from django.db import connection
 
 
 class FileQuerySet(models.QuerySet):
@@ -112,6 +113,9 @@ class FileQuerySet(models.QuerySet):
         if base_filter is not None:
             query_set = query_set.filter(base_filter)
         
+        N = len(list(query_set))
+
+        
         # Create a SearchQuery from tokens to use GIN index
         # Combine tokens with AND logic for binary search
         if not tokens:
@@ -124,14 +128,41 @@ class FileQuerySet(models.QuerySet):
         
         # Use the GIN index with binary search (@@)
         query_set = query_set.filter(ts=search_query)
-        print(f"THE QUERY SET IS: {query_set}")
+        self.get_ts_stats_for_query(query_set)
 
+        # Total number of documents
+        
         return query_set
+    
+    def get_ts_stats_for_query(self, query_set):
+        # Get the total number of documents for a user
+        sql, params = query_set.values("ts").query.sql_with_params()
+        ts_sql = """
+            SELECT word, ndoc, nentry
+            FROM ts_stat($$%s$$)
+        """ % sql
+        with connection.cursor() as cursor:
+            cursor.execute(ts_sql, params)
+            ts_stats = cursor.fetchall()
+        print(ts_stats)
 
+
+    def get_query_ltc(tokens):
+        query_term_stats = {}
+        number_of_tokens = len(tokens)
         
+        for token in tokens:
+            query_term_stats.update({token: {
+                "tf-raw": 1,
+                "tf-wt": 1,
+                "df": 1,
+                "idf": 1,
+                "wt": 1,
+                "norm-wt": 1
+            }})
 
 
-        
+
 
 
 class FileManager(models.Manager.from_queryset(FileQuerySet)):
