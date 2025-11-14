@@ -16,6 +16,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 import django
 django.setup()
 from django.utils import timezone
+from django.contrib.postgres.search import SearchVector, Value
 import pytest
 
 from helpers.search_filename_rank import (
@@ -57,6 +58,7 @@ def test_data_fixture():
         size=1024,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
+        ts=SearchVector(Value("Token1 Token2 Token3 Token4 Token5"), weight="A", config='simple')
     )
     file2 = File.objects.create(
         serviceId=service1,
@@ -69,6 +71,7 @@ def test_data_fixture():
         size=1024,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
+        ts=SearchVector(Value("Token1 Token2"), weight="A", config='simple')
     )
     file3 = File.objects.create(
         serviceId=service1,
@@ -81,6 +84,7 @@ def test_data_fixture():
         size=1024,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
+        ts=SearchVector(Value("Token2 Token1"), weight="A", config='simple')
     )
     return {
         "user1": user1,
@@ -89,6 +93,7 @@ def test_data_fixture():
         "file2": file2,
         "file3": file3,
     }
+
 
 def test_exact_match(test_data):
     """Test exact match ranking higher than partial matches."""

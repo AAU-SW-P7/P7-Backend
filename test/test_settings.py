@@ -7,6 +7,7 @@ SECRET_KEY = "bogus"
 
 INSTALLED_APPS = [
     "repository",
+    "pgcrypto",
     "django_q",
 ]
 

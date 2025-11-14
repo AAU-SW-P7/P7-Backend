@@ -17,7 +17,7 @@ import django
 
 django.setup()
 from django.utils import timezone
-
+from django.contrib.postgres.search import SearchVector, Value
 import pytest
 from ninja.testing import TestClient
 
@@ -117,20 +117,22 @@ def test_search_filename_end_to_end(search_file):
         path="/report-user1.docx",
         link="http://dropbox/link1",
         size=1024,
-        createdAt=timezone.now(),
-        modifiedAt=timezone.now(),
+    	createdAt=timezone.now(),
+    	modifiedAt=timezone.now(),
+        ts=SearchVector(Value("report-user1"), weight="A", config='simple')
     )
     File.objects.create(
         serviceId=service1,
         serviceFileId="file-2",
-        name="another-file-with-different-name.docx",
+        name="another-file-with-different-name",
         extension="docx",
         downloadable=True,
         path="/another-file-with-different-name.docx",
         link="http://dropbox/link2",
         size=1024,
-        createdAt=timezone.now(),
-        modifiedAt=timezone.now(),
+    	createdAt=timezone.now(),
+    	modifiedAt=timezone.now(),
+        ts=SearchVector(Value("another-file-with-different-name"), weight="A", config='simple')
     )
 
     # Perform a search for 'report'

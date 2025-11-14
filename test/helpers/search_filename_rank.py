@@ -74,7 +74,7 @@ def assert_token_position(query_close: str, query_far_away: str, file_name: str)
 def assert_overfitting_token_count(
         query_exact_match: str,
         query_more_tokens: str,
-        file_name: object
+        file_name: str
         ):
     """Test that overfitting penalizes the ranking score.
     params:

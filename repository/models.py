@@ -3,8 +3,9 @@
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
-
+import pgcrypto
 from repository.managers import FileManager
+
 
 
 class User(models.Model):
@@ -37,16 +38,16 @@ class Service(models.Model):
         db_column="userId",
         related_name="services",
     )
-    oauthType = models.TextField()
-    oauthToken = models.TextField()
-    accessToken = models.TextField()
-    accessTokenExpiration = models.DateTimeField()
-    refreshToken = models.TextField()
-    name = models.TextField()
-    accountId = models.TextField()
-    email = models.TextField()
-    scopeName = models.TextField()
-    indexedAt = models.DateTimeField(null=True, blank=True)
+    oauthType = pgcrypto.EncryptedTextField()
+    oauthToken = pgcrypto.EncryptedTextField()
+    accessToken = pgcrypto.EncryptedTextField()
+    accessTokenExpiration = pgcrypto.EncryptedDateTimeField()
+    refreshToken = pgcrypto.EncryptedTextField()
+    name = pgcrypto.EncryptedTextField()
+    accountId = pgcrypto.EncryptedTextField()
+    email = pgcrypto.EncryptedTextField()
+    scopeName = pgcrypto.EncryptedTextField()
+    indexedAt = pgcrypto.EncryptedDateTimeField(null=True, blank=True)
 
     class Meta:
         """Class defining metadata for the Service model."""
@@ -69,17 +70,17 @@ class File(models.Model):
         db_column="serviceId",
         related_name="files",
     )
-    serviceFileId = models.TextField()
-    name = models.TextField()
+    serviceFileId = pgcrypto.EncryptedTextField()
+    name = pgcrypto.EncryptedTextField()
     extension = models.TextField()
     downloadable = models.BooleanField()
-    path = models.TextField()
-    link = models.TextField()
+    path = pgcrypto.EncryptedTextField()
+    link = pgcrypto.EncryptedTextField()
     size = models.BigIntegerField()
-    createdAt = models.DateTimeField()
-    modifiedAt = models.DateTimeField()
-    indexedAt = models.DateTimeField(null=True, blank=True)
-    snippet = models.TextField(null=True, blank=True)
+    createdAt = pgcrypto.EncryptedDateTimeField()
+    modifiedAt = pgcrypto.EncryptedDateTimeField()
+    indexedAt = pgcrypto.EncryptedDateTimeField(null=True, blank=True)
+    snippet = pgcrypto.EncryptedTextField(null=True, blank=True)
     ts = SearchVectorField(null=True)
 
     class Meta:

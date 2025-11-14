@@ -17,6 +17,7 @@ pytest-check
 pylint
 pylint-django
 hypothesis
+django-pgcrypto
 python-docx
 python-pptx
 openpyxl

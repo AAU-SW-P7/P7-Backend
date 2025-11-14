@@ -1,8 +1,9 @@
 """" Manager for ranking files based on query matches. """
 
 from django.db import models
-from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Value, FloatField
+
 
 class FileQuerySet(models.QuerySet):
     """Custom QuerySet for File model with ranking capabilities."""
@@ -12,11 +13,13 @@ class FileQuerySet(models.QuerySet):
         - query_text: the original user query ("file name with spaces")
         - base_filter: optional Q object with prefilter logic
         """
+
+
         tokens = query_text.split()
         token_count = len(tokens)
 
-        # Search vector on the 'name' field
-        query_text_search_vector = SearchVector("name", config="simple")
+        # Search vector on the ts vector
+        query_text_search_vector = F("ts")
 
         # Search type phrase favors exact phrase matches
         # Search type plain favors individual token matches
@@ -31,7 +34,7 @@ class FileQuerySet(models.QuerySet):
         # Annotate how many tokens appear in the name
         token_match_expr = sum(
             models.Case(
-                models.When(name__icontains=t, then=Value(1)),
+                models.When(ts__icontains=t, then=Value(1)),
                 default=Value(0),
                 output_field=models.IntegerField(),
             )
@@ -47,30 +50,39 @@ class FileQuerySet(models.QuerySet):
         return (
             query_set
             .annotate(
-                search=query_text_search_vector,
-                phrase_rank=SearchRank(query_text_search_vector, phrase_q),
-                plain_rank=SearchRank(query_text_search_vector, plain_q),
+                phrase_rank=SearchRank(query_text_search_vector, phrase_q, normalization=2),
+                plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=2),
                 matched_tokens=token_match_expr,
             )
             .annotate(
                 token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
-                exact_phrase_match=models.Case(
-                        models.When(name__icontains=query_text,
-                                    then=Value(1.0)/models.functions.Length("name")),
+                token_penalty=1.0 - F("token_ratio"),
+            )
+            .annotate(
+                ordered_bonus=models.Case(
+                    models.When(name__icontains=query_text, then=Value(1.0)),
                     default=Value(0.0),
                     output_field=FloatField(),
                 ),
             )
+            # STEP 1: compute raw rank first
             .annotate(
-                rank=(
-                    # heavier weight for phrase matches
-                    (F("phrase_rank") * 3.0 + F("plain_rank") * 1.0)
-                    + (F("token_ratio") * 1.0)
-                    + (F("exact_phrase_match") * 4)  # large boost for exact ordered phrase
+                raw_rank=(
+                    (F("phrase_rank") + F("plain_rank"))
+                    + F("token_ratio") * 1.5
+                    - (F("token_penalty") * (token_count + 3 - F("matched_tokens")))
+                    + F('ordered_bonus') * 2
                 )
-                / models.functions.Greatest(models.functions.Length("name"), Value(1))
             )
-            .filter(rank__gt=0.0)
+            # STEP 2: clamp negatives to 0
+            .annotate(
+                rank=models.Case(
+                    models.When(raw_rank__lt=0, then=Value(0.0)),
+                    default=F("raw_rank"),
+                    output_field=FloatField(),
+                )
+            )
+            .filter(rank__gte=0)
             .order_by("-rank")
         )
 

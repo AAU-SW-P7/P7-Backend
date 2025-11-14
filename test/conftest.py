@@ -92,6 +92,7 @@ def django_db_setup():
         conn.autocommit = True
         with conn.cursor() as cur:
             cur.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+            cur.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto;")
     finally:
         conn.close()
     for connection in connections.all():

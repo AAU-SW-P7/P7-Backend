@@ -7,6 +7,7 @@ from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
 from p7.helpers import downloadable_file_extensions
+from p7.helpers import smart_extension
 
 def fetch_downloadable_files(service):
     """Fetches all downloadable files for a given service.
@@ -27,7 +28,6 @@ def fetch_downloadable_files(service):
         )
 
     return JsonResponse({"error": "Invalid service parameter"}, status=400)
-
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -58,7 +58,7 @@ def save_file(
         modifiedAt: Timestamp when the file was last modified.
         indexedAt: Timestamp when the file was last indexed.
         snippet: Text snippet or preview of the file content.
-    """
+        """
 
     with transaction.atomic():
         # Insert the file
@@ -80,9 +80,25 @@ def save_file(
             defaults=defaults,
         )
 
+        # Remove extensions tag from name field
+        name = remove_extension_from_ts_vector_smart(file)
         update_tsvector(file, name, None, indexed_at)
 
     return file
+
+def remove_extension_from_ts_vector_smart(file: File) -> str:
+    """Removes the file extension from the file name for tsvector indexing.
+
+    params:
+        file: File instance whose name is to be processed.
+    returns:
+        The file name without its extension.
+    """
+    extension = smart_extension(file.serviceId.name, file.name)
+    if extension and file.name.lower().endswith(extension.lower()):
+        name_without_extension = file.name[: -len(extension)]
+        return name_without_extension
+    return file.name
 
 def update_tsvector(file, name: str, content: str | None, indexed_at: datetime | None) -> None:
     """Update the tsvector field for full-text search on the given file instance."""
@@ -128,7 +144,6 @@ def query_files_by_name(name_query, user_id):
 
     query_text = " ".join(name_query)
     results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
-
     return results
 
 

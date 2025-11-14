@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # "repository.apps.RepositoryConfig",
     "repository",
+    'pgcrypto',
     "django_q",
 ]
 
@@ -199,7 +200,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
+PGCRYPTO_KEY = "your-very-secret-key"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-MIGRATION_MODULES
 """ MIGRATION_MODULES = {
     "repository": None,             # <- Name for repo we should not create migrations for
