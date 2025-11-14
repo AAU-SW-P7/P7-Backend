@@ -2,9 +2,9 @@
 
 import io
 import os
-from datetime import datetime
-from ninja import Router, Header
+from django.utils import timezone
 from django.http import JsonResponse
+from ninja import Router, Header
 from django_q.tasks import async_task
 
 # Google libs
@@ -143,7 +143,7 @@ def download_recursive_files(
                 google_drive_file,
                 google_drive_file.name,
                 google_drive_content,
-                datetime.now(),
+                timezone.now(),
             )
 
             files.append({
