@@ -1,10 +1,10 @@
 """API endpoint to download Dropbox files for a user."""
 import json
-from datetime import datetime
 import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
+from django.utils import timezone
 from django_q.tasks import async_task
 from p7.helpers import validate_internal_auth, parse_file_content
 from p7.get_dropbox_files.helper import get_new_access_token
@@ -129,7 +129,7 @@ def download_recursive_files(
                     dropbox_file,
                     dropbox_result.get("name"),
                     dropbox_content,
-                    datetime.now(),
+                    timezone.now(),
                 )
 
                 files.append({

@@ -61,6 +61,8 @@ def assert_save_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file)
 
         elif service_name == "google":
+            if file.get("trashed"): # If the file is in the trash, it should be skipped
+                continue
             # Skip non-files (folders, shortcuts, etc)
             if (
                 file.get("mimeType", "") in (

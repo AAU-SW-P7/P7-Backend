@@ -28,10 +28,9 @@ from helpers.search_filename import (
     assert_search_filename_missing_search_string,
     assert_search_filename_missing_userid,
 )
-from helpers.create_user import assert_create_user_success
+from helpers.general_helper_functions import create_x_users
 from repository.models import File, Service, User
 from p7.search_files_by_filename.api import search_files_by_filename_router
-from p7.create_user.api import create_user_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 
@@ -45,14 +44,6 @@ def create_search_file_client():
     return TestClient(search_files_by_filename_router)
 
 
-@pytest.fixture(name="user_client", scope="module", autouse=True)
-def create_user_client():
-    """Fixture for creating a test client for the search_files_by_filename_router endpoint.
-    Returns:
-        TestClient: A test client for the search_files_by_filename_router endpoint.
-    """
-    return TestClient(create_user_router)
-
 
 @pytest.fixture(name="test_client", scope="module", autouse=True)
 def create_test_client():
@@ -63,14 +54,9 @@ def create_test_client():
     return TestClient(search_files_by_filename_router)
 
 
-def test_create_user_success(user_client):
-    """Test creating 3 users successfully.
-    params:
-        user_client: Fixture for creating a test client for the create_user endpoint.
-    """
-    for user_number in range(1, 3 + 1):  # 3 users
-        assert_create_user_success(user_client, user_number)
-
+def test_create_user_success():
+    """Create 3 users."""
+    create_x_users(3)
 
 def test_missing_user_id(test_client):
     """Test searching files with invalid user ID parameter.
@@ -78,7 +64,6 @@ def test_missing_user_id(test_client):
         client: Test client to make requests.
     """
     assert_search_filename_missing_userid(test_client, "sample_search")
-
 
 def test_missing_auth_header(test_client):
     """Test searching files with missing auth header.
@@ -88,7 +73,6 @@ def test_missing_auth_header(test_client):
     for user_number in range(1, 3 + 1):  # 3 users
         assert_search_filename_missing_header(test_client, user_number, "sample_search")
 
-
 def test_invalid_auth_header(test_client):
     """Test searching files with invalid auth header.
     params:
@@ -97,7 +81,6 @@ def test_invalid_auth_header(test_client):
     for user_number in range(1, 3 + 1):  # 3 users
         assert_search_filename_invalid_auth(test_client, user_number, "sample_search")
 
-
 def test_search_filename_missing_search_string(test_client):
     """Test searching files with missing search string parameter.
     params:
@@ -105,7 +88,6 @@ def test_search_filename_missing_search_string(test_client):
     """
     for user_number in range(1, 3 + 1):  # 3 users
         assert_search_filename_missing_search_string(test_client, user_number)
-
 
 def test_search_filename_end_to_end(search_file):
     """Test searching files by filename end-to-end.
