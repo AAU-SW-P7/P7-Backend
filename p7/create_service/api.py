@@ -1,9 +1,9 @@
 """API endpoint for creating a new service associated with a user."""
 
-from datetime import datetime, timezone
 from typing import Dict, Any, Tuple
 from ninja import Router, Body, Header
 from django.http import JsonResponse
+from django.utils import timezone as timezone
 from repository.service import save_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
@@ -45,7 +45,7 @@ def create_service(
         cleaned["accountId"],
         cleaned["email"],
         cleaned["scopeName"],
-        datetime.now(timezone.utc),
+        timezone.now(),
     )
 
     # save_service returns either a Service or JsonResponse on error
@@ -86,6 +86,6 @@ def _parse_and_validate_payload(
     # Normalize timestamp -> datetime
     exp = cleaned["accessTokenExpiration"]
     if isinstance(exp, int):
-        cleaned["accessTokenExpiration"] = datetime.fromtimestamp(exp)
+        cleaned["accessTokenExpiration"] = timezone.datetime.fromtimestamp(exp)
 
     return cleaned, None
