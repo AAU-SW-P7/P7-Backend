@@ -110,11 +110,10 @@ def test_create_user_success():
     create_x_users(3)
 
 def test_create_service_success():
-    """Creating 9 services (3 each for Dropbox, Google, OneDrive).
-    """
-    for service_number in range(1, 3+1):  # 3 services
+    """Creating 9 services (3 each for Dropbox, Google, OneDrive)."""
+    for user_number in range(1, 3+1):  # 3 users
         for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
-            create_service(provider, service_number)
+            create_service(provider, user_number)
 
 # --- TESTS FOR DROPBOX ---
 def test_fetch_dropbox_files_success(fetch_dropbox_files_client):
