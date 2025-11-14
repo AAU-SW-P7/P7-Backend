@@ -8,6 +8,7 @@ from p7.helpers import smart_extension
 from p7.get_google_drive_files.helper import build_google_drive_path
 from repository.models import Service, User, File
 from repository.file import remove_extension_from_ts_vector_smart
+from repository.helpers import ts_tokenize
 
 def assert_save_file_success(client, user_id, service_name):
     """Helper function to assert successful creation of a service.
@@ -256,17 +257,3 @@ def check_tokens_against_ts_vector(file: File, ts_type: str = None):
     for token in name_tokens:
         check.equal(token.lower() in ts, True)
 
-def ts_tokenize(text, config):
-    "Tokenizes a string using PostgreSQL's tsvector parser"
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT unnest(tsvector_to_array(to_tsvector(%s, %s)))", [config, text]
-        )
-        return [row[0] for row in cursor.fetchall()]
-
-def ts_lexize(token):
-    "Lexizes (stems) a token"
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT ts_lexize('english_stem', %s);", [token])
-        results = cursor.fetchone()
-        return results[0] if results and results[0] is not None else []

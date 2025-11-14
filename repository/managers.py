@@ -1,19 +1,22 @@
-"""" Manager for ranking files based on query matches. """
+""" " Manager for ranking files based on query matches."""
 
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Value, FloatField
+from repository.helpers import ts_tokenize
 
 
 class FileQuerySet(models.QuerySet):
     """Custom QuerySet for File model with ranking capabilities."""
-    def ranking_based_on_file_name(self, query_text: str, base_filter: models.Q | None = None):
+
+    def ranking_based_on_file_name(
+        self, query_text: str, base_filter: models.Q | None = None
+    ):
         """
         Apply ranking favoring phrase matches, and token coverage.
         - query_text: the original user query ("file name with spaces")
         - base_filter: optional Q object with prefilter logic
         """
-
 
         tokens = query_text.split()
         token_count = len(tokens)
@@ -48,14 +51,19 @@ class FileQuerySet(models.QuerySet):
         #    4) Exact phrase match bonus (inversely proportional to name length)
         #    5) Normalized by name length to favor shorter names
         return (
-            query_set
-            .annotate(
-                phrase_rank=SearchRank(query_text_search_vector, phrase_q, normalization=2),
-                plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=2),
+            query_set.annotate(
+                phrase_rank=SearchRank(
+                    query_text_search_vector, phrase_q, normalization=2
+                ),
+                plain_rank=SearchRank(
+                    query_text_search_vector, plain_q, normalization=2
+                ),
                 matched_tokens=token_match_expr,
             )
             .annotate(
-                token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
+                token_ratio=(
+                    F("matched_tokens") / Value(token_count, output_field=FloatField())
+                ),
                 token_penalty=1.0 - F("token_ratio"),
             )
             .annotate(
@@ -71,7 +79,7 @@ class FileQuerySet(models.QuerySet):
                     (F("phrase_rank") + F("plain_rank"))
                     + F("token_ratio") * 1.5
                     - (F("token_penalty") * (token_count + 3 - F("matched_tokens")))
-                    + F('ordered_bonus') * 2
+                    + F("ordered_bonus") * 2
                 )
             )
             # STEP 2: clamp negatives to 0
@@ -86,5 +94,45 @@ class FileQuerySet(models.QuerySet):
             .order_by("-rank")
         )
 
+    def ranking_based_on_content(
+        self, query_text: str, base_filter: models.Q | None = None
+    ):
+        """
+        Apply ranking to file content accodring to tf-idf
+        - query_text: the original user query ("file name with spaces")
+        - base_filter: optional Q object with prefilter logic
+        """
+
+        # Retrieve tokens from query string
+        # The function also stems them
+        tokens = ts_tokenize(query_text, "english")
+        
+        # Apply base filter if provided
+        query_set = self
+        if base_filter is not None:
+            query_set = query_set.filter(base_filter)
+        
+        # Create a SearchQuery from tokens to use GIN index
+        # Combine tokens with AND logic for binary search
+        if not tokens:
+            return query_set.none()
+        
+        # Build SearchQuery by combining tokens with & operator
+        search_query = SearchQuery(tokens[0], config="english")
+        for token in tokens[1:]:
+            search_query = search_query & SearchQuery(token, config="english")
+        
+        # Use the GIN index with binary search (@@)
+        query_set = query_set.filter(ts=search_query)
+        print(f"THE QUERY SET IS: {query_set}")
+
+        return query_set
+
+        
+
+
+        
+
+
 class FileManager(models.Manager.from_queryset(FileQuerySet)):
-    """ Custom manager for File model using FileQuerySet. """
+    """Custom manager for File model using FileQuerySet."""

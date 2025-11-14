@@ -160,7 +160,7 @@ def query_files_by_name(
     q &= Q(serviceId__userId=user_id)
 
     query_text = " ".join(name_query)
-    results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
+    results = File.objects.ranking_based_on_content(query_text, base_filter=q)
 
     return results
 
@@ -177,3 +177,5 @@ def get_files_by_service(service):
     if isinstance(service, Service):
         return list(File.objects.filter(serviceId=service.id))
     return JsonResponse({"error": "Invalid service parameter"}, status=400)
+
+

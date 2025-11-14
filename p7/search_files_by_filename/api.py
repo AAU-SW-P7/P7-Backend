@@ -71,7 +71,9 @@ def search_files_by_filename(
         return JsonResponse({"error": "search_string required"}, status=400)
 
     sanitized_input = sanitize_user_search(search_string)
+    print(f"THE SANITIZED INPUT: {sanitized_input}")
     tokens = tokenize(sanitized_input)
+    print(f"THESE ARE THE TOKENS: {tokens}")
     results = query_files_by_name(tokens, user_id)
 
     # Cache service lookups to avoid repeated DB calls

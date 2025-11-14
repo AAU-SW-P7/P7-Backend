@@ -5,6 +5,7 @@ import pytest_check as check
 from django.db import connection
 from django_q.tasks import result
 from repository.models import Service, User, File
+from repository.helpers import ts_lexize, ts_tokenize
 
 
 def assert_download_file_success(client, user_id, service_name):
@@ -194,12 +195,12 @@ def check_tokens_against_ts_vector(file: File, content: str):
     file_name = file.get().name
 
     # Tokenize & lexize file name
-    name_tokens = ts_tokenize_simple(file_name)
+    name_tokens = ts_tokenize(file_name, "simple")
 
     # Tokenize & lexize content (if any)
     content_lexemes = []
     if content:
-        content_tokens = ts_tokenize_english(content)
+        content_tokens = ts_tokenize(content, "english")
         content_lexemes = list(content_tokens)
 
     # Combine and dedupe lexemes from name and content
@@ -208,21 +209,3 @@ def check_tokens_against_ts_vector(file: File, content: str):
     # Ensure each lexeme appears in the stored tsvector
     for lex in all_lexemes:
         check.equal(lex in ts, True)
-
-
-def ts_tokenize_simple(text):
-    "Tokenizes a string using PostgreSQL's tsvector parser"
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT unnest(tsvector_to_array(to_tsvector('simple', %s)))", [text]
-        )
-        return [row[0] for row in cursor.fetchall()]
-
-
-def ts_tokenize_english(text):
-    "Tokenizes a string using PostgreSQL's tsvector parser"
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT unnest(tsvector_to_array(to_tsvector('english', %s)))", [text]
-        )
-        return [row[0] for row in cursor.fetchall()]
