@@ -128,23 +128,24 @@ class FileQuerySet(models.QuerySet):
         
         # Use the GIN index with binary search (@@)
         query_set = query_set.filter(ts=search_query)
-        self.get_ts_stats_for_query(query_set)
+        document_frequencies = self.get_document_frequencies_matching_tokens(query_set, tokens)
 
         # Total number of documents
         
         return query_set
     
-    def get_ts_stats_for_query(self, query_set):
+    def get_document_frequencies_matching_tokens(self, query_set, tokens):
         # Get the total number of documents for a user
         sql, params = query_set.values("ts").query.sql_with_params()
         ts_sql = """
-            SELECT word, ndoc, nentry
+            SELECT word, ndoc
             FROM ts_stat($$%s$$)
         """ % sql
         with connection.cursor() as cursor:
             cursor.execute(ts_sql, params)
             ts_stats = cursor.fetchall()
-        print(ts_stats)
+            filtered_stats = [row for row in ts_stats if row[0] in tokens]
+        return filtered_stats
 
 
     def get_query_ltc(tokens):
