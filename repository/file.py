@@ -57,7 +57,6 @@ def save_file(
         createdAt: Timestamp when the file was created.
         modifiedAt: Timestamp when the file was last modified.
         indexedAt: Timestamp when the file was last indexed.
-        indexedAt: Timestamp when the file was last indexed.
         snippet: Text snippet or preview of the file content.
         """
 
@@ -145,8 +144,6 @@ def query_files_by_name(name_query, user_id):
 
     query_text = " ".join(name_query)
     results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
-    for file in results:
-        print (f"File: {file.name}, Rank: {file.rank}")
     return results
 
 
