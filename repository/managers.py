@@ -1,5 +1,6 @@
 """ " Manager for ranking files based on query matches."""
 
+from math import log10, sqrt
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Value, FloatField
@@ -113,7 +114,10 @@ class FileQuerySet(models.QuerySet):
         if base_filter is not None:
             query_set = query_set.filter(base_filter)
         
-        N = len(list(query_set))
+        # Get totalt number of documents for user
+        # Important to do here before query_set is reduced
+        user_documents = 4 #len(list(query_set))
+        document_frequencies = self.get_document_frequencies_matching_tokens(query_set, tokens)
 
         
         # Create a SearchQuery from tokens to use GIN index
@@ -128,7 +132,9 @@ class FileQuerySet(models.QuerySet):
         
         # Use the GIN index with binary search (@@)
         query_set = query_set.filter(ts=search_query)
-        document_frequencies = self.get_document_frequencies_matching_tokens(query_set, tokens)
+        print(query_set.query)
+        query_ltc = self.get_query_ltc(user_documents, tokens, document_frequencies)
+        print(query_ltc)
 
         # Total number of documents
         
@@ -148,20 +154,37 @@ class FileQuerySet(models.QuerySet):
         return filtered_stats
 
 
-    def get_query_ltc(tokens):
+    def get_query_ltc(self, user_documents, tokens, document_frequencies):
         query_term_stats = {}
-        number_of_tokens = len(tokens)
-        
-        for token in tokens:
-            query_term_stats.update({token: {
-                "tf-raw": 1,
-                "tf-wt": 1,
-                "df": 1,
-                "idf": 1,
-                "wt": 1,
-                "norm-wt": 1
-            }})
+        print(f"THESE ARE THE DOCUMENT FREQUENCIES: {document_frequencies}")
+        df_dict = dict(document_frequencies)
+        print(f"THIS IS THE DF DICT {df_dict}")
+        squared_sum = 0
 
+        for token in tokens:
+            tf_raw = tokens.count(token)
+            tf_wt = 1 + log10(tf_raw)
+            df = df_dict[token]
+            idf = log10(user_documents / df)
+            tf_idf = tf_wt * idf
+
+            query_term_stats.update({token: {
+                "tf-raw": tf_raw,
+                "tf-wt": tf_wt,
+                "df": df,
+                "idf": idf,
+                "tf-idf": tf_idf,
+            }})
+        
+        for term in query_term_stats:
+            squared_sum += (query_term_stats[term]["tf-idf"])**2
+        
+        length = sqrt(squared_sum)
+        
+        for token, stats in query_term_stats.items():
+            stats["norm"] = stats["tf-idf"] / length
+        
+        return query_term_stats
 
 
 
