@@ -156,34 +156,33 @@ class FileQuerySet(models.QuerySet):
 
     def get_query_ltc(self, user_documents, tokens, document_frequencies):
         query_term_stats = {}
-        print(f"THESE ARE THE DOCUMENT FREQUENCIES: {document_frequencies}")
         df_dict = dict(document_frequencies)
-        print(f"THIS IS THE DF DICT {df_dict}")
-        squared_sum = 0
 
-        for token in tokens:
+        # Compute tf-idf and accumulate squared sum
+        squared_sum = 0.0
+        for token in set(tokens):  
             tf_raw = tokens.count(token)
             tf_wt = 1 + log10(tf_raw)
             df = df_dict[token]
             idf = log10(user_documents / df)
             tf_idf = tf_wt * idf
 
-            query_term_stats.update({token: {
+            query_term_stats[token] = {
                 "tf-raw": tf_raw,
                 "tf-wt": tf_wt,
                 "df": df,
                 "idf": idf,
                 "tf-idf": tf_idf,
-            }})
-        
-        for term in query_term_stats:
-            squared_sum += (query_term_stats[term]["tf-idf"])**2
-        
+            }
+            squared_sum += tf_idf ** 2
+
+        # Compute vector length
         length = sqrt(squared_sum)
-        
+
+        # Add normalized weight
         for token, stats in query_term_stats.items():
             stats["norm"] = stats["tf-idf"] / length
-        
+
         return query_term_stats
 
 
