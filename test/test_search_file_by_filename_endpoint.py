@@ -119,7 +119,8 @@ def test_search_filename_end_to_end(search_file):
         size=1024,
     	createdAt=timezone.now(),
     	modifiedAt=timezone.now(),
-        ts=SearchVector(Value("report-user1"), weight="A", config='simple')
+        tsFilename=SearchVector(Value("report-user1"), weight="A", config='simple'),
+        tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
     File.objects.create(
         serviceId=service1,
@@ -132,7 +133,9 @@ def test_search_filename_end_to_end(search_file):
         size=1024,
     	createdAt=timezone.now(),
     	modifiedAt=timezone.now(),
-        ts=SearchVector(Value("another-file-with-different-name"), weight="A", config='simple')
+        tsFilename=SearchVector(Value("another-file-with-different-name"), \
+                                             weight="A", config='simple'),
+        tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
 
     # Perform a search for 'report'

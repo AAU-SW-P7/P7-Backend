@@ -81,7 +81,8 @@ class File(models.Model):
     modifiedAt = pgcrypto.EncryptedDateTimeField()
     indexedAt = pgcrypto.EncryptedDateTimeField(null=True, blank=True)
     snippet = pgcrypto.EncryptedTextField(null=True, blank=True)
-    ts = SearchVectorField(null=True)
+    tsFilename = SearchVectorField(null=True)
+    tsContent = SearchVectorField(null=True)
 
     class Meta:
         """Class defining metadata for the File model."""
@@ -95,4 +96,9 @@ class File(models.Model):
             ),
         ]
         # GIN index over a weighted SearchVector expression
-        indexes = [GinIndex(name="file_search_gin", fields=["ts"])]
+        indexes = [
+            GinIndex(
+                name="file_search_gin",
+                fields=["tsFilename", "tsContent"],
+            ),
+        ]

@@ -17,7 +17,12 @@ def schedule_fetching_files(cleaned):
             try:
                 group = f"Google-Drive-{cleaned['userId']}"
                 # Could trigger Google Drive file fetch here if desired
-                async_task(process_google_drive_files, cleaned["userId"], cluster="high", group=group)
+                async_task(
+                    process_google_drive_files,
+                    cleaned["userId"],
+                    cluster="high",
+                    group=group,
+                )
                 # Schedule daily sync of Google Drive files
                 # Pass the callable as a dotted path string and args as a list so django-q
                 # worker can import and resolve the function at runtime.
