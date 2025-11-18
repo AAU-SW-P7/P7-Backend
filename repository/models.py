@@ -98,7 +98,11 @@ class File(models.Model):
         # GIN index over a weighted SearchVector expression
         indexes = [
             GinIndex(
-                name="file_search_gin",
-                fields=["tsFilename", "tsContent"],
+                name="file_tscontent_gin",
+                fields=["tsContent"],
+            ),
+            GinIndex(
+                name="file_tsfilename_gin",
+                fields=["tsFilename"],
             ),
         ]
