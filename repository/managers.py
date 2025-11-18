@@ -13,11 +13,12 @@ class FileQuerySet(models.QuerySet):
         - query_text: the original user query ("file name with spaces")
         - base_filter: optional Q object with prefilter logic
         """
+
         tokens = query_text.split()
         token_count = len(tokens)
-        
+
         # Search vector on the ts vector
-        query_text_search_vector = F("ts")
+        query_text_search_vector = F("tsFilename")
 
         # Search type plain favors individual token matches
         plain_q = SearchQuery(query_text, search_type="plain", config="simple")
@@ -30,7 +31,7 @@ class FileQuerySet(models.QuerySet):
         # Annotate how many tokens appear in the name
         token_match_expr = sum(
             models.Case(
-                models.When(ts__icontains=t, then=Value(1)),
+                models.When(tsFilename__icontains=t, then=Value(1)),
                 default=Value(0),
                 output_field=models.IntegerField(),
             )
@@ -54,7 +55,7 @@ class FileQuerySet(models.QuerySet):
                     output_field=FloatField(),
                 ),
                 rank=(
-                    (F("plain_rank") * F("token_ratio"))
+                    (F("plain_rank") * (F("token_ratio")**2))
                     + F("ordered_bonus")
                 ),
             )

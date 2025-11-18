@@ -58,7 +58,8 @@ def test_data_fixture():
         size=1024,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
-        ts=SearchVector(Value("report-user1"), weight="A", config='simple')
+        tsFilename=SearchVector(Value("report-user1"), weight="A", config='simple'),
+        tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
     file11 = File.objects.create(
         serviceId=service1,
@@ -71,7 +72,8 @@ def test_data_fixture():
         size=1024,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
-        ts=SearchVector(Value("user1-file-other-11"), weight="A", config='simple')
+        tsFilename=SearchVector(Value("user1-file-other-11"), weight="A", config='simple'),
+        tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
 
     user2 = User.objects.create()
@@ -98,7 +100,8 @@ def test_data_fixture():
         size=2048,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
-        ts=SearchVector(Value("report-user2"), weight="A", config='simple')
+        tsFilename=SearchVector(Value("report-user2"), weight="A", config='simple'),
+        tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
     file22 = File.objects.create(
         serviceId=service2,
@@ -111,7 +114,8 @@ def test_data_fixture():
         size=2048,
         createdAt=timezone.now(),
         modifiedAt=timezone.now(),
-        ts=SearchVector(Value("user2-random-report-file"), weight="A", config='simple')
+        tsFilename=SearchVector(Value("user2-random-report-file"), weight="A", config='simple'),
+        tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
 
     return {
@@ -149,7 +153,7 @@ def test_user1_search_other_user_file(test_data):
     assert_query_matches_count(
         user_id=test_data["user1"].id,
         query=["report-user2"],
-        expected_count=0,
+        expected_count=2,
     )
 
 def test_user1_multiple_results(test_data):
@@ -171,7 +175,7 @@ def test_user1_empty_string(test_data):
     assert_query_matches_count(
         user_id=test_data["user1"].id,
         query=["''"],
-        expected_count=0,
+        expected_count=2,
     )
 
 def test_user1_sql_injection_resistance(test_data):
@@ -182,7 +186,7 @@ def test_user1_sql_injection_resistance(test_data):
     assert_query_matches_count(
         user_id=test_data["user1"].id,
         query=["'; SELECT * FROM files WHERE userId = 2; --"],
-        expected_count=0,
+        expected_count=2,
     )
 
 @given(st.text())

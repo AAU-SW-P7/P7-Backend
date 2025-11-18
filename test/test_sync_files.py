@@ -18,15 +18,14 @@ django.setup()
 import pytest
 import pytest_check as check
 from ninja.testing import TestClient
-from helpers.create_user import (assert_create_user_success)
 from helpers.sync_files import (
     assert_sync_files_invalid_auth,
     assert_sync_files_missing_internal_auth,
     assert_sync_files_missing_user_id,
     assert_sync_files_function_missing_user_id,
-    create_service,
     read_json_file
 )
+from helpers.general_helper_functions import (create_x_users,create_service)
 
 from p7.sync_files.api import sync_files_router
 from p7.create_user.api import create_user_router
@@ -59,13 +58,9 @@ def sync_file_client():
     """
     return TestClient(sync_files_router)
 
-def test_create_user_success(user_client):
-    """Test creating 3 users successfully.
-    params:
-        user_client: Fixture for creating a test client for the create_user endpoint.
-    """
-    for user_number in range(1, 3+1):  # 3 users
-        assert_create_user_success(user_client, user_number)
+def test_create_user_success():
+    """Create 3 users."""
+    create_x_users(3)
 
 def test_sync_files_missing_internal_auth(sync_files_client_fixture):
     """Test for trying to call sync_files endpoint without auth header"""

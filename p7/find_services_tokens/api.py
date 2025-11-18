@@ -18,6 +18,7 @@ def find_services(
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ) -> JsonResponse | list[dict[str, Any]]:
     """
+    Debugging API endpoint to show rows in the service table unencrypted.
     Find services associated with a user ID.
 
     Returns a JsonResponse on error, otherwise a list of serialized service dicts.
