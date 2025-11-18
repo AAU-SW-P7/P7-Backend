@@ -14,12 +14,11 @@ class FileQuerySet(models.QuerySet):
         - base_filter: optional Q object with prefilter logic
         """
 
-
         tokens = query_text.split()
         token_count = len(tokens)
 
         # Search vector on the ts vector
-        query_text_search_vector = F("ts")
+        query_text_search_vector = F("tsFilename")
 
         # Search type phrase favors exact phrase matches
         # Search type plain favors individual token matches
@@ -34,7 +33,7 @@ class FileQuerySet(models.QuerySet):
         # Annotate how many tokens appear in the name
         token_match_expr = sum(
             models.Case(
-                models.When(ts__icontains=t, then=Value(1)),
+                models.When(tsFilename__icontains=t, then=Value(1)),
                 default=Value(0),
                 output_field=models.IntegerField(),
             )

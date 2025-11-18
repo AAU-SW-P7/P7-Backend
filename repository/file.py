@@ -105,14 +105,15 @@ def update_tsvector(file, name: str, content: str | None, indexed_at: datetime |
 
     File.objects.filter(pk=file.pk).update(
         indexedAt=indexed_at,
-        ts=(
-            SearchVector(Value(name), weight="A", config='simple') +
+        tsFilename=(
+            SearchVector(Value(name), weight="A", config='simple')
+        ),
+        tsContent=(
             SearchVector(Value(content or ""), weight="B", config='english')
         ),
     )
 
-    file.refresh_from_db(fields=["ts"])
-
+    file.refresh_from_db(fields=["tsFilename", "tsContent"])
 
 def query_files_by_name(name_query, user_id):
     """Query for files by name containing any of the given tokens and user id.
