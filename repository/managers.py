@@ -38,37 +38,26 @@ class FileQuerySet(models.QuerySet):
         )
 
         # Final ranking combines:
-        #    1) Phrase rank (heavier weight)
-        #    2) Plain rank
-        #    3) Token coverage ratio
-        #    4) Exact phrase match bonus (inversely proportional to name length)
-        #    5) Normalized by name length to favor shorter names
+        #    1) Plain rank
+        #    2) Query Token coverage ratio
+        #    3) ordered bonus for phrase matches
+        #    4) Normalized by name length to favor shorter names
         return (
             query_set
             .annotate(
-                plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=2),
+                plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=16),
                 matched_tokens=token_match_expr,
-            )
-            .annotate(
                 token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
-                token_penalty= 1.0 - F("token_ratio"),
-            )
-            .annotate(
                 ordered_bonus=models.Case(
                     models.When(name__icontains=query_text, then=Value(1.0)),
                     default=Value(0.0),
                     output_field=FloatField(),
                 ),
-            )
-            .annotate(
                 rank=(
-                    # heavier weight for phrase matches
-                    F("plain_rank") * F("token_penalty")
-                    + F("token_ratio")   # moderate boost for token coverage
-                    + F('ordered_bonus') # large boost for exact ordered phrase
-                )
+                    (F("plain_rank") * F("token_ratio"))
+                    + F("ordered_bonus")
+                ),
             )
-            .filter(rank__gt=0.0)
             .order_by("-rank")
         )
 

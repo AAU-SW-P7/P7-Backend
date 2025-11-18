@@ -162,7 +162,7 @@ def query_files_by_name(
     query_text = " ".join(name_query)
     results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
     for f in results:
-        print(f"File:{f.name}, Details Pl:{f.plain_rank=}, M:{f.matched_tokens=}, TR:{f.token_ratio=}, TP:{f.token_penalty=}, OB:{f.ordered_bonus=}, R:{f.rank=}")
+        print(f"File:{f.name}, Details Pl:{f.plain_rank=}, M:{f.matched_tokens=}, TR:{f.token_ratio=}, OB:{f.ordered_bonus=}, R:{f.rank=}")
     return results
 
 
