@@ -1,11 +1,10 @@
 """ " Manager for ranking files based on query matches."""
 
-from math import log10, sqrt
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Value, FloatField
-from repository.helpers import ts_tokenize
-from django.db import connection
+from repository.helpers import ts_tokenize, get_document_frequencies_matching_tokens, get_term_frequencies_for_file
+from p7.search_files_by_filename.content_ranking import get_document_lnc, get_query_ltc, compute_score_for_files
 
 
 class FileQuerySet(models.QuerySet):
@@ -117,7 +116,7 @@ class FileQuerySet(models.QuerySet):
         # Get totalt number of documents for user
         # Important to do here before query_set is reduced
         user_documents = len(list(query_set))
-        document_frequencies = self.get_document_frequencies_matching_tokens(
+        document_frequencies = get_document_frequencies_matching_tokens(
             query_set, tokens
         )
 
@@ -133,22 +132,19 @@ class FileQuerySet(models.QuerySet):
 
         # Use the GIN index with binary search (@@)
         query_set = query_set.filter(tsContent=search_query)
-        query_ltc = self.get_query_ltc(user_documents, tokens, document_frequencies)
-        # print(f"QUERY STATALATS: {query_ltc}" )
+        query_ltc = get_query_ltc(user_documents, tokens, document_frequencies)
 
         # Calculate document lnc
         files = list(query_set)
         file_stats = []
         for file in files:
-            term_frequencies = self.get_term_frequencies_for_file(
-                query_set, tokens, file.id
+            term_frequencies = get_term_frequencies_for_file(
+                query_set, file.id
             )
-            # print(f"THESE ARE THE TERM FREQUENCIES {term_frequencies}")
-            stats = self.get_document_lnc(term_frequencies)
-            # print(f"RESULT FOR FILE {file.name}: {result}")
+            stats = get_document_lnc(term_frequencies)
             file_stats.append({file.id: stats})
 
-        scored_files = self.compute_score_for_files(query_ltc, file_stats)
+        scored_files = compute_score_for_files(query_ltc, file_stats)
 
         rank_case = models.Case(
             *[
@@ -164,113 +160,6 @@ class FileQuerySet(models.QuerySet):
             .annotate(content_rank=rank_case)
             .order_by("-content_rank")
         )
-
-    def get_document_frequencies_matching_tokens(self, query_set, tokens):
-        # Get the total number of documents for a user
-        sql, params = query_set.values("tsContent").query.sql_with_params()
-        ts_sql = (
-            """
-            SELECT word, ndoc
-            FROM ts_stat($$%s$$)
-        """
-            % sql
-        )
-        with connection.cursor() as cursor:
-            cursor.execute(ts_sql, params)
-            ts_stats = cursor.fetchall()
-            filtered_stats = [row for row in ts_stats if row[0] in tokens]
-        return filtered_stats
-
-    def get_term_frequencies_for_file(self, query_set, tokens, file_id):
-        file_ts_query = query_set.filter(pk=file_id).values("tsContent")
-
-        if not file_ts_query.exists():
-            return []
-
-        sql, params = file_ts_query.query.sql_with_params()
-        ts_sql = (
-            """
-            SELECT word, nentry
-            FROM ts_stat($$%s$$)
-        """
-            % sql
-        )
-        with connection.cursor() as cursor:
-            cursor.execute(ts_sql, params)
-            ts_stats = cursor.fetchall()
-        return ts_stats
-
-    def get_query_ltc(self, user_documents, tokens, document_frequencies):
-        query_term_stats = {}
-        df_dict = dict(document_frequencies)
-
-        # Compute tf-idf and accumulate squared sum
-        squared_sum = 0.0
-        for token in set(tokens):
-            tf_raw = tokens.count(token)
-            tf_wt = 1 + log10(tf_raw)
-            df = df_dict.get(token,0) # Get the document frequency if it exists, otherwise set it to 0
-            idf = log10(user_documents / df) if df != 0 else 0
-            tf_idf = tf_wt * idf
-
-            query_term_stats[token] = {
-                "tf-raw": tf_raw,
-                "tf-wt": tf_wt,
-                "df": df,
-                "idf": idf,
-                "tf-idf": tf_idf,
-            }
-            squared_sum += tf_idf**2
-
-        # Compute vector length
-        length = sqrt(squared_sum)
-
-        # Add normalized weight
-        for token, stats in query_term_stats.items():
-            stats["norm"] = stats["tf-idf"] / length
-
-        return query_term_stats
-
-    def get_document_lnc(self, term_frequencies):
-        document_term_stats = {}
-        tf_dict = dict(term_frequencies)
-
-        # Compute tf-idf and accumulate squared sum
-        squared_sum = 0.0
-
-        for term in tf_dict:
-            tf_raw = tf_dict[term]
-            tf_wt = 1 + log10(tf_raw)
-            tf_idf = tf_wt  # Since we use lnc the df is 1
-
-            document_term_stats[term] = {
-                "tf-raw": tf_raw,
-                "tf-wt": tf_wt,
-                "tf-idf": tf_idf,
-            }
-            squared_sum += tf_idf**2
-
-        # Compute vector length
-        length = sqrt(squared_sum)
-
-        # Add normalized weight
-        for term, stats in document_term_stats.items():
-            stats["norm"] = stats["tf-idf"] / length
-
-        return document_term_stats
-
-    def compute_score_for_files(self, query_term_stats, file_stats_list):
-        file_scores = {}
-        # print(f"THESE ARE THE QUERY STATALLALLALAA: {query_term_stats}")
-        for file_stat in file_stats_list:
-            (file_id, doc_stats), prod = next(iter(file_stat.items())), 0.0
-            for term, stats in query_term_stats.items():
-                doc_term = doc_stats.get(term)
-                if doc_term:
-                    prod += stats["norm"] * doc_term["norm"]
-            file_scores[file_id] = prod
-        return file_scores
-
 
 class FileManager(models.Manager.from_queryset(FileQuerySet)):
     """Custom manager for File model using FileQuerySet."""

@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import Value, Q #, F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
+from django.db import connection
 from repository.models import File, Service, User
 from p7.helpers import downloadable_file_extensions, smart_extension
 
@@ -178,5 +179,4 @@ def get_files_by_service(service):
     if isinstance(service, Service):
         return list(File.objects.filter(serviceId=service.id))
     return JsonResponse({"error": "Invalid service parameter"}, status=400)
-
 
