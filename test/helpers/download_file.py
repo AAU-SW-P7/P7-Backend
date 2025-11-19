@@ -193,7 +193,7 @@ def check_tokens_against_ts_vector(file: File, content: str):
     obj = file.get()
     ts_filename = obj.tsFilename
     ts_content = obj.tsContent
-    file_name = remove_extension_from_ts_vector_smart(file.get())
+    file_name = remove_extension_from_ts_vector_smart(obj)
 
     # Tokenize & lexize file name
     name_tokens = ts_tokenize_simple(file_name)
