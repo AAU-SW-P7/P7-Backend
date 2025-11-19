@@ -23,7 +23,9 @@ class FileQuerySet(models.QuerySet):
         # Search type plain favors individual token matches
         plain_q = SearchQuery(query_text, search_type="plain", config="simple")
 
-        # Apply base filter if provided
+        # Apply base filter (
+        # default: userid, 
+        # optional: file extensions, providers, modified date range)
         query_set = self
         if base_filter is not None:
             query_set = query_set.filter(base_filter)
@@ -39,7 +41,7 @@ class FileQuerySet(models.QuerySet):
         )
 
         # Final ranking combines:
-        #    1) Plain rank
+        #    1) Plain rank normalized by length
         #    2) Query Token coverage ratio
         #    3) ordered bonus for phrase matches
         #    4) Normalized by name length to favor shorter names
@@ -50,12 +52,12 @@ class FileQuerySet(models.QuerySet):
                 matched_tokens=token_match_expr,
                 token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
                 ordered_bonus=models.Case(
-                    models.When(name__icontains=query_text, then=Value(1.0)),
+                    models.When(name__icontains=query_text, then=Value(0.5)),
                     default=Value(0.0),
                     output_field=FloatField(),
                 ),
                 rank=(
-                    (F("plain_rank") * (F("token_ratio")**2))
+                    (F("plain_rank") * (F("token_ratio")))
                     + F("ordered_bonus")
                 ),
             )

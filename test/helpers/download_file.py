@@ -210,10 +210,6 @@ def check_tokens_against_ts_vector(file: File, content: str):
     # Ensure each lexeme appears in the stored tsvector
     for lex in all_lexemes:
         # allow lexeme to be present in either filename tsvector or content tsvector
-        if lex not in ts_filename and (ts_content is None or lex not in ts_content):
-            print(
-                f"Lexeme '{lex}' from file '{file_name}' not found in tsFilename or tsContent"
-            )
         check.equal((lex in ts_filename) or (lex in (ts_content or "")), True)
 
 
