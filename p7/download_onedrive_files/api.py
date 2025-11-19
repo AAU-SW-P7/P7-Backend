@@ -2,12 +2,12 @@
 
 # Microsoft libs
 import os
-from datetime import datetime
 import msal
 import requests
 
 from ninja import Router, Header
 from django.http import JsonResponse
+from django.utils import timezone
 from django_q.tasks import async_task
 from repository.file import update_tsvector, fetch_downloadable_files
 from repository.service import get_tokens, get_service
@@ -148,7 +148,7 @@ def download_recursive_files(
                 update_tsvector(
                     onedrive_file,
                     onedrive_content,
-                    datetime.now(),
+                    timezone.now(),
                 )
 
                 files.append({

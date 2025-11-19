@@ -24,7 +24,7 @@ class FileQuerySet(models.QuerySet):
         token_count = len(tokens)
 
         # Search vector on the ts vector
-        query_text_search_vector = F("ts")
+        query_text_search_vector = F("tsFilename")
 
         # Search type phrase favors exact phrase matches
         # Search type plain favors individual token matches
@@ -39,7 +39,7 @@ class FileQuerySet(models.QuerySet):
         # Annotate how many tokens appear in the name
         token_match_expr = sum(
             models.Case(
-                models.When(ts__icontains=t, then=Value(1)),
+                models.When(tsFilename__icontains=t, then=Value(1)),
                 default=Value(0),
                 output_field=models.IntegerField(),
             )
@@ -131,7 +131,7 @@ class FileQuerySet(models.QuerySet):
             search_query = search_query & SearchQuery(token, config="english")
         
         # Use the GIN index with binary search (@@)
-        query_set = query_set.filter(ts=search_query)
+        query_set = query_set.filter(tsContent=search_query)
         query_ltc = self.get_query_ltc(user_documents, tokens, document_frequencies)
         #print(query_ltc)
 
@@ -141,7 +141,7 @@ class FileQuerySet(models.QuerySet):
         for file in files:
             term_frequencies = self.get_term_frequencies_for_file(query_set, tokens, file.id)
             print(f"THESE ARE THE TERM FREQUENCIES {term_frequencies}")
-            result = self.get_document_lnc(user_documents, tokens, term_frequencies)
+            result = self.get_document_lnc(term_frequencies)
             print(f"RESULT FOR FILE {file.name}: {result}")
 
         # Total number of documents
@@ -150,7 +150,7 @@ class FileQuerySet(models.QuerySet):
     
     def get_document_frequencies_matching_tokens(self, query_set, tokens):
         # Get the total number of documents for a user
-        sql, params = query_set.values("ts").query.sql_with_params()
+        sql, params = query_set.values("tsContent").query.sql_with_params()
         ts_sql = """
             SELECT word, ndoc
             FROM ts_stat($$%s$$)
@@ -162,7 +162,7 @@ class FileQuerySet(models.QuerySet):
         return filtered_stats
     
     def get_term_frequencies_for_file(self, query_set, tokens, file_id):
-        file_ts_query = query_set.filter(pk=file_id).values("ts")
+        file_ts_query = query_set.filter(pk=file_id).values("tsContent")
         
         if not file_ts_query.exists():
             return []
@@ -209,18 +209,19 @@ class FileQuerySet(models.QuerySet):
 
         return query_term_stats
     
-    def get_document_lnc(self, user_documents, tokens, term_frequencies):
+    def get_document_lnc(self, term_frequencies):
         document_term_stats = {}
         tf_dict = dict(term_frequencies)
 
         # Compute tf-idf and accumulate squared sum
         squared_sum = 0.0
-        for token in set(tokens):  
-            tf_raw = tf_dict[token]
+
+        for term in tf_dict:  
+            tf_raw = tf_dict[term]
             tf_wt = 1 + log10(tf_raw)
             tf_idf = tf_wt # Since we use lnc the df is 1
 
-            document_term_stats[token] = {
+            document_term_stats[term] = {
                 "tf-raw": tf_raw,
                 "tf-wt": tf_wt,
                 "tf-idf": tf_idf,
@@ -231,7 +232,7 @@ class FileQuerySet(models.QuerySet):
         length = sqrt(squared_sum)
 
         # Add normalized weight
-        for token, stats in document_term_stats.items():
+        for term, stats in document_term_stats.items():
             stats["norm"] = stats["tf-idf"] / length
 
         return document_term_stats

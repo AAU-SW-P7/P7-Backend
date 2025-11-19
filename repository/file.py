@@ -106,16 +106,17 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
 
     File.objects.filter(pk=file.pk).update(
         indexedAt=indexed_at,
-        ts=(
+        tsFilename=(
             SearchVector(Value(
                 remove_extension_from_ts_vector_smart(file)
-            ), weight="A", config='simple') +
+            ), weight="A", config='simple')
+        ),
+        tsContent=(
             SearchVector(Value(content or ""), weight="B", config='english')
         ),
     )
 
-    file.refresh_from_db(fields=["ts"])
-
+    file.refresh_from_db(fields=["tsFilename", "tsContent"])
 
 def query_files_by_name(
     name_query,

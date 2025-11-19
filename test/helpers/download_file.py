@@ -191,8 +191,10 @@ def check_tokens_against_ts_vector(file: File, content: str):
     Checks tokenized file name and content against the tsvector stored in the database
     """
     # Get produced ts vector for the file
-    ts = file.get().ts
-    file_name = file.get().name
+    obj = file.get()
+    ts_filename = obj.tsFilename
+    ts_content = obj.tsContent
+    file_name = obj.name
 
     # Tokenize & lexize file name
     name_tokens = ts_tokenize(file_name, "simple")
@@ -208,4 +210,5 @@ def check_tokens_against_ts_vector(file: File, content: str):
 
     # Ensure each lexeme appears in the stored tsvector
     for lex in all_lexemes:
-        check.equal(lex in ts, True)
+        # allow lexeme to be present in either filename tsvector or content tsvector
+        check.equal((lex in ts_filename) or (lex in (ts_content or "")), True)
