@@ -132,9 +132,17 @@ class FileQuerySet(models.QuerySet):
         
         # Use the GIN index with binary search (@@)
         query_set = query_set.filter(ts=search_query)
-        print(query_set.query)
         query_ltc = self.get_query_ltc(user_documents, tokens, document_frequencies)
-        print(query_ltc)
+        #print(query_ltc)
+
+        # Calculate document lnc
+        files = list(query_set)
+        file_lnc = {}
+        for file in files:
+            term_frequencies = self.get_term_frequencies_for_file(query_set, tokens, file.id)
+            print(f"THESE ARE THE TERM FREQUENCIES {term_frequencies}")
+            result = self.get_document_lnc(user_documents, tokens, term_frequencies)
+            print(f"RESULT FOR FILE {file.name}: {result}")
 
         # Total number of documents
         
@@ -152,6 +160,22 @@ class FileQuerySet(models.QuerySet):
             ts_stats = cursor.fetchall()
             filtered_stats = [row for row in ts_stats if row[0] in tokens]
         return filtered_stats
+    
+    def get_term_frequencies_for_file(self, query_set, tokens, file_id):
+        file_ts_query = query_set.filter(pk=file_id).values("ts")
+        
+        if not file_ts_query.exists():
+            return []
+
+        sql, params = file_ts_query.query.sql_with_params()
+        ts_sql = """
+            SELECT word, nentry
+            FROM ts_stat($$%s$$)
+        """ % sql
+        with connection.cursor() as cursor:
+            cursor.execute(ts_sql, params)
+            ts_stats = cursor.fetchall()
+        return ts_stats
 
 
     def get_query_ltc(self, user_documents, tokens, document_frequencies):
@@ -184,9 +208,34 @@ class FileQuerySet(models.QuerySet):
             stats["norm"] = stats["tf-idf"] / length
 
         return query_term_stats
+    
+    def get_document_lnc(self, user_documents, tokens, term_frequencies):
+        document_term_stats = {}
+        tf_dict = dict(term_frequencies)
 
+        # Compute tf-idf and accumulate squared sum
+        squared_sum = 0.0
+        for token in set(tokens):  
+            tf_raw = tf_dict[token]
+            tf_wt = 1 + log10(tf_raw)
+            tf_idf = tf_wt # Since we use lnc the df is 1
 
+            document_term_stats[token] = {
+                "tf-raw": tf_raw,
+                "tf-wt": tf_wt,
+                "tf-idf": tf_idf,
+            }
+            squared_sum += tf_idf ** 2
 
+        # Compute vector length
+        length = sqrt(squared_sum)
+
+        # Add normalized weight
+        for token, stats in document_term_stats.items():
+            stats["norm"] = stats["tf-idf"] / length
+
+        return document_term_stats
+    
 
 class FileManager(models.Manager.from_queryset(FileQuerySet)):
     """Custom manager for File model using FileQuerySet."""
