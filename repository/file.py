@@ -1,5 +1,4 @@
 """Repository functions for handling File model operations."""
-import logging
 from datetime import datetime
 from django.db import transaction
 from django.db.models import Value, Q #, F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
