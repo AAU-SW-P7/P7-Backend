@@ -128,7 +128,7 @@ class FileQuerySet(models.QuerySet):
         # Build SearchQuery by combining tokens with & operator
         search_query = SearchQuery(tokens[0], config="english")
         for token in tokens[1:]:
-            search_query = search_query & SearchQuery(token, config="english")
+            search_query = search_query | SearchQuery(token, config="english")
         
         # Use the GIN index with binary search (@@)
         query_set = query_set.filter(tsContent=search_query)
