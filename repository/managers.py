@@ -149,11 +149,21 @@ class FileQuerySet(models.QuerySet):
             file_stats.append({file.id: stats})
 
         scored_files = self.compute_score_for_files(query_ltc, file_stats)
-        print(scored_files)
 
-        # Total number of documents
+        rank_case = models.Case(
+            *[
+                models.When(pk=file_id, then=Value(score))
+                for file_id, score in scored_files.items()
+            ],
+            default=Value(0.0),
+            output_field=FloatField(),
+        )
 
-        return query_set
+        return (
+            query_set.filter(pk__in=scored_files.keys())
+            .annotate(content_rank=rank_case)
+            .order_by("-content_rank")
+        )
 
     def get_document_frequencies_matching_tokens(self, query_set, tokens):
         # Get the total number of documents for a user
@@ -250,7 +260,7 @@ class FileQuerySet(models.QuerySet):
         return document_term_stats
 
     def compute_score_for_files(self, query_term_stats, file_stats_list):
-        file_scores = []
+        file_scores = {}
         # print(f"THESE ARE THE QUERY STATALLALLALAA: {query_term_stats}")
         for file_stat in file_stats_list:
             (file_id, doc_stats), prod = next(iter(file_stat.items())), 0.0
@@ -258,7 +268,7 @@ class FileQuerySet(models.QuerySet):
                 doc_term = doc_stats.get(term)
                 if doc_term:
                     prod += stats["norm"] * doc_term["norm"]
-            file_scores.append({file_id: prod})
+            file_scores[file_id] = prod
         return file_scores
 
 
