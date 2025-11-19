@@ -116,7 +116,7 @@ class FileQuerySet(models.QuerySet):
 
         # Get totalt number of documents for user
         # Important to do here before query_set is reduced
-        user_documents = 4  # len(list(query_set))
+        user_documents = len(list(query_set))
         document_frequencies = self.get_document_frequencies_matching_tokens(
             query_set, tokens
         )
@@ -149,7 +149,6 @@ class FileQuerySet(models.QuerySet):
             file_stats.append({file.id: stats})
 
         scored_files = self.compute_score_for_files(query_ltc, file_stats)
-        print(scored_files)
 
         rank_case = models.Case(
             *[
