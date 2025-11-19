@@ -99,67 +99,65 @@ class FileQuerySet(models.QuerySet):
         self, query_text: str, base_filter: models.Q | None = None
     ):
         """
-        Apply ranking to file content accodring to tf-idf
+        Apply ranking to file content using Term Frequency-Inverse Document Frequency (tf-idf)
+        The following notation is used:(Term frequency)-(Document frequency)-(Normalization)
+        For the query we use logarithm-idf-cosine (ltc)
+        For the files we use logarithm-none-cosine (lnc)
         - query_text: the original user query ("file name with spaces")
-        - base_filter: optional Q object with prefilter logic
+        - base_filter: always contains user filter (id) and possibly others
         """
 
-        # Retrieve tokens from query string
-        # The function also stems them
+        # Retrieve tokens from query string (stemmed)
         tokens = ts_tokenize(query_text, "english")
-
-        # Apply base filter if provided
         query_set = self
-        if base_filter is not None:
-            query_set = query_set.filter(base_filter)
+
+        # No tokens, we cannot query anything
+        if not tokens:
+            return query_set.none()
+        
+        # Apply base filter (always includes user)
+        all_user_files = query_set.filter(base_filter)
 
         # Get totalt number of documents for user
         # Important to do here before query_set is reduced
-        user_documents = len(list(query_set))
+        user_documents_count = len(list(all_user_files))
+        
+        # Compute document frequencies for all terms included in the query over all user files
         document_frequencies = get_document_frequencies_matching_tokens(
             query_set, tokens
         )
 
-        # Create a SearchQuery from tokens to use GIN index
-        # Combine tokens with AND logic for binary search
-        if not tokens:
-            return query_set.none()
-
-        # Build SearchQuery by combining tokens with & operator
-        search_query = SearchQuery(tokens[0], config="english")
-        for token in tokens[1:]:
-            search_query = search_query | SearchQuery(token, config="english")
-
-        # Use the GIN index with binary search (@@)
-        query_set = query_set.filter(tsContent=search_query)
-        query_ltc = get_query_ltc(user_documents, tokens, document_frequencies)
-
-        # Calculate document lnc
-        files = list(query_set)
-        file_stats = []
-        for file in files:
-            term_frequencies = get_term_frequencies_for_file(
-                query_set, file.id
-            )
-            stats = get_document_lnc(term_frequencies)
-            file_stats.append({file.id: stats})
-
-        scored_files = compute_score_for_files(query_ltc, file_stats)
-
-        rank_case = models.Case(
-            *[
-                models.When(pk=file_id, then=Value(score))
-                for file_id, score in scored_files.items()
-            ],
-            default=Value(0.0),
-            output_field=FloatField(),
+        # Build SearchQuery by combining tokens with | operator
+        search_query = SearchQuery(
+            " | ".join(tokens), search_type="raw", config="english"
         )
 
-        return (
-            query_set.filter(pk__in=scored_files.keys())
-            .annotate(content_rank=rank_case)
-            .order_by("-content_rank")
-        )
+        # Use the GIN index to find files matching query
+        user_files_matching_query = list(query_set.filter(tsContent=search_query))
+        
+        # Compute ltc stats for the query
+        query_ltc = get_query_ltc(user_documents_count, tokens, document_frequencies)
 
+        # Calculate document lnc for each file
+        file_stats_list = [
+            {
+                file.id: get_document_lnc(
+                    get_term_frequencies_for_file(query_set, file.id)
+                )
+            }
+            for file in user_files_matching_query
+        ]
+
+        # Compute a score for each file
+        scored_files = compute_score_for_files(query_ltc, file_stats_list)
+
+        # Sort files based on scores
+        sorted_files = sorted(
+            user_files_matching_query,
+            key=lambda file: scored_files.get(file.id, 0.0),
+            reverse=True,
+        )
+        return sorted_files
+    
 class FileManager(models.Manager.from_queryset(FileQuerySet)):
     """Custom manager for File model using FileQuerySet."""
