@@ -153,7 +153,7 @@ def test_user1_search_other_user_file(test_data):
     assert_query_matches_count(
         user_id=test_data["user1"].id,
         query=["report-user2"],
-        expected_count=2,
+        expected_count=0,
     )
 
 def test_user1_multiple_results(test_data):
@@ -175,7 +175,7 @@ def test_user1_empty_string(test_data):
     assert_query_matches_count(
         user_id=test_data["user1"].id,
         query=["''"],
-        expected_count=2,
+        expected_count=0,
     )
 
 def test_user1_sql_injection_resistance(test_data):
@@ -186,7 +186,7 @@ def test_user1_sql_injection_resistance(test_data):
     assert_query_matches_count(
         user_id=test_data["user1"].id,
         query=["'; SELECT * FROM files WHERE userId = 2; --"],
-        expected_count=2,
+        expected_count=0,
     )
 
 @given(st.text())

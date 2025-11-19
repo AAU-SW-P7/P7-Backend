@@ -96,7 +96,6 @@ def remove_extension_from_ts_vector_smart(file: File) -> str:
         The file name without its extension.
     """
     extension = smart_extension(file.serviceId.name, file.name)
-    logging.debug(f"Removing extension '{extension}' from file name '{file.name}' for tsvector indexing.")
     if extension and file.name.lower().endswith(extension.lower()):
         return file.name[: -len(extension)]
     return file.name
@@ -164,8 +163,6 @@ def query_files_by_name(
 
     query_text = " ".join(name_query)
     results = File.objects.ranking_based_on_file_name(query_text, base_filter=q)
-    for f in results:
-        print(f"File:{f.name}, Details Pl:{f.plain_rank=}, M:{f.matched_tokens=}, TR:{f.token_ratio=}, OB:{f.ordered_bonus=}, R:{f.rank=}")
     return results
 
 

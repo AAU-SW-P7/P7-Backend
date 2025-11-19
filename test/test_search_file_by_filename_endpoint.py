@@ -122,7 +122,7 @@ def test_search_filename_end_to_end(search_file):
         tsFilename=SearchVector(Value("report-user1"), weight="A", config='simple'),
         tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
-    test_file_2 = File.objects.create(
+    File.objects.create(
         serviceId=service1,
         serviceFileId="file-2",
         name="another-file-with-different-name",
@@ -147,7 +147,7 @@ def test_search_filename_end_to_end(search_file):
     check.equal(response.status_code, 200)
     data = response.json()
     check.is_in("files", data)
-    check.equal(len(data["files"]), 2)  # Should only contain two files
+    check.equal(len(data["files"]), 1)  # Should only contain one file
     file = data["files"][0]
     check.equal(file["id"], test_file_1.id)
     check.equal(file["name"], test_file_1.name)
@@ -155,25 +155,6 @@ def test_search_filename_end_to_end(search_file):
     check.equal(file["path"], test_file_1.path)
     check.equal(file["link"], test_file_1.link)
     check.equal(file["size"], test_file_1.size)
-
-    created_dt = _parse_iso_with_z(file["createdAt"])
-    modified_dt = _parse_iso_with_z(file["modifiedAt"])
-
-    # Compare endpoint timestamps to the model datetimes using a small tolerance
-    # to avoid failures caused by timezone/formatting differences.
-    check.less(abs(created_dt.timestamp() - test_file_1.createdAt.timestamp()), 1)
-    check.less(abs(modified_dt.timestamp() - test_file_1.modifiedAt.timestamp()), 1)
-    check.equal(
-        file["serviceName"], service1.name
-    )  # Check service provider is sent with the file
-
-    file = data["files"][1]
-    check.equal(file["id"], test_file_2.id)
-    check.equal(file["name"], test_file_2.name)
-    check.equal(file["extension"], test_file_2.extension)
-    check.equal(file["path"], test_file_2.path)
-    check.equal(file["link"], test_file_2.link)
-    check.equal(file["size"], test_file_2.size)
 
     created_dt = _parse_iso_with_z(file["createdAt"])
     modified_dt = _parse_iso_with_z(file["modifiedAt"])

@@ -26,7 +26,7 @@ class FileQuerySet(models.QuerySet):
 
         tokens = query_text.split()
         token_count = len(tokens)
-        
+
         # Filter to only files that match at least one token
         q = Q()
         for t in tokens:
@@ -44,7 +44,7 @@ class FileQuerySet(models.QuerySet):
         )
 
         # Adds Final ranking composed of below and orders by it:
-        #    1) Plain rank with normalization 16 
+        #    1) Plain rank with normalization 16
         #       https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-RANKING
         #    2) Query Token coverage ratio (0.0 to 1.0)
         #    3) ordered bonus for phrase matches (0.5 bonus)
