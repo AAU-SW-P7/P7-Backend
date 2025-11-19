@@ -149,6 +149,7 @@ class FileQuerySet(models.QuerySet):
             file_stats.append({file.id: stats})
 
         scored_files = self.compute_score_for_files(query_ltc, file_stats)
+        print(scored_files)
 
         rank_case = models.Case(
             *[
@@ -209,8 +210,8 @@ class FileQuerySet(models.QuerySet):
         for token in set(tokens):
             tf_raw = tokens.count(token)
             tf_wt = 1 + log10(tf_raw)
-            df = df_dict[token]
-            idf = log10(user_documents / df)
+            df = df_dict.get(token,0) # Get the document frequency if it exists, otherwise set it to 0
+            idf = log10(user_documents / df) if df != 0 else 0
             tf_idf = tf_wt * idf
 
             query_term_stats[token] = {
