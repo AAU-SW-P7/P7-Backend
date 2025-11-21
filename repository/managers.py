@@ -56,7 +56,7 @@ class FileQuerySet(models.QuerySet):
         return (
             query_set
             .annotate(
-                plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=16),
+                plain_rank=SearchRank(query_text_search_vector, plain_q, normalization = 16),
                 matched_tokens=token_match_expr,
                 token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
                 ordered_bonus=models.Case(
@@ -128,13 +128,11 @@ class FileQuerySet(models.QuerySet):
         # Compute a score for each file
         scored_files = compute_score_for_files(query_ltc, file_stats_list)
 
-        # Sort files based on scores
-        sorted_files = sorted(
-            user_files_matching_query,
-            key=lambda file: scored_files.get(file.id, 0.0),
-            reverse=True,
-        )
-        return sorted_files
+        # Add rank attribute to the files
+        for file in user_files_matching_query:
+            file.rank = scored_files.get(file.id, 0.0)
+        
+        return user_files_matching_query
     
 class FileManager(models.Manager.from_queryset(FileQuerySet)):
     """Custom manager for File model using FileQuerySet."""

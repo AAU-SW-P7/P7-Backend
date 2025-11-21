@@ -12,6 +12,8 @@ from django.db import connection
 from repository.models import File, Service, User
 from p7.helpers import downloadable_file_extensions, smart_extension
 
+NAME_RANK_WEIGHT = 0.7
+CONTENT_RANK_WEIGHT = 0.3
 
 def fetch_downloadable_files(service):
     """Fetches all downloadable files for a given service.
@@ -174,8 +176,41 @@ def query_files_by_name(
         query_text, base_filter=q
     )
 
-    return content_ranked_files
+    return combine_rankings(name_ranked_files, content_ranked_files)
 
+from collections import defaultdict
+from typing import Iterable, Any
+
+def combine_rankings(
+    name_ranked_files: Iterable[Any],
+    content_ranked_files: Iterable[Any],
+) -> list[Any]:
+    scores = defaultdict(float)
+    files_by_id = {}            
+
+    accumulate(name_ranked_files, NAME_RANK_WEIGHT, scores, files_by_id)
+    accumulate(content_ranked_files, CONTENT_RANK_WEIGHT, scores, files_by_id)
+
+    # Sort ids by score descending
+    ordered_ids = sorted(scores, key=scores.get, reverse=True)
+
+    result = []
+    for file_id in ordered_ids:
+        file = files_by_id[file_id]
+        file.combined_rank = scores[file_id]
+        result.append(file)
+
+    return result
+
+def accumulate(files, weight, scores, files_by_id) -> None:
+        for f in files:
+            rank = getattr(f, "rank", 0.0) or 0.0
+            if not rank:
+                continue  # small optimization: skip if rank is 0
+            scores[f.id] += rank * weight
+            # only store file once; assume same id means same logical file
+            if f.id not in files_by_id:
+                files_by_id[f.id] = f
 
 def get_files_by_service(service):
     """Retrieves all files associated with a given service.

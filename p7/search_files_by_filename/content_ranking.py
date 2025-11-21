@@ -101,7 +101,7 @@ def compute_score_for_files(query_term_stats: DocumentStats, file_stats_list: Li
         file_stats_list: List of document stats keyed by file identifier.
 
     Returns:
-        Dict[str, float]: Mapping from file identifier to similarity score.
+        Dict[int, float]: Mapping from file identifier to similarity score.
     """
     file_scores = {}
     for file_stat in file_stats_list:
