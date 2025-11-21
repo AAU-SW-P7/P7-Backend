@@ -1,70 +1,104 @@
 from math import log10, sqrt
+from collections import Counter
+from typing import Callable, Dict, Iterable, Mapping, Sequence, Union, List
+
+TermStats = Dict[str, Union[float, int]]
+DocumentStats = Dict[str, TermStats]
 
 
-def get_query_ltc(user_documents, tokens, document_frequencies):
-    query_term_stats = {}
-    df_dict = dict(document_frequencies)
+def build_weighted_vector(
+    freq_map: Dict[str, int], idf_lookup: Callable[[str], float]
+) -> DocumentStats:
+    """
+    Build a normalized tf-idf vector from term frequencies.
 
-    # Compute tf-idf and accumulate squared sum
-    squared_sum = 0.0
-    for token in set(tokens):
-        tf_raw = tokens.count(token)
+    Args:
+        freq_map: Mapping of term to its raw frequency within a document or query.
+        idf_lookup: Function returning the inverse document frequency for a term.
+
+    Returns:
+        DocumentStats: Per-term statistics including tf, idf, tf-idf, and normalized weights.
+    """
+    term_stats, squared_sum = {}, 0.0
+
+    for term, tf_raw in freq_map.items():
         tf_wt = 1 + log10(tf_raw)
-        df = df_dict.get(
-            token, 0
-        )  # Get the document frequency if it exists, otherwise set it to 0
-        idf = log10(user_documents / df) if df != 0 else 0
+        idf = idf_lookup(term)
         tf_idf = tf_wt * idf
-
-        query_term_stats[token] = {
+        term_stats[term] = {
             "tf-raw": tf_raw,
             "tf-wt": tf_wt,
-            "df": df,
             "idf": idf,
             "tf-idf": tf_idf,
         }
         squared_sum += tf_idf**2
 
-    # Compute vector length
     length = sqrt(squared_sum)
 
-    # Add normalized weight
-    for token, stats in query_term_stats.items():
-        stats["norm"] = stats["tf-idf"] / length if length != 0 else 0 
-
-    return query_term_stats
+    for term in term_stats:
+        term_stats[term]["norm"] = term_stats[term]["tf-idf"] / length if length else 0
+    return term_stats
 
 
-def get_document_lnc(term_frequencies):
-    document_term_stats = {}
-    tf_dict = dict(term_frequencies)
+def get_query_ltc(
+    user_documents: int,
+    query_tokens: Sequence[str],
+    document_frequencies: Mapping[str, int],
+):
+    """
+    Compute the ltc-weighted vector for a query.
 
-    # Compute tf-idf and accumulate squared sum
-    squared_sum = 0.0
+    Args:
+        user_documents: Total number of user documents.
+        query_tokens: Tokenized query terms.
+        document_frequencies: Frequency of term accross all user files
 
-    for term in tf_dict:
-        tf_raw = tf_dict[term]
-        tf_wt = 1 + log10(tf_raw)
-        tf_idf = tf_wt  # Since we use lnc the df is 1
-
-        document_term_stats[term] = {
-            "tf-raw": tf_raw,
-            "tf-wt": tf_wt,
-            "tf-idf": tf_idf,
-        }
-        squared_sum += tf_idf**2
-
-    # Compute vector length
-    length = sqrt(squared_sum)
-
-    # Add normalized weight
-    for term, stats in document_term_stats.items():
-        stats["norm"] = stats["tf-idf"] / length if length != 0 else 0 
-
-    return document_term_stats
+    Returns:
+        DocumentStats: LTC-normalized statistics for the query terms.
+    """
+    # Dictionary holding term: document_frequency mapping
+    df_lookup = dict(document_frequencies)
+    # Term frequency of each token in the query
+    freq_map = Counter(query_tokens)
+    return build_weighted_vector(
+        # The lambda function calculates the inverted document frequency for a term
+        freq_map,
+        lambda term: (
+            log10(user_documents / df_lookup[term]) if df_lookup.get(term) else 0
+        ),
+    )
 
 
-def compute_score_for_files(query_term_stats, file_stats_list):
+def get_document_lnc(term_frequencies:  Mapping[str, int]):
+    """
+    Compute the lnc-weighted vector for a document.
+
+    Args:
+        term_frequencies: Term frequency data for the document
+
+    Returns:
+        DocumentStats: LNC-normalized statistics for the document terms
+    """
+    # Dictionary holding term: term_frequency mapping
+    freq_map = dict(term_frequencies)
+    
+    # When computing lnc the df is 1
+    return build_weighted_vector(
+        freq_map, lambda _term: 1.0
+    )
+
+
+def compute_score_for_files(query_term_stats: DocumentStats, file_stats_list: List[Dict[int, DocumentStats]]):
+    """
+    Calculate cosine similarity scores between a query vector and document vectors.
+
+    Args:
+        query_term_stats: Normalized statistics for query terms.
+        file_stats_list: List of document stats keyed by file identifier.
+
+    Returns:
+        Dict[str, float]: Mapping from file identifier to similarity score.
+    """
     file_scores = {}
     for file_stat in file_stats_list:
         (file_id, doc_stats), prod = next(iter(file_stat.items())), 0.0
