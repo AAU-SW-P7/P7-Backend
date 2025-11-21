@@ -56,6 +56,10 @@ def get_query_ltc(
     Returns:
         DocumentStats: LTC-normalized statistics for the query terms.
     """
+    # Guard if there are no user documents or no query tokens
+    if user_documents <= 0 or not query_tokens:
+        return {}
+    
     # Dictionary holding term: document_frequency mapping
     df_lookup = dict(document_frequencies)
     # Term frequency of each token in the query
