@@ -65,7 +65,7 @@ def process_google_drive_files(user_id):
             token_uri="https://oauth2.googleapis.com/token",
             client_id=os.getenv("GOOGLE_CLIENT_ID"),
             client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-            scopes=["https://www.googleapis.com/auth/drive.readonly"],
+            scopes=["https://www.googleapis.com/auth/drive.metadata.readonly"],
         )
 
         access_token = get_new_access_token(

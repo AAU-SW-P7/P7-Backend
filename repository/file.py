@@ -23,7 +23,7 @@ def fetch_downloadable_files(service):
                 serviceId=service,
                 extension__in=downloadable_file_extensions(),
                 downloadable=True,
-                # modifiedAt__gt=F("indexedAt"), # re-enable when debugging/coding is done
+                # modifiedAt__gt=F("indexedAt"), # TODO: re-enable when debugging/coding is done
             )
         )
 

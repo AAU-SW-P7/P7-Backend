@@ -69,7 +69,7 @@ def fetch_recursive_files(
         access_token: str = access_token,
     ) -> list[
         dict
-    ]:  # dette kan der i hvertfald godt være nogle workers som kan tage sig af
+    ]:
         results: list[dict] = []
 
         while url:
