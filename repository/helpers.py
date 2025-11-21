@@ -29,7 +29,7 @@ def get_document_frequencies_matching_tokens(
         query_set: The query containing the user we need to search files for
         terms: List of terms included in the user query
     returns:
-        A list of (term, document_frequency)
+        A list of (term, document_frequency): list[tuple[str, int]]
     """
     # Convert the Django QuerySet into the raw SQL query
     # Only return tsContent (tsVector for the content) for each file
@@ -48,19 +48,31 @@ def get_document_frequencies_matching_tokens(
     with connection.cursor() as cursor:
         cursor.execute(ts_sql, params)
         ts_stats = cursor.fetchall()
-        
+
         # Filter out rows not matching query terms
         filtered_stats = [row for row in ts_stats if row[0] in terms]
     return filtered_stats
 
 
-def get_term_frequencies_for_file(query_set, file_id):
+def get_term_frequencies_for_file(query_set: models.QuerySet, file_id: int):
+    """
+    Retrieve term frequencies for a single file using ts_stat().
+    Args:
+        query_set: Base queryset representing accessible files
+        file_id: Primary key of the target file.
+    Returns:
+        A list of  (term, term_frequency): [tuple[str, int]]
+    """
+    # Build a queryset pointing to the tsvector content of the specific file
     file_ts_query = query_set.filter(pk=file_id).values("tsContent")
 
     if not file_ts_query.exists():
         return []
-
+    
+    # Extract the SQL and parameters representing the filtered queryset
     sql, params = file_ts_query.query.sql_with_params()
+
+    # Wrap the queryset SQL in ts_stat() to collect term frequencies
     ts_sql = (
         """
             SELECT word, nentry
@@ -68,6 +80,7 @@ def get_term_frequencies_for_file(query_set, file_id):
         """
         % sql
     )
+    # Fetch all (term, term_frequency) pairs from DB
     with connection.cursor() as cursor:
         cursor.execute(ts_sql, params)
         ts_stats = cursor.fetchall()
