@@ -1,13 +1,17 @@
 """Repository functions for handling File model operations."""
-import logging
+
 from datetime import datetime
 from django.db import transaction
-from django.db.models import Value, Q #, F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
+from django.db.models import (
+    Value,
+    Q,
+)  # , F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from django.db import connection
 from repository.models import File, Service, User
 from p7.helpers import downloadable_file_extensions, smart_extension
+
 
 def fetch_downloadable_files(service):
     """Fetches all downloadable files for a given service.
@@ -28,6 +32,7 @@ def fetch_downloadable_files(service):
         )
 
     return JsonResponse({"error": "Invalid service parameter"}, status=400)
+
 
 def save_file(
     service_id,  # may be an int (Service.pk) or a Service instance
@@ -58,7 +63,7 @@ def save_file(
         modifiedAt: Timestamp when the file was last modified.
         indexedAt: Timestamp when the file was last indexed.
         snippet: Text snippet or preview of the file content.
-        """
+    """
 
     with transaction.atomic():
         # Insert the file
@@ -80,13 +85,10 @@ def save_file(
             defaults=defaults,
         )
 
-        update_tsvector(
-            file,
-            None,
-            indexed_at,
-        )
+        update_tsvector(file, None, indexed_at)
 
     return file
+
 
 def remove_extension_from_ts_vector_smart(file: File) -> str:
     """Removes the file extension from the file name for tsvector indexing.
@@ -97,10 +99,10 @@ def remove_extension_from_ts_vector_smart(file: File) -> str:
         The file name without its extension.
     """
     extension = smart_extension(file.serviceId.name, file.name)
-    logging.debug(f"Removing extension '{extension}' from file name '{file.name}' for tsvector indexing.")
     if extension and file.name.lower().endswith(extension.lower()):
         return file.name[: -len(extension)]
     return file.name
+
 
 def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> None:
     """Update the tsvector field for full-text search on the given file instance."""
@@ -108,16 +110,17 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
     File.objects.filter(pk=file.pk).update(
         indexedAt=indexed_at,
         tsFilename=(
-            SearchVector(Value(
-                remove_extension_from_ts_vector_smart(file)
-            ), weight="A", config='simple')
+            SearchVector(
+                Value(remove_extension_from_ts_vector_smart(file)),
+                weight="A",
+                config="simple",
+            )
         ),
-        tsContent=(
-            SearchVector(Value(content or ""), weight="B", config='english')
-        ),
+        tsContent=(SearchVector(Value(content or ""), weight="B", config="english")),
     )
 
     file.refresh_from_db(fields=["tsFilename", "tsContent"])
+
 
 def query_files_by_name(
     name_query,
@@ -145,7 +148,7 @@ def query_files_by_name(
     assert isinstance(
         name_query, (list, tuple)
     ), "name_query must be a list or tuple of tokens"
-    
+
     # Q() object to combine queries
     q = Q()
     if provider:
@@ -162,9 +165,16 @@ def query_files_by_name(
     q &= Q(serviceId__userId=user_id)
 
     query_text = " ".join(name_query)
-    results = File.objects.ranking_based_on_content(query_text, base_filter=q)
+    
+    name_ranked_files = File.objects.ranking_based_on_file_name(
+        query_text, base_filter=q
+    )
+    
+    content_ranked_files = File.objects.ranking_based_on_content(
+        query_text, base_filter=q
+    )
 
-    return results
+    return content_ranked_files
 
 
 def get_files_by_service(service):
@@ -179,4 +189,3 @@ def get_files_by_service(service):
     if isinstance(service, Service):
         return list(File.objects.filter(serviceId=service.id))
     return JsonResponse({"error": "Invalid service parameter"}, status=400)
-

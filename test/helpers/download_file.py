@@ -5,7 +5,7 @@ import pytest_check as check
 from django.db import connection
 from django_q.tasks import result
 from repository.models import Service, User, File
-from repository.helpers import ts_lexize, ts_tokenize
+from repository.file import remove_extension_from_ts_vector_smartfrom repository.helpers import ts_lexize, ts_tokenize
 
 
 def assert_download_file_success(client, user_id, service_name):
@@ -194,7 +194,7 @@ def check_tokens_against_ts_vector(file: File, content: str):
     obj = file.get()
     ts_filename = obj.tsFilename
     ts_content = obj.tsContent
-    file_name = obj.name
+    file_name = remove_extension_from_ts_vector_smart(obj)
 
     # Tokenize & lexize file name
     name_tokens = ts_tokenize(file_name, "simple")
