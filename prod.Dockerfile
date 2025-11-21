@@ -61,4 +61,4 @@ USER appuser
 EXPOSE 8000
 
 ENTRYPOINT ["/usr/local/bin/prod.entrypoint.sh"]
-CMD ["gunicorn", "p7.wsgi.application", "--bind", "0.0.0.0:8000", "--workers", "6", "--threads", "12", "--access-logfile", "-", "--error-logfile", "-"]
+CMD ["gunicorn", "p7.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "6", "--threads", "12", "--access-logfile", "-", "--error-logfile", "-"]
