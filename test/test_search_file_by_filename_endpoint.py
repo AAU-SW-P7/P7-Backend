@@ -30,7 +30,7 @@ from helpers.search_filename import (
 )
 from helpers.general_helper_functions import create_x_users
 from repository.models import File, Service, User
-from p7.search_files_by_filename.api import search_files_by_filename_router
+from p7.search.api import search_files_by_filename_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 

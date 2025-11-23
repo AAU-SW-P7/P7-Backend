@@ -1,7 +1,7 @@
 """Helper functions for testing search_files_by_name function."""
 
 import pytest_check as check
-from p7.search_files_by_filename.api import (
+from p7.search.api import (
     sanitize_user_search,
     query_files_by_name,
     tokenize,

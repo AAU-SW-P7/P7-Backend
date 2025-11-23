@@ -7,7 +7,7 @@ import math
 import pytest
 import pytest_check as check
 
-from p7.search_files_by_filename.content_ranking import (
+from p7.search.content_ranking import (
     compute_score_for_files,
     get_document_lnc,
     get_query_ltc,

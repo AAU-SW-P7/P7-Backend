@@ -8,7 +8,7 @@ from repository.user import get_user
 from repository.service import get_service_name
 from p7.helpers import validate_internal_auth
 
-search_files_by_filename_router = Router()
+search_router = Router()
 
 
 def sanitize_user_search(text: str) -> str:
@@ -45,7 +45,7 @@ def tokenize(input_str: str) -> list[str]:
     return list(input_str.split())
 
 
-@search_files_by_filename_router.get("/")
+@search_router.get("/")
 def search_files_by_filename(
     request,
     user_id: str,

@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Value, FloatField, Q
 from repository.helpers import ts_tokenize, get_document_frequencies_matching_tokens, get_term_frequencies_for_file
-from p7.search_files_by_filename.content_ranking import get_document_lnc, get_query_ltc, compute_score_for_files
+from p7.search.content_ranking import get_document_lnc, get_query_ltc, compute_score_for_files
 
 
 class FileQuerySet(models.QuerySet):
