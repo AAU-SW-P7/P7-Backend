@@ -30,12 +30,4 @@ def assert_query_file_by_content(user_id, query, expected_ids):
     for expected in expected_ids:
         check.is_in(expected.id, result_ids)
 
-def assert_query_matches_count(user_id, query, expected_count):
-    """Assert that search returns no results for a missing query."""
-    results = query_files(query, user_id)
-    for file in results:
-        check.equal(file.serviceId.userId.id, user_id)
-    check.equal(results.count(), expected_count)
-
-
 
