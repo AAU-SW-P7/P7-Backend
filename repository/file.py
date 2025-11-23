@@ -127,7 +127,7 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
     file.refresh_from_db(fields=["tsFilename", "tsContent"])
 
 
-def query_files_by_name(
+def query_files(
     name_query,
     user_id,
     provider=None,

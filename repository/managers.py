@@ -132,6 +132,9 @@ class FileQuerySet(models.QuerySet):
         for file in user_files_matching_query:
             file.rank = scored_files.get(file.id, 0.0)
         
+        # Sort the files
+        user_files_matching_query.sort(key=lambda f: f.rank, reverse=True)
+
         return user_files_matching_query
     
 class FileManager(models.Manager.from_queryset(FileQuerySet)):

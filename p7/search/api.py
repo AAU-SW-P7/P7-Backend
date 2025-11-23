@@ -3,7 +3,7 @@
 import re
 from ninja import Router, Header
 from django.http import JsonResponse
-from repository.file import query_files_by_name
+from repository.file import query_files
 from repository.user import get_user
 from repository.service import get_service_name
 from p7.helpers import validate_internal_auth
@@ -72,7 +72,7 @@ def search_files_by_filename(
 
     sanitized_input = sanitize_user_search(search_string)
     tokens = tokenize(sanitized_input)
-    results = query_files_by_name(tokens, user_id)
+    results = query_files(tokens, user_id)
     # Cache service lookups to avoid repeated DB calls
     service_name_cache: dict = {}
 
