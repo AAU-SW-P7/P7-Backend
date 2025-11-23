@@ -11,9 +11,12 @@ from django.http import JsonResponse
 from django.db import connection
 from repository.models import File, Service, User
 from p7.helpers import downloadable_file_extensions, smart_extension
+from collections import defaultdict
+from typing import Iterable, Any
 
 NAME_RANK_WEIGHT = 0.7
 CONTENT_RANK_WEIGHT = 0.3
+
 
 def fetch_downloadable_files(service):
     """Fetches all downloadable files for a given service.
@@ -167,29 +170,38 @@ def query_files_by_name(
     q &= Q(serviceId__userId=user_id)
 
     query_text = " ".join(name_query)
-    
+
+    # Rank files based on file name
     name_ranked_files = File.objects.ranking_based_on_file_name(
         query_text, base_filter=q
     )
-    
+
+    # Rank files based on file content
     content_ranked_files = File.objects.ranking_based_on_content(
         query_text, base_filter=q
     )
 
     return combine_rankings(name_ranked_files, content_ranked_files)
 
-from collections import defaultdict
-from typing import Iterable, Any
-
 def combine_rankings(
-    name_ranked_files: Iterable[Any],
-    content_ranked_files: Iterable[Any],
-) -> list[Any]:
-    scores = defaultdict(float)
-    files_by_id = {}            
+    name_ranked_files: Iterable[File],
+    content_ranked_files: Iterable[File],
+) -> list[File]:
+    """
+    Merge name and content ranking results into a single ordered list.
 
-    accumulate(name_ranked_files, NAME_RANK_WEIGHT, scores, files_by_id)
-    accumulate(content_ranked_files, CONTENT_RANK_WEIGHT, scores, files_by_id)
+    Params:
+        name_ranked_files: Iterable of File objects (with appended rank) ranked by name.
+        content_ranked_files: Iterable of File objects (with appended rank) ranked by content (tf-idf).
+
+    Returns:
+        List of File objects sorted by their combined weighted rank.
+    """
+    scores = defaultdict(float)
+    files_by_id = {}
+
+    accumulate_file_scores(name_ranked_files, NAME_RANK_WEIGHT, scores, files_by_id)
+    accumulate_file_scores(content_ranked_files, CONTENT_RANK_WEIGHT, scores, files_by_id)
 
     # Sort ids by score descending
     ordered_ids = sorted(scores, key=scores.get, reverse=True)
@@ -197,23 +209,35 @@ def combine_rankings(
     result = []
     for file_id in ordered_ids:
         file = files_by_id[file_id]
-        file.combined_rank = scores[file_id]
+        file.combined_rank = scores[file_id] # Score is attached, if we want to log it in front end
         result.append(file)
 
     return result
 
-def accumulate(files, weight, scores, files_by_id) -> None:
-        for f in files:
-            rank = getattr(f, "rank", 0.0) or 0.0
-            if not rank:
-                continue  # small optimization: skip if rank is 0
-            scores[f.id] += rank * weight
-            # only store file once; assume same id means same logical file
-            if f.id not in files_by_id:
-                files_by_id[f.id] = f
+
+def accumulate_file_scores(files: Iterable[File], weight: float, scores: defaultdict, files_by_id: dict) -> None:
+    """
+    Accumulate weighted rank scores for a set of files
+
+    Params:
+        files: Iterable of File objects that expose id and optional rank.
+        weight: Weight multiplier to apply to each files rank
+        scores: Dict tracking cumulative scores keyed by file id.
+        files_by_id: Dict caching file objects keyed by id for later retrieval.
+    """
+    for f in files:
+        rank = getattr(f, "rank", 0.0) or 0.0
+        if not rank:
+            continue  # skip if rank is 0
+        scores[f.id] += rank * weight
+        # only store file once
+        if f.id not in files_by_id:
+            files_by_id[f.id] = f
+
 
 def get_files_by_service(service):
-    """Retrieves all files associated with a given service.
+    """
+    Retrieves all files associated with a given service.
 
     params:
         service: The service object for which to retrieve files.
