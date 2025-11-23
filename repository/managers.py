@@ -101,7 +101,7 @@ class FileQuerySet(models.QuerySet):
         
         # Compute document frequencies for all terms included in the query over all user files
         document_frequencies = get_document_frequencies_matching_tokens(
-            query_set, tokens
+            all_user_files, tokens
         )
 
         # Build SearchQuery by combining tokens with | operator
@@ -110,7 +110,7 @@ class FileQuerySet(models.QuerySet):
         )
 
         # Use the GIN index to find files matching query
-        user_files_matching_query = list(query_set.filter(tsContent=search_query))
+        user_files_matching_query = list(all_user_files.filter(tsContent=search_query))
         
         # Compute ltc stats for the query
         query_ltc = get_query_ltc(user_documents_count, tokens, document_frequencies)
@@ -119,7 +119,7 @@ class FileQuerySet(models.QuerySet):
         file_stats_list = [
             {
                 file.id: get_document_lnc(
-                    get_term_frequencies_for_file(query_set, file.id)
+                    get_term_frequencies_for_file(all_user_files, file.id)
                 )
             }
             for file in user_files_matching_query
