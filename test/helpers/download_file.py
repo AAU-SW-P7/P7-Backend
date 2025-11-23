@@ -5,7 +5,8 @@ import pytest_check as check
 from django.db import connection
 from django_q.tasks import result
 from repository.models import Service, User, File
-from repository.file import remove_extension_from_ts_vector_smartfrom repository.helpers import ts_lexize, ts_tokenize
+from repository.file import remove_extension_from_ts_vector_smart
+from repository.helpers import ts_tokenize
 
 
 def assert_download_file_success(client, user_id, service_name):
