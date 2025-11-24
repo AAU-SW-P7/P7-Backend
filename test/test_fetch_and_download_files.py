@@ -14,6 +14,15 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
 import pytest
 
+@pytest.fixture(scope="module")
+def three_users_with_services():
+    create_x_users(3)
+    for user_number in range(1, 3 + 1):
+        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
+            create_service(provider, user_number)
+    # could return the user IDs if you want
+    return range(1, 4)
+
 import django
 django.setup()
 from ninja.testing import TestClient
@@ -47,8 +56,7 @@ from p7.download_google_drive_files.api import download_google_drive_files_route
 from p7.download_onedrive_files.api import download_onedrive_files_router
 
 
-pytestmark = pytest.mark.usefixtures("django_db_setup")
-#pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db
 
 @pytest.fixture(name="fetch_dropbox_files_client", scope='module', autouse=True)
 def create_fetch_dropbox_files_client():
@@ -157,11 +165,11 @@ def test_fetch_dropbox_files_missing_userid(fetch_dropbox_files_client):
 
         assert_fetch_dropbox_files_missing_userid(fetch_dropbox_files_client)
 
-def test_download_dropbox_file_success(download_dropbox_files_client_fixture):
+def test_download_dropbox_file_success(
+    download_dropbox_files_client_fixture,
+    three_users_with_services):
     """Test downloading a Dropbox file."""
-
-    for user_number in range(1, 3 + 1):  # 3 users
-
+    for user_number in three_users_with_services:
         assert_download_file_success(
             download_dropbox_files_client_fixture, user_number, "dropbox"
         )
