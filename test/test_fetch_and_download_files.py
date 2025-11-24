@@ -14,15 +14,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
 import pytest
 
-@pytest.fixture(scope="module")
-def three_users_with_services():
-    create_x_users(3)
-    for user_number in range(1, 3 + 1):
-        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
-            create_service(provider, user_number)
-    # could return the user IDs if you want
-    return range(1, 4)
-
 import django
 django.setup()
 from ninja.testing import TestClient
@@ -55,6 +46,14 @@ from p7.download_dropbox_files.api import download_dropbox_files_router
 from p7.download_google_drive_files.api import download_google_drive_files_router
 from p7.download_onedrive_files.api import download_onedrive_files_router
 
+@pytest.fixture(scope="module")
+def three_users_with_services():
+    create_x_users(3)
+    for user_number in range(1, 3 + 1):
+        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
+            create_service(provider, user_number)
+    # could return the user IDs if you want
+    return range(1, 4)
 
 pytestmark = pytest.mark.django_db
 
@@ -113,25 +112,14 @@ def download_onedrive_files_client():
     """
     return TestClient(download_onedrive_files_router)
 
-
-def test_create_user_success():
-    """Create 3 users."""
-    create_x_users(3)
-
-def test_create_service_success():
-    """Creating 9 services (3 each for Dropbox, Google, OneDrive)."""
-    for user_number in range(1, 3+1):  # 3 users
-        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
-            create_service(provider, user_number)
-
 # --- TESTS FOR DROPBOX ---
-def test_fetch_dropbox_files_success(fetch_dropbox_files_client):
+def test_fetch_dropbox_files_success(fetch_dropbox_files_client, three_users_with_services):
     """Test fetching Dropbox files successfully for 3 users.
     params:
         fetch_dropbox_files_client:
             Fixture for creating a test client for the fetch_dropbox_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
+    for user_number in three_users_with_services:  # 3 users
 
         assert_fetch_dropbox_files_success(fetch_dropbox_files_client, user_number, "dropbox")
 
@@ -202,13 +190,13 @@ def test_download_dropbox_file_missing_user_id(download_dropbox_files_client_fix
 
 # --- TESTS FOR GOOGLE DRIVE ---
 
-def test_fetch_google_files_success(fetch_google_files_client):
+def test_fetch_google_files_success(fetch_google_files_client, three_users_with_services):
     """Test fetching Google files successfully for 3 users.
     params:
         fetch_google_files_client: 
             Fixture for creating a test client for the fetch_google_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
+    for user_number in three_users_with_services:  # 3 users
 
         assert_fetch_google_files_success(fetch_google_files_client, user_number, "google")
 
