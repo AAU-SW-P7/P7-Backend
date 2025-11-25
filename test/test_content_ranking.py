@@ -1,6 +1,16 @@
 import os
+import sys
+from pathlib import Path
+
+# Make the local backend package importable so `from p7...` works under pytest
+repo_backend = Path(__file__).resolve().parents[1]  # backend/
+sys.path.insert(0, str(repo_backend))
+# Make the backend/test dir importable so you can use test_settings.py directly
+sys.path.insert(0, str(repo_backend / "test"))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
+
 import django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "p7.settings")
 django.setup()
 
 import math
