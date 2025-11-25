@@ -54,6 +54,7 @@ def assert_download_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "google":
+            print(file)
             db_file = File.objects.filter(
                 serviceFileId=file.get("id"),
                 serviceId=service.id,
