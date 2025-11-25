@@ -20,7 +20,7 @@ from django.utils import timezone
 from django.contrib.postgres.search import SearchVector, Value
 import pytest
 from ninja.testing import TestClient
-
+import pytest_check as check
 
 from helpers.search_filename import (
     assert_search_filename_invalid_auth,
@@ -28,10 +28,9 @@ from helpers.search_filename import (
     assert_search_filename_missing_search_string,
     assert_search_filename_missing_userid,
 )
-from helpers.create_user import assert_create_user_success
+from helpers.general_helper_functions import create_x_users
 from repository.models import File, Service, User
 from p7.search_files_by_filename.api import search_files_by_filename_router
-from p7.create_user.api import create_user_router
 
 pytestmark = pytest.mark.usefixtures("django_db_setup")
 
@@ -45,14 +44,6 @@ def create_search_file_client():
     return TestClient(search_files_by_filename_router)
 
 
-@pytest.fixture(name="user_client", scope="module", autouse=True)
-def create_user_client():
-    """Fixture for creating a test client for the search_files_by_filename_router endpoint.
-    Returns:
-        TestClient: A test client for the search_files_by_filename_router endpoint.
-    """
-    return TestClient(create_user_router)
-
 
 @pytest.fixture(name="test_client", scope="module", autouse=True)
 def create_test_client():
@@ -63,14 +54,9 @@ def create_test_client():
     return TestClient(search_files_by_filename_router)
 
 
-def test_create_user_success(user_client):
-    """Test creating 3 users successfully.
-    params:
-        user_client: Fixture for creating a test client for the create_user endpoint.
-    """
-    for user_number in range(1, 3 + 1):  # 3 users
-        assert_create_user_success(user_client, user_number)
-
+def test_create_user_success():
+    """Create 3 users."""
+    create_x_users(3)
 
 def test_missing_user_id(test_client):
     """Test searching files with invalid user ID parameter.
@@ -78,7 +64,6 @@ def test_missing_user_id(test_client):
         client: Test client to make requests.
     """
     assert_search_filename_missing_userid(test_client, "sample_search")
-
 
 def test_missing_auth_header(test_client):
     """Test searching files with missing auth header.
@@ -88,7 +73,6 @@ def test_missing_auth_header(test_client):
     for user_number in range(1, 3 + 1):  # 3 users
         assert_search_filename_missing_header(test_client, user_number, "sample_search")
 
-
 def test_invalid_auth_header(test_client):
     """Test searching files with invalid auth header.
     params:
@@ -97,7 +81,6 @@ def test_invalid_auth_header(test_client):
     for user_number in range(1, 3 + 1):  # 3 users
         assert_search_filename_invalid_auth(test_client, user_number, "sample_search")
 
-
 def test_search_filename_missing_search_string(test_client):
     """Test searching files with missing search string parameter.
     params:
@@ -105,7 +88,6 @@ def test_search_filename_missing_search_string(test_client):
     """
     for user_number in range(1, 3 + 1):  # 3 users
         assert_search_filename_missing_search_string(test_client, user_number)
-
 
 def test_search_filename_end_to_end(search_file):
     """Test searching files by filename end-to-end.
@@ -137,7 +119,8 @@ def test_search_filename_end_to_end(search_file):
         size=1024,
     	createdAt=timezone.now(),
     	modifiedAt=timezone.now(),
-        ts=SearchVector(Value("report-user1"), weight="A", config='simple')
+        tsFilename=SearchVector(Value("report-user1"), weight="A", config='simple'),
+        tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
     File.objects.create(
         serviceId=service1,
@@ -150,7 +133,9 @@ def test_search_filename_end_to_end(search_file):
         size=1024,
     	createdAt=timezone.now(),
     	modifiedAt=timezone.now(),
-        ts=SearchVector(Value("another-file-with-different-name"), weight="A", config='simple')
+        tsFilename=SearchVector(Value("another-file-with-different-name"), \
+                                             weight="A", config='simple'),
+        tsContent=SearchVector(Value(""), weight="B", config='english'),
     )
 
     # Perform a search for 'report'
@@ -159,31 +144,28 @@ def test_search_filename_end_to_end(search_file):
     )
 
     # Assert we return all the required fields
-    assert response.status_code == 200
+    check.equal(response.status_code, 200)
     data = response.json()
-    assert "files" in data
-    assert len(data["files"]) == 1  # Should only contain one files
+    check.is_in("files", data)
+    check.equal(len(data["files"]), 1)  # Should only contain one file
     file = data["files"][0]
-    assert file["id"] == test_file_1.id
-    assert file["name"] == test_file_1.name
-    assert file["extension"] == test_file_1.extension
-    assert file["path"] == test_file_1.path
-    assert file["link"] == test_file_1.link
-    assert file["size"] == test_file_1.size
+    check.equal(file["id"], test_file_1.id)
+    check.equal(file["name"], test_file_1.name)
+    check.equal(file["extension"], test_file_1.extension)
+    check.equal(file["path"], test_file_1.path)
+    check.equal(file["link"], test_file_1.link)
+    check.equal(file["size"], test_file_1.size)
 
     created_dt = _parse_iso_with_z(file["createdAt"])
     modified_dt = _parse_iso_with_z(file["modifiedAt"])
 
     # Compare endpoint timestamps to the model datetimes using a small tolerance
     # to avoid failures caused by timezone/formatting differences.
-    assert abs(created_dt.timestamp() - test_file_1.createdAt.timestamp()) < 1
-    assert abs(modified_dt.timestamp() - test_file_1.modifiedAt.timestamp()) < 1
-    assert (
-        file["serviceName"] == service1.name
+    check.less(abs(created_dt.timestamp() - test_file_1.createdAt.timestamp()), 1)
+    check.less(abs(modified_dt.timestamp() - test_file_1.modifiedAt.timestamp()), 1)
+    check.equal(
+        file["serviceName"], service1.name
     )  # Check service provider is sent with the file
-
-    # Remember to test snippet at some point
-
 
 def _parse_iso_with_z(s: str) -> datetime:
     """

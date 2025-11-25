@@ -61,6 +61,8 @@ def assert_save_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file)
 
         elif service_name == "google":
+            if file.get("trashed"): # If the file is in the trash, it should be skipped
+                continue
             # Skip non-files (folders, shortcuts, etc)
             if (
                 file.get("mimeType", "") in (
@@ -241,20 +243,21 @@ def check_tokens_against_ts_vector(file: File, ts_type: str = None):
     Checks tokenized file name against the ts_vector stored in the database
     """
     # Get produced ts vector for the file
-    ts = file.get().ts
-    file_name = file.get().name
+    obj = file.get()
+    ts_filename = obj.tsFilename
+    file_name = obj.name
     # Check that each token in the name appears as a term in our tsvector
     # To produce the tokens PostgreSQL's tsvector parser is used
     # NOTE: this currently only takes into account the file name
     name_tokens = ts_tokenize(file_name, "simple")
 
     for i, token in enumerate(name_tokens):
-        token_extension = smart_extension(file.get().serviceId.name, file_name)
+        token_extension = smart_extension(obj.serviceId.name, file_name)
         if token_extension and token.endswith(token_extension):
             name_tokens[i] = token[: -len(token_extension)]
-    remove_extension_from_ts_vector_smart(file.get())
+    remove_extension_from_ts_vector_smart(obj)
     for token in name_tokens:
-        check.equal(token.lower() in ts, True)
+        check.equal(token.lower() in ts_filename, True)
 
 def ts_tokenize(text, config):
     "Tokenizes a string using PostgreSQL's tsvector parser"

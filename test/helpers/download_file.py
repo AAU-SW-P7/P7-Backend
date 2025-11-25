@@ -5,8 +5,12 @@ import pytest_check as check
 from django.db import connection
 from django_q.tasks import result
 from repository.models import Service, User, File
+<<<<<<< HEAD
 from repository.service import get_service
 
+=======
+from repository.file import remove_extension_from_ts_vector_smart
+>>>>>>> 8d795025b25bdc015ae9d6662b9418f7d644124e
 
 def assert_download_file_success(client, user_id, service_name):
     """Helper function to assert successful creation of a service.
@@ -194,8 +198,10 @@ def check_tokens_against_ts_vector(file: File, content: str):
     Checks tokenized file name and content against the tsvector stored in the database
     """
     # Get produced ts vector for the file
-    ts = file.get().ts
-    file_name = file.get().name
+    obj = file.get()
+    ts_filename = obj.tsFilename
+    ts_content = obj.tsContent
+    file_name = remove_extension_from_ts_vector_smart(obj)
 
     # Tokenize & lexize file name
     name_tokens = ts_tokenize_simple(file_name)
@@ -211,7 +217,8 @@ def check_tokens_against_ts_vector(file: File, content: str):
 
     # Ensure each lexeme appears in the stored tsvector
     for lex in all_lexemes:
-        check.equal(lex in ts, True)
+        # allow lexeme to be present in either filename tsvector or content tsvector
+        check.equal((lex in ts_filename) or (lex in (ts_content or "")), True)
 
 
 def ts_tokenize_simple(text):
