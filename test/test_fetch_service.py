@@ -2,16 +2,20 @@
 import os
 import sys
 from pathlib import Path
-from helpers.create_user import (
-    assert_create_user_success,
-    assert_create_user_invalid_auth,
-    assert_create_user_missing_header,
-)
-from helpers.create_service import (
-    assert_create_service_invalid_auth,
-    assert_create_service_missing_header,
-    assert_create_service_missing_payload,
-)
+
+# Make the local backend package importable so `from p7...` works under pytest
+repo_backend = Path(__file__).resolve().parents[1]  # backend/
+sys.path.insert(0, str(repo_backend))
+# Make the backend/test dir importable so you can use test_settings.py directly
+sys.path.insert(0, str(repo_backend / "test"))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
+
+import pytest
+
+import django
+django.setup()
+
 from helpers.fetch_service import (
     assert_fetch_dropbox_files_success,
     assert_fetch_dropbox_files_invalid_auth,
@@ -26,7 +30,13 @@ from helpers.fetch_service import (
     assert_fetch_onedrive_files_missing_header,
     assert_fetch_onedrive_files_missing_userid,
 )
-from helpers.sync_files import create_service
+from helpers.download_file import (
+    assert_download_file_success,
+    assert_download_file_invalid_auth,
+    assert_download_file_missing_header,
+    assert_download_file_missing_user_id,
+)
+from helpers.general_helper_functions import (create_x_users, create_service)
 import pytest
 
 # Make the local backend package importable so `from p7...` works under pytest
