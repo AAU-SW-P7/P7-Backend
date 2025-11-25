@@ -1,8 +1,8 @@
 """Tests for the fetch service endpoints."""
+
 import os
 import sys
 from pathlib import Path
-
 
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
@@ -10,13 +10,10 @@ sys.path.insert(0, str(repo_backend))
 # Make the backend/test dir importable so you can use test_settings.py directly
 sys.path.insert(0, str(repo_backend / "test"))
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
-
 import pytest
-
 import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 django.setup()
-from ninja.testing import TestClient
 
 from helpers.fetch_service import (
     assert_fetch_dropbox_files_success,
@@ -38,7 +35,11 @@ from helpers.download_file import (
     assert_download_file_missing_header,
     assert_download_file_missing_user_id,
 )
-from helpers.general_helper_functions import (create_x_users, create_service)
+from helpers.general_helper_functions import create_x_users, create_service
+from repository.models import User, Service
+
+from ninja.testing import TestClient
+
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
 from p7.get_google_drive_files.api import fetch_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router
@@ -46,18 +47,12 @@ from p7.download_dropbox_files.api import download_dropbox_files_router
 from p7.download_google_drive_files.api import download_google_drive_files_router
 from p7.download_onedrive_files.api import download_onedrive_files_router
 
-@pytest.fixture(scope="module")
-def three_users_with_services():
-    create_x_users(3)
-    for user_number in range(1, 3 + 1):
-        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
-            create_service(provider, user_number)
-    # could return the user IDs if you want
-    return range(1, 4)
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.usefixtures("django_db_setup")
+# pytestmark = pytest.mark.django_db
 
-@pytest.fixture(name="fetch_dropbox_files_client", scope='module', autouse=True)
+
+@pytest.fixture(name="fetch_dropbox_files_client", scope="module", autouse=True)
 def create_fetch_dropbox_files_client():
     """Fixture for creating a test client for the fetch_dropbox_files endpoint.
     Returns:
@@ -65,7 +60,8 @@ def create_fetch_dropbox_files_client():
     """
     return TestClient(fetch_dropbox_files_router)
 
-@pytest.fixture(name="fetch_google_files_client", scope='module', autouse=True)
+
+@pytest.fixture(name="fetch_google_files_client", scope="module", autouse=True)
 def create_fetch_google_files_client():
     """Fixture for creating a test client for the fetch_google_files endpoint.
     Returns:
@@ -73,13 +69,15 @@ def create_fetch_google_files_client():
     """
     return TestClient(fetch_google_drive_files_router)
 
-@pytest.fixture(name="fetch_onedrive_files_client", scope='module', autouse=True)
+
+@pytest.fixture(name="fetch_onedrive_files_client", scope="module", autouse=True)
 def create_fetch_onedrive_files_client():
     """Fixture for creating a test client for the fetch_onedrive_files endpoint.
     Returns:
         TestClient: A test client for the fetch_onedrive_files endpoint.
     """
     return TestClient(fetch_onedrive_files_router)
+
 
 @pytest.fixture(
     name="download_dropbox_files_client_fixture", scope="module", autouse=True
@@ -102,6 +100,7 @@ def download_google_files_client():
     """
     return TestClient(download_google_drive_files_router)
 
+
 @pytest.fixture(
     name="download_onedrive_files_client_fixture", scope="module", autouse=True
 )
@@ -112,16 +111,47 @@ def download_onedrive_files_client():
     """
     return TestClient(download_onedrive_files_router)
 
+
+@pytest.fixture(scope="module", autouse=True)
+def seed_users_and_services():
+    """Ensure the module always has 3 users and their services seeded."""
+    desired_users = 3
+    current_users = User.objects.count()
+    if current_users < desired_users:
+        create_x_users(desired_users - current_users)
+
+    for user_number in range(1, desired_users + 1):
+        for provider in ["DROPBOX", "GOOGLE", "ONEDRIVE"]:
+            create_service(provider, user_number)
+
+
+def test_create_user_success():
+    """Ensure the fixture seeded the expected number of users."""
+    assert User.objects.count() == 3
+
+
+def test_create_service_success():
+    """Validate that each user has the expected services."""
+    for user_number in range(1, 3 + 1):  # 3 users
+        for provider in ["dropbox", "google", "onedrive"]:
+            assert (
+                Service.objects.filter(userId=user_number, name=provider).count() == 1
+            )
+
+
 # --- TESTS FOR DROPBOX ---
-def test_fetch_dropbox_files_success(fetch_dropbox_files_client, three_users_with_services):
+def test_fetch_dropbox_files_success(fetch_dropbox_files_client):
     """Test fetching Dropbox files successfully for 3 users.
     params:
         fetch_dropbox_files_client:
             Fixture for creating a test client for the fetch_dropbox_files endpoint.
     """
-    for user_number in three_users_with_services:  # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
 
-        assert_fetch_dropbox_files_success(fetch_dropbox_files_client, user_number, "dropbox")
+        assert_fetch_dropbox_files_success(
+            fetch_dropbox_files_client, user_number, "dropbox"
+        )
+
 
 def test_fetch_dropbox_files_invalid_auth(fetch_dropbox_files_client):
     """Test fetching Dropbox files with invalid auth token.
@@ -129,9 +159,10 @@ def test_fetch_dropbox_files_invalid_auth(fetch_dropbox_files_client):
         fetch_dropbox_files_client:
             Fixture for creating a test client for the fetch_dropbox_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
 
         assert_fetch_dropbox_files_invalid_auth(fetch_dropbox_files_client, user_number)
+
 
 def test_fetch_dropbox_files_missing_header(fetch_dropbox_files_client):
     """Test fetching Dropbox files with missing auth header.
@@ -139,25 +170,29 @@ def test_fetch_dropbox_files_missing_header(fetch_dropbox_files_client):
         fetch_dropbox_files_client:
             Fixture for creating a test client for the fetch_dropbox_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
 
-        assert_fetch_dropbox_files_missing_header(fetch_dropbox_files_client, user_number)
+        assert_fetch_dropbox_files_missing_header(
+            fetch_dropbox_files_client, user_number
+        )
+
 
 def test_fetch_dropbox_files_missing_userid(fetch_dropbox_files_client):
     """Test fetching Dropbox files with missing userId query parameter.
     params:
-        fetch_dropbox_files_client: 
+        fetch_dropbox_files_client:
             Fixture for creating a test client for the fetch_dropbox_files endpoint.
     """
-    for _ in range(1, 3+1):  # 3 users
+    for _ in range(1, 3 + 1):  # 3 users
 
         assert_fetch_dropbox_files_missing_userid(fetch_dropbox_files_client)
 
-def test_download_dropbox_file_success(
-    download_dropbox_files_client_fixture,
-    three_users_with_services):
+
+def test_download_dropbox_file_success(download_dropbox_files_client_fixture):
     """Test downloading a Dropbox file."""
-    for user_number in three_users_with_services:
+
+    for user_number in range(1, 3 + 1):  # 3 users
+
         assert_download_file_success(
             download_dropbox_files_client_fixture, user_number, "dropbox"
         )
@@ -188,37 +223,44 @@ def test_download_dropbox_file_missing_user_id(download_dropbox_files_client_fix
 
     assert_download_file_missing_user_id(download_dropbox_files_client_fixture)
 
+
 # --- TESTS FOR GOOGLE DRIVE ---
 
-def test_fetch_google_files_success(fetch_google_files_client, three_users_with_services):
+
+def test_fetch_google_files_success(fetch_google_files_client):
     """Test fetching Google files successfully for 3 users.
     params:
-        fetch_google_files_client: 
+        fetch_google_files_client:
             Fixture for creating a test client for the fetch_google_files endpoint.
     """
-    for user_number in three_users_with_services:  # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
 
-        assert_fetch_google_files_success(fetch_google_files_client, user_number, "google")
+        assert_fetch_google_files_success(
+            fetch_google_files_client, user_number, "google"
+        )
+
 
 def test_fetch_google_files_invalid_auth(fetch_google_files_client):
     """Test fetching Google files with invalid auth token.
     params:
-        fetch_google_files_client: 
+        fetch_google_files_client:
             Fixture for creating a test client for the fetch_google_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
 
         assert_fetch_google_files_invalid_auth(fetch_google_files_client, user_number)
+
 
 def test_fetch_google_files_missing_header(fetch_google_files_client):
     """Test fetching Google files with missing auth header.
     params:
-        fetch_google_files_client: 
+        fetch_google_files_client:
             Fixture for creating a test client for the fetch_google_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
 
         assert_fetch_google_files_missing_header(fetch_google_files_client, user_number)
+
 
 def test_fetch_google_files_missing_userid(fetch_google_files_client):
     """Test fetching Google files with missing userId query parameter.
@@ -226,8 +268,9 @@ def test_fetch_google_files_missing_userid(fetch_google_files_client):
         fetch_google_files_client:
             Fixture for creating a test client for the fetch_google_files endpoint.
     """
-    for _ in range(1, 3+1):  # 3 users
+    for _ in range(1, 3 + 1):  # 3 users
         assert_fetch_google_files_missing_userid(fetch_google_files_client)
+
 
 def test_download_google_drive_file_success(download_google_drive_files_client_fixture):
     """Test downloading a Google Drive file."""
@@ -237,8 +280,9 @@ def test_download_google_drive_file_success(download_google_drive_files_client_f
         assert_download_file_success(
             download_google_drive_files_client_fixture,
             user_number,
-            'google',
+            "google",
         )
+
 
 def test_download_google_drive_file_invalid_auth(
     download_google_drive_files_client_fixture,
@@ -271,6 +315,7 @@ def test_download_google_drive_file_missing_user_id(
 
     assert_download_file_missing_user_id(download_google_drive_files_client_fixture)
 
+
 # --- TESTS FOR ONEDRIVE ---
 def test_fetch_onedrive_files_success(fetch_onedrive_files_client):
     """Test fetching OneDrive files successfully for 3 users.
@@ -278,12 +323,11 @@ def test_fetch_onedrive_files_success(fetch_onedrive_files_client):
         fetch_onedrive_files_client:
             Fixture for creating a test client for the fetch_onedrive_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
+    for user_number in range(1, 3 + 1):  # 3 users
         assert_fetch_onedrive_files_success(
-            fetch_onedrive_files_client,
-            user_number,
-            "onedrive"
+            fetch_onedrive_files_client, user_number, "onedrive"
         )
+
 
 def test_fetch_onedrive_files_invalid_auth(fetch_onedrive_files_client):
     """Test fetching OneDrive files with invalid auth token.
@@ -291,8 +335,11 @@ def test_fetch_onedrive_files_invalid_auth(fetch_onedrive_files_client):
         fetch_onedrive_files_client:
             Fixture for creating a test client for the fetch_onedrive_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
-        assert_fetch_onedrive_files_invalid_auth(fetch_onedrive_files_client, user_number)
+    for user_number in range(1, 3 + 1):  # 3 users
+        assert_fetch_onedrive_files_invalid_auth(
+            fetch_onedrive_files_client, user_number
+        )
+
 
 def test_fetch_onedrive_files_missing_header(fetch_onedrive_files_client):
     """Test fetching OneDrive files with missing auth header.
@@ -300,8 +347,11 @@ def test_fetch_onedrive_files_missing_header(fetch_onedrive_files_client):
         fetch_onedrive_files_client:
             Fixture for creating a test client for the fetch_onedrive_files endpoint.
     """
-    for user_number in range(1, 3+1):  # 3 users
-        assert_fetch_onedrive_files_missing_header(fetch_onedrive_files_client, user_number)
+    for user_number in range(1, 3 + 1):  # 3 users
+        assert_fetch_onedrive_files_missing_header(
+            fetch_onedrive_files_client, user_number
+        )
+
 
 def test_fetch_onedrive_files_missing_userid(fetch_onedrive_files_client):
     """Test fetching OneDrive files with missing userId query parameter.
@@ -310,8 +360,9 @@ def test_fetch_onedrive_files_missing_userid(fetch_onedrive_files_client):
             Fixture for creating a test client for the fetch_onedrive_files endpoint.
     """
 
-    for _ in range(1, 3+1):  # 3 users
+    for _ in range(1, 3 + 1):  # 3 users
         assert_fetch_onedrive_files_missing_userid(fetch_onedrive_files_client)
+
 
 def test_download_onedrive_file_success(download_onedrive_files_client_fixture):
     """Test downloading a OneDrive file."""
