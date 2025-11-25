@@ -68,7 +68,8 @@ def smart_extension(provider: str, name: str, mime: Optional[str] = None) -> str
 
     known_file_extensions = set(mimetypes.types_map) \
                             | compressed_file_extensions \
-                            | extra_known_extensions
+                            | extra_known_extensions \
+                            | downloadable_file_extensions()
 
     google_file_extensions = {}
     if provider == "google":

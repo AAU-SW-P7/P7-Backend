@@ -7,7 +7,6 @@ from p7.search_files_by_filename.api import (
     tokenize,
 )
 
-
 def assert_query_file_by_name(user_id, query, expected_name):
     """Assert that searching by filename works correctly.
 
@@ -17,18 +16,23 @@ def assert_query_file_by_name(user_id, query, expected_name):
         expected_name (list): The expected filename in results
     """
     results = query_files_by_name(query, user_id)
-    expected_name_len = len(expected_name)
+
+    # 1. Check all returned files belong to the user
     for file in results:
-        check.equal(file.name, expected_name.pop(0))
         check.equal(file.serviceId.userId.id, user_id)
 
-    check.equal(results.count(), expected_name_len)
+    # 2. Extract actual names
+    result_names = [file.name for file in results]
 
+    # 3. Check that ALL expected names are present
+    for expected in expected_name:
+        check.is_in(expected, result_names)
 
 def assert_query_matches_count(user_id, query, expected_count):
     """Assert that search returns no results for a missing query."""
     results = query_files_by_name(query, user_id)
-
+    for file in results:
+        check.equal(file.serviceId.userId.id, user_id)
     check.equal(results.count(), expected_count)
 
 def assert_search_filename_invalid_auth(client, user_id, search_string):

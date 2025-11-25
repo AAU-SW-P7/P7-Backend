@@ -147,7 +147,6 @@ def download_recursive_files(
             try:
                 update_tsvector(
                     onedrive_file,
-                    onedrive_file.name,
                     onedrive_content,
                     timezone.now(),
                 )

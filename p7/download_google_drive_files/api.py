@@ -141,7 +141,6 @@ def download_recursive_files(
 
             update_tsvector(
                 google_drive_file,
-                google_drive_file.name,
                 google_drive_content,
                 timezone.now(),
             )

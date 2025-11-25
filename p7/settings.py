@@ -18,13 +18,36 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        # Django-Q logs come from this namespace
+        'django_q': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # and DEBUG for your own code
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        }
+    }
+}
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or 'django-insecure-^pxui41@j26x%)!9bgbwljhi!32xfj(nh2a2tsv=utx2ls2)zu'
-
+SECRET_KEY = (os.getenv("DJANGO_SECRET_KEY")
+              or 'django-insecure-^pxui41@j26x%)!9bgbwljhi!32xfj(nh2a2tsv=utx2ls2)zu'
+)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG") == 'True'
 
@@ -135,6 +158,7 @@ DATABASES = {
 # DJANGO_Q database config. Docs: https://django-q2.readthedocs.io/en/master/configure.html
 Q_CLUSTER = {
     'name': 'default',
+    'log_level': 'DEBUG',
     'workers': multiprocessing.cpu_count(),
     'retry': 3600,
     'timeout': 600,

@@ -2,6 +2,21 @@
 import os
 import sys
 from pathlib import Path
+
+# Make the local backend package importable so `from p7...` works under pytest
+repo_backend = Path(__file__).resolve().parents[1]  # backend/
+sys.path.insert(0, str(repo_backend))
+# Make the backend/test dir importable so you can use test_settings.py directly
+sys.path.insert(0, str(repo_backend / "test"))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
+
+import pytest
+
+import django
+django.setup()
+from ninja.testing import TestClient
+
 from helpers.fetch_service import (
     assert_fetch_dropbox_files_success,
     assert_fetch_dropbox_files_invalid_auth,
@@ -22,21 +37,7 @@ from helpers.download_file import (
     assert_download_file_missing_header,
     assert_download_file_missing_user_id,
 )
-from helpers.general_helper_functions import (create_x_users, create_service)
-import pytest
-
-# Make the local backend package importable so `from p7...` works under pytest
-repo_backend = Path(__file__).resolve().parents[1]  # backend/
-sys.path.insert(0, str(repo_backend))
-# Make the backend/test dir importable so you can use test_settings.py directly
-sys.path.insert(0, str(repo_backend / "test"))
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
-
-
-import django
-django.setup()
-from ninja.testing import TestClient
+from helpers.general_helper_functions import create_service, create_x_users
 
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
 from p7.get_google_drive_files.api import fetch_google_drive_files_router

@@ -20,7 +20,7 @@ from django.utils import timezone
 from django.contrib.postgres.search import SearchVector, Value
 import pytest
 from ninja.testing import TestClient
-
+import pytest_check as check
 
 from helpers.search_filename import (
     assert_search_filename_invalid_auth,
@@ -144,31 +144,28 @@ def test_search_filename_end_to_end(search_file):
     )
 
     # Assert we return all the required fields
-    assert response.status_code == 200
+    check.equal(response.status_code, 200)
     data = response.json()
-    assert "files" in data
-    assert len(data["files"]) == 1  # Should only contain one files
+    check.is_in("files", data)
+    check.equal(len(data["files"]), 1)  # Should only contain one file
     file = data["files"][0]
-    assert file["id"] == test_file_1.id
-    assert file["name"] == test_file_1.name
-    assert file["extension"] == test_file_1.extension
-    assert file["path"] == test_file_1.path
-    assert file["link"] == test_file_1.link
-    assert file["size"] == test_file_1.size
+    check.equal(file["id"], test_file_1.id)
+    check.equal(file["name"], test_file_1.name)
+    check.equal(file["extension"], test_file_1.extension)
+    check.equal(file["path"], test_file_1.path)
+    check.equal(file["link"], test_file_1.link)
+    check.equal(file["size"], test_file_1.size)
 
     created_dt = _parse_iso_with_z(file["createdAt"])
     modified_dt = _parse_iso_with_z(file["modifiedAt"])
 
     # Compare endpoint timestamps to the model datetimes using a small tolerance
     # to avoid failures caused by timezone/formatting differences.
-    assert abs(created_dt.timestamp() - test_file_1.createdAt.timestamp()) < 1
-    assert abs(modified_dt.timestamp() - test_file_1.modifiedAt.timestamp()) < 1
-    assert (
-        file["serviceName"] == service1.name
+    check.less(abs(created_dt.timestamp() - test_file_1.createdAt.timestamp()), 1)
+    check.less(abs(modified_dt.timestamp() - test_file_1.modifiedAt.timestamp()), 1)
+    check.equal(
+        file["serviceName"], service1.name
     )  # Check service provider is sent with the file
-
-    # Remember to test snippet at some point
-
 
 def _parse_iso_with_z(s: str) -> datetime:
     """
