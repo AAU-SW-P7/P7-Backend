@@ -5,12 +5,9 @@ import pytest_check as check
 from django.db import connection
 from django_q.tasks import result
 from repository.models import Service, User, File
-<<<<<<< HEAD
 from repository.service import get_service
 
-=======
 from repository.file import remove_extension_from_ts_vector_smart
->>>>>>> 8d795025b25bdc015ae9d6662b9418f7d644124e
 
 def assert_download_file_success(client, user_id, service_name):
     """Helper function to assert successful creation of a service.
@@ -34,7 +31,7 @@ def assert_download_file_success(client, user_id, service_name):
         f"/?user_id={user_id}",
         headers={"x-internal-auth": os.getenv("INTERNAL_API_KEY")},
     )
-    service = get_service(user_id, service_name)
+
     data = response.json()
     data = result(task_id=response.json().get("task_id")) if response.status_code == 202 else data
 
@@ -46,7 +43,6 @@ def assert_download_file_success(client, user_id, service_name):
         if service_name == "dropbox":
             db_file = File.objects.filter(
                 serviceFileId=file.get("id"),
-                serviceId=service.id,
             )
             file_count = db_file.count()
 
@@ -57,7 +53,6 @@ def assert_download_file_success(client, user_id, service_name):
         elif service_name == "google":
             db_file = File.objects.filter(
                 serviceFileId=file.get("id"),
-                serviceId=service.id,
             )
             file_count = db_file.count()
 
@@ -68,7 +63,6 @@ def assert_download_file_success(client, user_id, service_name):
         elif service_name == "onedrive":
             db_file = File.objects.filter(
                 serviceFileId=file.get("id"),
-                serviceId=service.id,
             )
             file_count = db_file.count()
 
