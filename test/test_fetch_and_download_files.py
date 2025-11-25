@@ -3,10 +3,6 @@ import os
 import sys
 from pathlib import Path
 
-<<<<<<< HEAD:test/test_fetch_service.py
-=======
-
->>>>>>> 8d795025b25bdc015ae9d6662b9418f7d644124e:test/test_fetch_and_download_files.py
 # Make the local backend package importable so `from p7...` works under pytest
 repo_backend = Path(__file__).resolve().parents[1]  # backend/
 sys.path.insert(0, str(repo_backend))
