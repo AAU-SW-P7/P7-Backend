@@ -1,6 +1,8 @@
 """Repository functions for handling File model operations."""
 
 from datetime import datetime
+from collections import defaultdict
+from typing import Iterable
 from django.db import transaction
 from django.db.models import (
     Value,
@@ -8,11 +10,8 @@ from django.db.models import (
 )  # , F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
-from django.db import connection
 from repository.models import File, Service, User
 from p7.helpers import downloadable_file_extensions, smart_extension
-from collections import defaultdict
-from typing import Iterable, Any
 
 NAME_RANK_WEIGHT = 0.7
 CONTENT_RANK_WEIGHT = 0.3
@@ -183,6 +182,7 @@ def query_files(
 
     return combine_rankings(name_ranked_files, content_ranked_files)
 
+
 def combine_rankings(
     name_ranked_files: Iterable[File],
     content_ranked_files: Iterable[File],
@@ -191,8 +191,10 @@ def combine_rankings(
     Merge name and content ranking results into a single ordered list.
 
     Params:
-        name_ranked_files: Iterable of File objects (with appended rank) ranked by name.
-        content_ranked_files: Iterable of File objects (with appended rank) ranked by content (tf-idf).
+        name_ranked_files: 
+             Iterable of File objects (with appended rank) ranked by name.
+        content_ranked_files: 
+             Iterable of File objects (with appended rank) ranked by content (tf-idf).
 
     Returns:
         List of File objects sorted by their combined weighted rank.
@@ -201,7 +203,9 @@ def combine_rankings(
     files_by_id = {}
 
     accumulate_file_scores(name_ranked_files, NAME_RANK_WEIGHT, scores, files_by_id)
-    accumulate_file_scores(content_ranked_files, CONTENT_RANK_WEIGHT, scores, files_by_id)
+    accumulate_file_scores(
+        content_ranked_files, CONTENT_RANK_WEIGHT, scores, files_by_id
+    )
 
     # Sort ids by score descending
     ordered_ids = sorted(scores, key=scores.get, reverse=True)
@@ -209,13 +213,17 @@ def combine_rankings(
     result = []
     for file_id in ordered_ids:
         file = files_by_id[file_id]
-        file.combined_rank = scores[file_id] # Score is attached, if we want to log it in front end
+        file.combined_rank = scores[
+            file_id
+        ]  # Score is attached, if we want to log it in front end
         result.append(file)
 
     return result
 
 
-def accumulate_file_scores(files: Iterable[File], weight: float, scores: defaultdict, files_by_id: dict) -> None:
+def accumulate_file_scores(
+    files: Iterable[File], weight: float, scores: defaultdict, files_by_id: dict
+) -> None:
     """
     Accumulate weighted rank scores for a set of files
 

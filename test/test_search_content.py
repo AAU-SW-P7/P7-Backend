@@ -20,8 +20,6 @@ from django.utils import timezone
 from django.contrib.postgres.search import SearchVector, Value
 
 import pytest
-
-from hypothesis import given, strategies as st
 from helpers.search_content import assert_query_file_by_content
 from repository.models import File, Service, User
 

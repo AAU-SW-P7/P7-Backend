@@ -36,9 +36,8 @@ from helpers.download_file import (
     assert_download_file_missing_user_id,
 )
 from helpers.general_helper_functions import create_x_users, create_service
-from repository.models import User, Service
-
 from ninja.testing import TestClient
+from repository.models import User, Service
 
 from p7.get_dropbox_files.api import fetch_dropbox_files_router
 from p7.get_google_drive_files.api import fetch_google_drive_files_router

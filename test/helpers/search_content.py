@@ -5,6 +5,7 @@ from p7.search.api import (
     query_files,
 )
 
+
 def assert_query_file_by_content(user_id, query, expected_ids):
     """Assert that searching by content works correctly.
 
@@ -15,7 +16,7 @@ def assert_query_file_by_content(user_id, query, expected_ids):
     """
     results = query_files(query, user_id)
     result_ids = []
-    
+
     for result in results:
         result_ids.append(result.id)
 
@@ -29,5 +30,3 @@ def assert_query_file_by_content(user_id, query, expected_ids):
     # 3. Check that ALL expected ids are present
     for expected in expected_ids:
         check.is_in(expected.id, result_ids)
-
-

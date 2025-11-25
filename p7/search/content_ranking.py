@@ -1,6 +1,11 @@
+"""
+The code used to rank files based on content
+Calculates ltc for queries and lnc for files
+"""
+
 from math import log10, sqrt
 from collections import Counter
-from typing import Callable, Dict, Iterable, Mapping, Sequence, Union, List
+from typing import Callable, Dict, Mapping, Sequence, Union, List
 
 TermStats = Dict[str, Union[float, int]]
 DocumentStats = Dict[str, TermStats]
@@ -17,7 +22,8 @@ def build_weighted_vector(
         idf_lookup: Function returning the inverse document frequency for a term.
 
     Returns:
-        DocumentStats: Per-term statistics including tf, idf, tf-idf, and normalized weights.
+        DocumentStats: 
+            Per-term statistics including tf, idf, tf-idf, and normalized weights.
     """
     term_stats, squared_sum = {}, 0.0
 
@@ -35,8 +41,8 @@ def build_weighted_vector(
 
     length = sqrt(squared_sum)
 
-    for term in term_stats:
-        term_stats[term]["norm"] = term_stats[term]["tf-idf"] / length if length else 0
+    for stats in term_stats.values():
+        stats["norm"] = stats["tf-idf"] / length if length else 0
     return term_stats
 
 
@@ -59,7 +65,7 @@ def get_query_ltc(
     # Guard if there are no user documents or no query tokens
     if user_documents <= 0 or not query_tokens:
         return {}
-    
+
     # Dictionary holding term: document_frequency mapping
     df_lookup = dict(document_frequencies)
     # Term frequency of each token in the query
@@ -73,7 +79,7 @@ def get_query_ltc(
     )
 
 
-def get_document_lnc(term_frequencies:  Mapping[str, int]):
+def get_document_lnc(term_frequencies: Mapping[str, int]):
     """
     Compute the lnc-weighted vector for a document.
 
@@ -85,14 +91,14 @@ def get_document_lnc(term_frequencies:  Mapping[str, int]):
     """
     # Dictionary holding term: term_frequency mapping
     freq_map = dict(term_frequencies)
-    
+
     # When computing lnc the df is 1
-    return build_weighted_vector(
-        freq_map, lambda _term: 1.0
-    )
+    return build_weighted_vector(freq_map, lambda _term: 1.0)
 
 
-def compute_score_for_files(query_term_stats: DocumentStats, file_stats_list: List[Dict[int, DocumentStats]]):
+def compute_score_for_files(
+    query_term_stats: DocumentStats, file_stats_list: List[Dict[int, DocumentStats]]
+):
     """
     Calculate cosine similarity scores between a query vector and document vectors.
 

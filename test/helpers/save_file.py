@@ -2,7 +2,6 @@
 
 import os
 import pytest_check as check
-from django.db import connection
 from django_q.tasks import result
 from p7.helpers import smart_extension
 from p7.get_google_drive_files.helper import build_google_drive_path
@@ -258,4 +257,3 @@ def check_tokens_against_ts_vector(file: File, ts_type: str = None):
     print(f"Checking tokens for file '{ts_filename}': {name_tokens}")
     for token in name_tokens:
         check.equal(token.lower() in ts_filename, True)
-

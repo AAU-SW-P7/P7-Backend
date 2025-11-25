@@ -1,14 +1,15 @@
 """Helper functions for testing filename search ranking."""
 
 import math
-import pytest_check as check
 from typing import List
-
-from repository.models import File
+import pytest_check as check
 from django.db.models import Q
+from repository.models import File
 
 
-def assert_files_appear_in_specified_order(query: str, ordered_files: List[File], base_filter: Q):
+def assert_files_appear_in_specified_order(
+    query: str, ordered_files: List[File], base_filter: Q
+):
     """
     Test files appear in the order specified by the ordered_files
     params:
@@ -27,7 +28,8 @@ def assert_files_appear_in_specified_order(query: str, ordered_files: List[File]
             f"Result #{index + 1} ({results[index]!r}) != expected {expected!r}",
         )
 
-def assert_files_have_same_rank(query: str,  base_filter: Q):
+
+def assert_files_have_same_rank(query: str, base_filter: Q):
     """
     Test files have the same rank
     params:
@@ -47,7 +49,3 @@ def assert_files_have_same_rank(query: str,  base_filter: Q):
             math.isclose(rank, first_rank, rel_tol=1e-9),
             f"Result #{index + 1} rank {rank} != {first_rank}",
         )
-
-
-
-

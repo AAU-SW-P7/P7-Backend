@@ -1,5 +1,8 @@
+"""Testing of the core ranking function responsible for calculating tf-idf"""
+
 import os
 import sys
+import math
 from pathlib import Path
 
 # Make the local backend package importable so `from p7...` works under pytest
@@ -11,9 +14,9 @@ sys.path.insert(0, str(repo_backend / "test"))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 
 import django
+
 django.setup()
 
-import math
 import pytest
 import pytest_check as check
 
@@ -25,7 +28,9 @@ from p7.search.content_ranking import (
 
 # --- TESTING of get_query_ltc ---
 
+
 def test_get_query_ltc_computes_expected_stats():
+    """Ensure get_query_ltc returns correct TF, IDF, TF-IDF, and norms for a standard query."""
     user_documents = 10
     query_tokens = ["cloud", "storage", "cloud", "files"]
     document_frequencies = {"cloud": 4, "storage": 2, "files": 5}
@@ -75,7 +80,9 @@ def test_get_query_ltc_computes_expected_stats():
     check.equal(stats["storage"]["norm"], pytest.approx(tf_idf_storage / length))
     check.equal(stats["files"]["norm"], pytest.approx(tf_idf_files / length))
 
+
 def test_get_query_ltc_handles_missing_document_frequencies():
+    """Verify missing document frequency entries default to zero IDF"""
     user_documents = 20
     query_tokens = ["sync", "backup", "sync", "offline"]
     document_frequencies = {"sync": 4, "backup": 4}  # "offline" missing
@@ -93,7 +100,6 @@ def test_get_query_ltc_handles_missing_document_frequencies():
     idf_offline = 0.0
     tf_idf_sync = tf_wt_sync * idf_sync
     tf_idf_backup = tf_wt_backup * idf_backup
-    tf_idf_offline = tf_wt_offline * idf_offline
     length = math.sqrt(tf_idf_sync**2 + tf_idf_backup**2)
 
     check.equal(stats["sync"]["tf-raw"], tf_sync)
@@ -109,16 +115,34 @@ def test_get_query_ltc_handles_missing_document_frequencies():
     check.equal(stats["backup"]["norm"], pytest.approx(tf_idf_backup / length))
     check.equal(stats["offline"]["norm"], pytest.approx(0.0))
 
+
 def test_get_query_ltc_handles_no_documents():
-    stats = get_query_ltc(user_documents=0, query_tokens = ["cloud", "storage", "cloud", "files"], document_frequencies = {"cloud": 4, "storage": 2, "files": 5})
+    """Return an empty stats dict when no documents exist"""
+    stats = get_query_ltc(
+        user_documents=0,
+        query_tokens=["cloud", "storage", "cloud", "files"],
+        document_frequencies={"cloud": 4, "storage": 2, "files": 5},
+    )
     check.equal(stats, {})
+
 
 def test_get_query_ltc_handles_empty_query():
-    stats = get_query_ltc(user_documents=25, query_tokens=[], document_frequencies={"cloud": 4, "storage": 2, "files": 5})
+    """Return an empty stats dict when the provided query has no tokens."""
+    stats = get_query_ltc(
+        user_documents=25,
+        query_tokens=[],
+        document_frequencies={"cloud": 4, "storage": 2, "files": 5},
+    )
     check.equal(stats, {})
 
+
 def test_get_query_ltc_handles_no_document_frequencies():
-    stats = get_query_ltc(user_documents=25, query_tokens = ["cloud", "storage", "cloud", "files"], document_frequencies = {})
+    """Set IDF-derived values to zero when document frequencies are unavailable."""
+    stats = get_query_ltc(
+        user_documents=25,
+        query_tokens=["cloud", "storage", "cloud", "files"],
+        document_frequencies={},
+    )
 
     # Check inverted document frequency
     check.equal(stats["cloud"]["idf"], 0)
@@ -135,14 +159,18 @@ def test_get_query_ltc_handles_no_document_frequencies():
     check.equal(stats["storage"]["norm"], 0)
     check.equal(stats["files"]["norm"], 0)
 
+
 def test_get_query_ltc_handles_no_valid_input():
-    stats = get_query_ltc(user_documents=25, query_tokens = [], document_frequencies = {})
+    """Return an empty dict when both the query tokens and document frequencies are missing"""
+    stats = get_query_ltc(user_documents=25, query_tokens=[], document_frequencies={})
     check.equal(stats, {})
 
 
 # --- TESTING of get_document_lnc ---
 
+
 def test_get_document_lnc_returns_expected_document_stats():
+    """Validate TF, IDF, TF-IDF, and normalization for a multi-term document."""
     term_frequencies = {"report": 4, "summary": 2, "data": 1}
 
     stats = get_document_lnc(term_frequencies)
@@ -170,10 +198,13 @@ def test_get_document_lnc_returns_expected_document_stats():
 
 
 def test_get_document_lnc_handles_empty_term_frequencies():
+    """Return an empty result when a document has no recorded term frequencies."""
     stats = get_document_lnc(term_frequencies={})
     check.equal(stats, {})
 
+
 def test_get_document_lnc_single_term_normalizes_to_one():
+    """Confirm a single-term document normalizes to a cosine length of one."""
     term_frequencies = {"agenda": 7}
 
     stats = get_document_lnc(term_frequencies)
@@ -188,9 +219,12 @@ def test_get_document_lnc_single_term_normalizes_to_one():
     check.equal(stats["agenda"]["norm"], pytest.approx(tf_idf / length))
     check.equal(stats["agenda"]["norm"], pytest.approx(1.0))
 
+
 # --- TESTING of compute_score_for_files ---
 
+
 def test_compute_score_for_files_returns_cosine_scores():
+    """Check cosine similarity scoring between query terms and multiple documents."""
     query_term_stats = {
         "alpha": {"norm": 0.8},
         "beta": {"norm": 0.6},
@@ -207,12 +241,14 @@ def test_compute_score_for_files_returns_cosine_scores():
     check.equal(scores[2], pytest.approx(0.8 * 0.8))
     check.equal(scores[3], pytest.approx(0.0))
 
+
 def test_compute_score_for_files_reflects_query_weight_changes():
+    """Ensure document ranking shifts appropriately when query term weights change."""
     file_stats_list = [
         {101: {"cloud": {"norm": 0.6}, "backup": {"norm": 0.4}}},
         {102: {"cloud": {"norm": 0.2}, "backup": {"norm": 0.8}}},
     ]
-    
+
     balanced_query = {"cloud": {"norm": 0.5}, "backup": {"norm": 0.5}}
     backup_heavy_query = {"cloud": {"norm": 0.2}, "backup": {"norm": 0.8}}
     cloud_heavy_query = {"cloud": {"norm": 0.85}, "backup": {"norm": 0.15}}

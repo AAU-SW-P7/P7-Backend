@@ -3,8 +3,16 @@
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Value, FloatField, Q
-from repository.helpers import ts_tokenize, get_document_frequencies_matching_tokens, get_term_frequencies_for_file
-from p7.search.content_ranking import get_document_lnc, get_query_ltc, compute_score_for_files
+from repository.helpers import (
+    ts_tokenize,
+    get_document_frequencies_matching_tokens,
+    get_term_frequencies_for_file,
+)
+from p7.search.content_ranking import (
+    get_document_lnc,
+    get_query_ltc,
+    compute_score_for_files,
+)
 
 
 class FileQuerySet(models.QuerySet):
@@ -53,24 +61,19 @@ class FileQuerySet(models.QuerySet):
         #       https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-RANKING
         #    2) Query Token coverage ratio (0.0 to 1.0)
         #    3) ordered bonus for phrase matches (0.5 bonus)
-        return (
-            query_set
-            .annotate(
-                plain_rank=SearchRank(query_text_search_vector, plain_q, normalization = 16),
-                matched_tokens=token_match_expr,
-                token_ratio=(F("matched_tokens") / Value(token_count, output_field=FloatField())),
-                ordered_bonus=models.Case(
-                    models.When(name__icontains=query_text, then=Value(0.5)),
-                    default=Value(0.0),
-                    output_field=FloatField(),
-                ),
-                rank=(
-                    (F("plain_rank") * (F("token_ratio")))
-                    + F("ordered_bonus")
-                ),
-            )
-            .order_by("-rank")
-        )
+        return query_set.annotate(
+            plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=16),
+            matched_tokens=token_match_expr,
+            token_ratio=(
+                F("matched_tokens") / Value(token_count, output_field=FloatField())
+            ),
+            ordered_bonus=models.Case(
+                models.When(name__icontains=query_text, then=Value(0.5)),
+                default=Value(0.0),
+                output_field=FloatField(),
+            ),
+            rank=((F("plain_rank") * (F("token_ratio"))) + F("ordered_bonus")),
+        ).order_by("-rank")
 
     def ranking_based_on_content(
         self, query_text: str, base_filter: models.Q | None = None
@@ -91,14 +94,14 @@ class FileQuerySet(models.QuerySet):
         # No tokens, we cannot query anything
         if not tokens:
             return query_set.none()
-        
+
         # Apply base filter (always includes user)
         all_user_files = query_set.filter(base_filter)
 
         # Get totalt number of documents for user
         # Important to do here before query_set is reduced
         user_documents_count = len(list(all_user_files))
-        
+
         # Compute document frequencies for all terms included in the query over all user files
         document_frequencies = get_document_frequencies_matching_tokens(
             all_user_files, tokens
@@ -111,7 +114,7 @@ class FileQuerySet(models.QuerySet):
 
         # Use the GIN index to find files matching query
         user_files_matching_query = list(all_user_files.filter(tsContent=search_query))
-        
+
         # Compute ltc stats for the query
         query_ltc = get_query_ltc(user_documents_count, tokens, document_frequencies)
 
@@ -131,11 +134,12 @@ class FileQuerySet(models.QuerySet):
         # Add rank attribute to the files
         for file in user_files_matching_query:
             file.rank = scored_files.get(file.id, 0.0)
-        
+
         # Sort the files
         user_files_matching_query.sort(key=lambda f: f.rank, reverse=True)
 
         return user_files_matching_query
-    
+
+
 class FileManager(models.Manager.from_queryset(FileQuerySet)):
     """Custom manager for File model using FileQuerySet."""

@@ -1,8 +1,12 @@
+"""Helper for working with ts_lexize() and ts_stat() from PostgreSQL"""
+
 from django.db import connection, models
 
 
 def ts_tokenize(text, config):
-    "Tokenizes a string using PostgreSQL's tsvector parser"
+    """
+    Tokenizes a string using PostgreSQL's tsvector parser
+    """
     with connection.cursor() as cursor:
         cursor.execute(
             "SELECT unnest(tsvector_to_array(to_tsvector(%s, %s)))", [config, text]
@@ -11,7 +15,9 @@ def ts_tokenize(text, config):
 
 
 def ts_lexize(token):
-    "Lexizes (stems) a token"
+    """
+    Lexizes (stems) a token
+    """
     with connection.cursor() as cursor:
         cursor.execute("SELECT ts_lexize('english_stem', %s);", [token])
         results = cursor.fetchone()
@@ -36,13 +42,10 @@ def get_document_frequencies_matching_tokens(
     sql, params = query_set.values("tsContent").query.sql_with_params()
 
     # Wrap the above SQL in the ts_stat() function
-    ts_sql = (
-        """
+    ts_sql = f"""
             SELECT word, ndoc
-            FROM ts_stat($$%s$$)
+            FROM ts_stat($${sql}$$)
         """
-        % sql
-    )
 
     # Execute the SQL
     with connection.cursor() as cursor:
@@ -68,18 +71,16 @@ def get_term_frequencies_for_file(query_set: models.QuerySet, file_id: int):
 
     if not file_ts_query.exists():
         return []
-    
+
     # Extract the SQL and parameters representing the filtered queryset
     sql, params = file_ts_query.query.sql_with_params()
 
     # Wrap the queryset SQL in ts_stat() to collect term frequencies
-    ts_sql = (
-        """
+    ts_sql = f"""
             SELECT word, nentry
-            FROM ts_stat($$%s$$)
+            FROM ts_stat($${sql}$$)
         """
-        % sql
-    )
+
     # Fetch all (term, term_frequency) pairs from DB
     with connection.cursor() as cursor:
         cursor.execute(ts_sql, params)
