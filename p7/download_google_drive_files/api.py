@@ -20,6 +20,8 @@ from repository.service import get_tokens, get_service
 from repository.user import get_user
 
 download_google_drive_files_router = Router()
+
+
 @download_google_drive_files_router.get("/")
 def download_google_drive_files(
     request,
@@ -44,9 +46,10 @@ def download_google_drive_files(
         process_download_google_drive_files,
         user_id,
         cluster="high",
-        group=f"Google-Drive-{user_id}"
+        group=f"Google-Drive-{user_id}",
     )
     return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
+
 
 def process_download_google_drive_files(user_id):
     """Download Google Drive files for a given user.
@@ -84,7 +87,14 @@ def process_download_google_drive_files(user_id):
         )
 
         return files
-    except (KeyError, ValueError, ConnectionError, RuntimeError, TypeError, OSError) as e:
+    except (
+        KeyError,
+        ValueError,
+        ConnectionError,
+        RuntimeError,
+        TypeError,
+        OSError,
+    ) as e:
         response = JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
         return response
 
@@ -116,9 +126,17 @@ def download_recursive_files(
 
         try:
             try:
-                request = drive_api.files().export(
-                    fileId=file_id, mimeType="text/plain"
-                )
+                match google_drive_file.extension:
+                    case ".gsheet":
+                        request = drive_api.files().export(
+                        fileId=file_id,
+                        mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                    case _:
+                        request = drive_api.files().export(
+                        fileId=file_id,
+                        mimeType="text/plain"
+                    )
 
                 fh = io.BytesIO()
                 downloader = MediaIoBaseDownload(fh, request)
@@ -145,10 +163,12 @@ def download_recursive_files(
                 timezone.now(),
             )
 
-            files.append({
-                "id": file_id,
-                "content": google_drive_content,
-            })
+            files.append(
+                {
+                    "id": file_id,
+                    "content": google_drive_content,
+                }
+            )
 
         except RuntimeError as e:
             errors.append(f"Error updating tsvector for file {file_id}: {str(e)}")
