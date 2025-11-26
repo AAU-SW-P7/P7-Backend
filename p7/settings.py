@@ -18,7 +18,28 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        # Django-Q logs come from this namespace
+        'django_q': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # and DEBUG for your own code
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        }
+    }
+}
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -135,9 +156,10 @@ DATABASES = {
 # DJANGO_Q database config. Docs: https://django-q2.readthedocs.io/en/master/configure.html
 Q_CLUSTER = {
     'name': 'default',
+    'log_level': 'DEBUG',
     'workers': multiprocessing.cpu_count(),
     'retry': 3600,
-    'timeout': 600,
+    'timeout': 3600,
     'recycle': 250,
     'save_limit': 10,
     'queue_limit': 100,
