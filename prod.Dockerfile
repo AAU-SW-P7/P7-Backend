@@ -45,9 +45,20 @@ WORKDIR /app
 # Set environment variables to optimize Python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1 
+
+# Set default DJANGO_SETTINGS_MODULE
+ENV DJANGO_SETTINGS_MODULE=p7.settings
+
+# Add an entrypoint script
+COPY prod.entrypoint.sh /usr/local/bin/prod.entrypoint.sh
+RUN chmod +x /usr/local/bin/prod.entrypoint.sh && \
+    chown appuser:appuser /usr/local/bin/prod.entrypoint.sh && \
+    chown -R appuser:appuser /app
+
+USER appuser
  
 # Expose the Django port
 EXPOSE 8000
- 
-# Run Django server
-CMD ["sh", "-c", "python manage.py makemigrations repository && python manage.py migrate repository --noinput && python manage.py makemigrations && python manage.py migrate --noinput && Q_CLUSTER_NAME=high python manage.py qcluster & Q_CLUSTER_NAME=low python manage.py qcluster & exec python manage.py runserver 0.0.0.0:8000"]
+
+ENTRYPOINT ["/usr/local/bin/prod.entrypoint.sh"]
+CMD ["gunicorn", "p7.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "6", "--threads", "12", "--access-logfile", "-", "--error-logfile", "-"]

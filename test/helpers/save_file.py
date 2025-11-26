@@ -245,17 +245,16 @@ def check_tokens_against_ts_vector(file: File, ts_type: str = None):
     # Get produced ts vector for the file
     obj = file.get()
     ts_filename = obj.tsFilename
-    file_name = obj.name
+    file_name = remove_extension_from_ts_vector_smart(obj)
     # Check that each token in the name appears as a term in our tsvector
     # To produce the tokens PostgreSQL's tsvector parser is used
     # NOTE: this currently only takes into account the file name
     name_tokens = ts_tokenize(file_name, "simple")
-
     for i, token in enumerate(name_tokens):
         token_extension = smart_extension(obj.serviceId.name, file_name)
         if token_extension and token.endswith(token_extension):
             name_tokens[i] = token[: -len(token_extension)]
-    remove_extension_from_ts_vector_smart(obj)
+    print(f"Checking tokens for file '{ts_filename}': {name_tokens}")
     for token in name_tokens:
         check.equal(token.lower() in ts_filename, True)
 
