@@ -1,13 +1,11 @@
 """Repository functions for handling File model operations."""
-
 from datetime import datetime
 from django.db import transaction
 from django.db.models import Value, Q #, F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
 from repository.models import File, Service, User
-from p7.helpers import downloadable_file_extensions
-from p7.helpers import smart_extension
+from p7.helpers import downloadable_file_extensions, smart_extension
 
 def fetch_downloadable_files(service):
     """Fetches all downloadable files for a given service.
@@ -80,9 +78,11 @@ def save_file(
             defaults=defaults,
         )
 
-        # Remove extensions tag from name field
-        name = remove_extension_from_ts_vector_smart(file)
-        update_tsvector(file, name, None, indexed_at)
+        update_tsvector(
+            file,
+            None,
+            indexed_at
+        )
 
     return file
 
@@ -96,26 +96,36 @@ def remove_extension_from_ts_vector_smart(file: File) -> str:
     """
     extension = smart_extension(file.serviceId.name, file.name)
     if extension and file.name.lower().endswith(extension.lower()):
-        name_without_extension = file.name[: -len(extension)]
-        return name_without_extension
+        return file.name[: -len(extension)]
     return file.name
 
-def update_tsvector(file, name: str, content: str | None, indexed_at: datetime | None) -> None:
+def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> None:
     """Update the tsvector field for full-text search on the given file instance."""
 
     File.objects.filter(pk=file.pk).update(
         indexedAt=indexed_at,
         tsFilename=(
-            SearchVector(Value(name), weight="A", config='simple')
+            SearchVector(Value(
+                remove_extension_from_ts_vector_smart(file)
+            ), weight="A", config='simple')
         ),
         tsContent=(
-            SearchVector(Value(content or ""), weight="B", config='english')
+            SearchVector(Value(
+                content or ""
+            ), weight="B", config='english')
         ),
     )
 
     file.refresh_from_db(fields=["tsFilename", "tsContent"])
 
-def query_files_by_name(name_query, user_id):
+def query_files_by_name(
+    name_query,
+    user_id,
+    provider=None,
+    modified_after_date=None,
+    modified_before_date=None,
+    extension=None,
+):
     """Query for files by name containing any of the given tokens and user id.
 
     params:
@@ -137,10 +147,17 @@ def query_files_by_name(name_query, user_id):
 
     # Q() object to combine queries
     q = Q()
-    for token in name_query:
-        q |= Q(name__icontains=token)
-    if not q.children:
-        return File.objects.none()
+    if provider:
+        for p in provider:
+            q &= Q(serviceId__name__iexact=p)
+    if modified_after_date:
+        q &= Q(modifiedAt__gte=modified_after_date)
+    if modified_before_date:
+        q &= Q(modifiedAt__lte=modified_before_date)
+    if extension:
+        for ext in extension:
+            q &= Q(extension__iexact=ext)
+    # Always filter by user_id
     q &= Q(serviceId__userId=user_id)
 
     query_text = " ".join(name_query)
