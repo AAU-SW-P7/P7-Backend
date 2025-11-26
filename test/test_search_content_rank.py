@@ -28,7 +28,7 @@ from helpers.search_content_rank import (
 )
 from repository.models import File, Service, User
 
-pytestmark = pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture(name="test_data", scope="function", autouse=True)

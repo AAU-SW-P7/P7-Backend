@@ -23,7 +23,7 @@ import pytest
 from helpers.search_content import assert_query_file_by_content
 from repository.models import File, Service, User
 
-pytestmark = pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture(name="test_data", scope="function", autouse=True)

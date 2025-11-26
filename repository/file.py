@@ -122,8 +122,8 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
         ),
         tsContent=(
             SearchVector(
-                Value(content or ""), 
-                weight="B", 
+                Value(content or ""),
+                weight="B",
                 config="english"
             )
         ),

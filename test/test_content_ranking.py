@@ -257,11 +257,53 @@ def test_compute_score_for_files_reflects_query_weight_changes():
     heavy_scores = compute_score_for_files(backup_heavy_query, file_stats_list)
     cloud_scores = compute_score_for_files(cloud_heavy_query, file_stats_list)
 
-    check.equal(balanced_scores[101], pytest.approx(0.5 * 0.6 + 0.5 * 0.4))
-    check.equal(balanced_scores[102], pytest.approx(0.5 * 0.2 + 0.5 * 0.8))
-    check.equal(heavy_scores[101], pytest.approx(0.2 * 0.6 + 0.8 * 0.4))
-    check.equal(heavy_scores[102], pytest.approx(0.2 * 0.2 + 0.8 * 0.8))
-    check.equal(cloud_scores[101], pytest.approx(0.85 * 0.6 + 0.15 * 0.4))
-    check.equal(cloud_scores[102], pytest.approx(0.85 * 0.2 + 0.15 * 0.8))
+    check.equal(
+        balanced_scores[101],
+        pytest.approx(
+            balanced_query["cloud"]["norm"] * file_stats_list[0][101]["cloud"]["norm"]
+            + balanced_query["backup"]["norm"] * file_stats_list[0][101]["backup"]["norm"]
+        ),
+    )
+
+    check.equal(
+        balanced_scores[102],
+        pytest.approx(
+            balanced_query["cloud"]["norm"] * file_stats_list[1][102]["cloud"]["norm"]
+            + balanced_query["backup"]["norm"] * file_stats_list[1][102]["backup"]["norm"]
+        ),
+    )
+
+    check.equal(
+        heavy_scores[101],
+        pytest.approx(
+            backup_heavy_query["cloud"]["norm"] * file_stats_list[0][101]["cloud"]["norm"]
+            + backup_heavy_query["backup"]["norm"] * file_stats_list[0][101]["backup"]["norm"]
+        ),
+    )
+
+    check.equal(
+        heavy_scores[102],
+        pytest.approx(
+            backup_heavy_query["cloud"]["norm"] * file_stats_list[1][102]["cloud"]["norm"]
+            + backup_heavy_query["backup"]["norm"] * file_stats_list[1][102]["backup"]["norm"]
+        ),
+    )
+
+    check.equal(
+        cloud_scores[101],
+        pytest.approx(
+            cloud_heavy_query["cloud"]["norm"] * file_stats_list[0][101]["cloud"]["norm"]
+            + cloud_heavy_query["backup"]["norm"] * file_stats_list[0][101]["backup"]["norm"]
+        ),
+    )
+
+    check.equal(
+        cloud_scores[102],
+        pytest.approx(
+            cloud_heavy_query["cloud"]["norm"] * file_stats_list[1][102]["cloud"]["norm"]
+            + cloud_heavy_query["backup"]["norm"] * file_stats_list[1][102]["backup"]["norm"]
+        ),
+    )
+
     check.equal(cloud_scores[101] > cloud_scores[102], True)
     check.equal(heavy_scores[102] > heavy_scores[101], True)

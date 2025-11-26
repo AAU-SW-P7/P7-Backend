@@ -12,6 +12,7 @@ sys.path.insert(0, str(repo_backend / "test"))
 
 import pytest
 import django
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")
 django.setup()
 
@@ -46,9 +47,7 @@ from p7.download_dropbox_files.api import download_dropbox_files_router
 from p7.download_google_drive_files.api import download_google_drive_files_router
 from p7.download_onedrive_files.api import download_onedrive_files_router
 
-
 pytestmark = pytest.mark.usefixtures("django_db_setup")
-# pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture(name="fetch_dropbox_files_client", scope="module", autouse=True)
