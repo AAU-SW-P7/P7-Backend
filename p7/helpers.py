@@ -138,13 +138,6 @@ def downloadable_file_extensions() -> set[str]:
         ".gdoc",
         ".gsheet",
         ".gslides",
-        ".gdraw",
-        ".gform",
-        ".gtable",
-        ".gmap",
-        ".gscript",
-        ".gsite",
-        ".gjam",
     }
 
     other_file_extensions = {
