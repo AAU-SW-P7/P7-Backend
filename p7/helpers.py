@@ -201,17 +201,20 @@ def parse_file_content(content_bytes: bytes, file) -> str | None:
                 except RuntimeError as e:
                     print(f"Failed to parse pptx: {e}")
                     return None
-            case ".xlsx":
+            case ".xlsx" | ".gsheet":
                 try:
                     wb = load_workbook(content_bytes, data_only=True)
-                    ws = wb.active
-                    # iter_rows(..., values_only=True) yields tuples of raw values, not cell objects
-                    rows = [list(row) for row in ws.iter_rows(values_only=True)]
-                    text = "\n".join(
-                        "\t".join(str(cell) if cell is not None else "" for cell in row)
-                        for row in rows
-                    )
-                    return text
+                    all_sheets_text = []
+                    for ws in wb.worksheets:
+                        rows = [list(row) for row in ws.iter_rows(values_only=True)]
+                        sheet_text = "\n".join(
+                            "\t".join(str(cell) if cell is not None else "" for cell in row)
+                            for row in rows
+                        )
+                        if sheet_text.strip():  # Only include non-empty sheets
+                            all_sheets_text.append(f"\n{sheet_text}")
+                    print(all_sheets_text)
+                    return "\n\n".join(all_sheets_text)
                 except RuntimeError as e:
                     print(f"Failed to parse xlsx: {e}")
                     return None

@@ -126,9 +126,15 @@ def download_recursive_files(
 
         try:
             try:
-                request = drive_api.files().export(
-                    fileId=file_id, mimeType="text/plain"
-                )
+                match google_drive_file.extension:
+                    case ".gsheet":
+                        request = drive_api.files().export(
+                            fileId=file_id, mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                    case _:
+                        request = drive_api.files().export(
+                            fileId=file_id, mimeType="text/plain"
+                        )
 
                 fh = io.BytesIO()
                 downloader = MediaIoBaseDownload(fh, request)
