@@ -40,6 +40,9 @@ class FileQuerySet(models.QuerySet):
         tokens = query_text.split()
         token_count = len(tokens)
 
+        if token_count == 0:
+            return query_set.none()
+
         # Filter to only files that match at least one token
         q = Q()
         for t in tokens:
