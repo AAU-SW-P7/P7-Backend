@@ -1,4 +1,4 @@
-""" " Manager for ranking files based on query matches."""
+"""Manager for ranking files based on query matches."""
 
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
