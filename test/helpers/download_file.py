@@ -2,12 +2,13 @@
 
 import os
 import pytest_check as check
-from django.db import connection
 from django_q.tasks import result
 from repository.models import Service, User, File
 from repository.service import get_service
 
 from repository.file import remove_extension_from_ts_vector_smart
+from repository.helpers import ts_tokenize
+
 
 def assert_download_file_success(client, user_id, service_name):
     """Helper function to assert successful creation of a service.
@@ -33,7 +34,11 @@ def assert_download_file_success(client, user_id, service_name):
     )
     service = get_service(user_id, service_name)
     data = response.json()
-    data = result(task_id=response.json().get("task_id")) if response.status_code == 202 else data
+    data = (
+        result(task_id=response.json().get("task_id"))
+        if response.status_code == 202
+        else data
+    )
 
     check.equal(response.status_code, 202)
     check.is_instance(data, list)
@@ -52,6 +57,7 @@ def assert_download_file_success(client, user_id, service_name):
             check_tokens_against_ts_vector(db_file, file.get("content"))
 
         elif service_name == "google":
+            print(file)
             db_file = File.objects.filter(
                 serviceFileId=file.get("id"),
                 serviceId=service.id,
@@ -201,12 +207,12 @@ def check_tokens_against_ts_vector(file: File, content: str):
     file_name = remove_extension_from_ts_vector_smart(obj)
 
     # Tokenize & lexize file name
-    name_tokens = ts_tokenize_simple(file_name)
+    name_tokens = ts_tokenize(file_name, "simple")
 
     # Tokenize & lexize content (if any)
     content_lexemes = []
     if content:
-        content_tokens = ts_tokenize_english(content)
+        content_tokens = ts_tokenize(content, "english")
         content_lexemes = list(content_tokens)
 
     # Combine and dedupe lexemes from name and content
@@ -216,21 +222,3 @@ def check_tokens_against_ts_vector(file: File, content: str):
     for lex in all_lexemes:
         # allow lexeme to be present in either filename tsvector or content tsvector
         check.equal((lex in ts_filename) or (lex in (ts_content or "")), True)
-
-
-def ts_tokenize_simple(text):
-    "Tokenizes a string using PostgreSQL's tsvector parser"
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT unnest(tsvector_to_array(to_tsvector('simple', %s)))", [text]
-        )
-        return [row[0] for row in cursor.fetchall()]
-
-
-def ts_tokenize_english(text):
-    "Tokenizes a string using PostgreSQL's tsvector parser"
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT unnest(tsvector_to_array(to_tsvector('english', %s)))", [text]
-        )
-        return [row[0] for row in cursor.fetchall()]
