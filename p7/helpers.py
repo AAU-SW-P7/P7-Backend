@@ -213,7 +213,6 @@ def parse_file_content(content_bytes: bytes, file) -> str | None:
                         )
                         if sheet_text.strip():  # Only include non-empty sheets
                             all_sheets_text.append(f"\n{sheet_text}")
-                    print(all_sheets_text)
                     return "\n\n".join(all_sheets_text)
                 except RuntimeError as e:
                     print(f"Failed to parse xlsx: {e}")
