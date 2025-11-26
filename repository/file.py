@@ -120,7 +120,13 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
                 config="simple",
             )
         ),
-        tsContent=(SearchVector(Value(content or ""), weight="B", config="english")),
+        tsContent=(
+            SearchVector(
+                Value(content or ""), 
+                weight="B", 
+                config="english"
+            )
+        ),
     )
 
     file.refresh_from_db(fields=["tsFilename", "tsContent"])
@@ -191,9 +197,9 @@ def combine_rankings(
     Merge name and content ranking results into a single ordered list.
 
     Params:
-        name_ranked_files: 
+        name_ranked_files:
              Iterable of File objects (with appended rank) ranked by name.
-        content_ranked_files: 
+        content_ranked_files:
              Iterable of File objects (with appended rank) ranked by content (tf-idf).
 
     Returns:
