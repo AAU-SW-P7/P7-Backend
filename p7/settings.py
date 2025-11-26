@@ -159,7 +159,7 @@ Q_CLUSTER = {
     'log_level': 'DEBUG',
     'workers': multiprocessing.cpu_count(),
     'retry': 3600,
-    'timeout': 3600,
+    'timeout': 28800,
     'recycle': 250,
     'save_limit': 10,
     'queue_limit': 100,
