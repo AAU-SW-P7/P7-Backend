@@ -2,7 +2,9 @@
 set -e
 
 # Run migrations and collectstatic
-python manage.py makemigrations --noinput
+python manage.py makemigrations repository
+python manage.py migrate repository --noinput
+python manage.py makemigrations
 python manage.py migrate --noinput
 
 # Start any background workers (django-q qcluster for example)
