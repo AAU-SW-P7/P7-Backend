@@ -1,6 +1,14 @@
 #!/bin/sh
 set -e
 
+# Create PostgreSQL extensions first
+python -c "
+from django.db import connection
+with connection.cursor() as cursor:
+    cursor.execute('CREATE EXTENSION IF NOT EXISTS pg_trgm;')
+    cursor.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto;')
+"
+
 # Run migrations and collectstatic
 python manage.py makemigrations repository
 python manage.py migrate repository --noinput
