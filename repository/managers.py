@@ -37,23 +37,21 @@ class FileQuerySet(models.QuerySet):
         if base_filter is not None:
             query_set = query_set.filter(base_filter)
 
-        tokens = query_text.split()
-        token_count = len(tokens)
+        tokens = [t for t in (query_text or "").split() if t]
+        if not tokens:
+            # No tokens -> nothing to search
+            return self.none()
 
-        if token_count == 0:
-            return query_set.none()
-
-        # Filter to only files that match at least one token
-        q = Q()
-        for t in tokens:
-            q |= Q(name__icontains=t)
-        query_set = query_set.filter(q)
-
-        # Annotate how many tokens appear in the name
+        search_query = SearchQuery(
+            " | ".join(tokens), search_type="raw", config="simple"
+        )
+        query_set = query_set.filter(tsFilename=search_query)
+        
         token_match_expr = sum(
             models.Case(
-                models.When(tsFilename__icontains=t, then=Value(1)),
-                default=Value(0),
+                models.When(tsFilename=SearchQuery(t, search_type="plain", config="simple"),
+                     then=models.Value(1)),
+                default=models.Value(0),
                 output_field=models.IntegerField(),
             )
             for t in tokens
@@ -68,15 +66,15 @@ class FileQuerySet(models.QuerySet):
             plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=16),
             matched_tokens=token_match_expr,
             token_ratio=(
-                F("matched_tokens") / Value(token_count, output_field=FloatField())
+                F("matched_tokens") / Value(len(tokens), output_field=FloatField())
             ),
             ordered_bonus=models.Case(
-                models.When(name__icontains=query_text, then=Value(0.5)),
+                models.When(name__icontains=query_text, then=Value(0.1)),
                 default=Value(0.0),
                 output_field=FloatField(),
             ),
-            rank=((F("plain_rank") * (F("token_ratio"))) + F("ordered_bonus")),
-        ).order_by("-rank")
+            rank=(F("plain_rank")* F("token_ratio") + F("ordered_bonus")),
+        )
 
     def ranking_based_on_content(
         self, query_text: str, base_filter: models.Q | None = None
@@ -103,7 +101,7 @@ class FileQuerySet(models.QuerySet):
 
         # Get totalt number of documents for user
         # Important to do here before query_set is reduced
-        user_documents_count = len(list(all_user_files))
+        user_documents_count = all_user_files.count()
 
         # Compute document frequencies for all terms included in the query over all user files
         document_frequencies = get_document_frequencies_matching_tokens(
@@ -116,7 +114,7 @@ class FileQuerySet(models.QuerySet):
         )
 
         # Use the GIN index to find files matching query
-        user_files_matching_query = list(all_user_files.filter(tsContent=search_query))
+        user_files_matching_query = all_user_files.filter(tsContent=search_query)
 
         # Compute ltc stats for the query
         query_ltc = get_query_ltc(user_documents_count, tokens, document_frequencies)
@@ -125,7 +123,7 @@ class FileQuerySet(models.QuerySet):
         file_stats_list = [
             {
                 file.id: get_document_lnc(
-                    get_term_frequencies_for_file(all_user_files, file.id)
+                    get_term_frequencies_for_file(file)
                 )
             }
             for file in user_files_matching_query
@@ -137,9 +135,6 @@ class FileQuerySet(models.QuerySet):
         # Add rank attribute to the files
         for file in user_files_matching_query:
             file.rank = scored_files.get(file.id, 0.0)
-
-        # Sort the files
-        user_files_matching_query.sort(key=lambda f: f.rank, reverse=True)
 
         return user_files_matching_query
 
