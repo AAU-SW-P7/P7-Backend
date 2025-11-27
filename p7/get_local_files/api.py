@@ -43,20 +43,10 @@ def process_local_files(user_id):
         service = get_service(user_id, "google")
         batch = []
         for _, file in enumerate(files, start=1):
-            if file[".tag"] == "file":
-                batch.append(file)
+            if file[".tag"] != "file":
+                continue
 
-            if len(batch) >= 500:
-                for file in batch:
-                    update_or_create_local_file(file, service)
-                batch = []
-                print("Processed 500 files, sleeping for 60 seconds to avoid overload...")
-                sleep(60)
-
-        # save remaining
-        if batch:
-            for file in batch:
-                update_or_create_local_file(file, service)
+            update_or_create_local_file(file, service)
 
         async_task(
             process_download_local_files,

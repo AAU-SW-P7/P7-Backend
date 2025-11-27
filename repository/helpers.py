@@ -57,32 +57,17 @@ def get_document_frequencies_matching_tokens(
     return filtered_stats
 
 
-def get_term_frequencies_for_file(query_set: models.QuerySet, file_id: int):
+def get_term_frequencies_for_file(file):
     """
-    Retrieve term frequencies for a single file using ts_stat().
+    Retrieve term frequencies using ts_stat() for a single file instance.
     Args:
-        query_set: Base queryset representing accessible files
-        file_id: Primary key of the target file.
-    Returns:
-        A list of  (term, term_frequency): [tuple[str, int]]
+        file: A model instance with a tsContent field.
     """
-    # Build a queryset pointing to the tsvector content of the specific file
-    file_ts_query = query_set.filter(pk=file_id).values("tsContent")
-
-    if not file_ts_query.exists():
-        return []
-
-    # Extract the SQL and parameters representing the filtered queryset
-    sql, params = file_ts_query.query.sql_with_params()
-
-    # Wrap the queryset SQL in ts_stat() to collect term frequencies
-    ts_sql = f"""
-            SELECT word, nentry
-            FROM ts_stat($${sql}$$)
-        """
-
-    # Fetch all (term, term_frequency) pairs from DB
+    ts_sql = """
+        SELECT word, nentry
+        FROM ts_stat($$SELECT %s::tsvector$$)
+    """
+    
     with connection.cursor() as cursor:
-        cursor.execute(ts_sql, params)
-        ts_stats = cursor.fetchall()
-    return ts_stats
+        cursor.execute(ts_sql, [file.tsContent])
+        return cursor.fetchall()
