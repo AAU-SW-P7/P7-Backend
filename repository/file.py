@@ -3,10 +3,11 @@
 from datetime import datetime, timezone
 from collections import defaultdict
 from typing import Iterable
-from django.db import transaction, F
+from django.db import transaction
 from django.db.models import (
     Value,
     Q,
+    F,
 )  # , F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
@@ -169,17 +170,16 @@ def query_files(
     q &= Q(serviceId__userId=user_id)
 
     query_text = " ".join(name_query)
-    print(datetime.now(timezone.utc), "Searching files for user", user_id, "with query:", query_text)
+
     # Rank files based on file name
     name_ranked_files = File.objects.ranking_based_on_file_name(
         query_text, base_filter=q
     )
-    print("Name ranking completed. Found", "files.", name_ranked_files, datetime.now(timezone.utc))
+
     # Rank files based on file content
     content_ranked_files = File.objects.ranking_based_on_content(
         query_text, base_filter=q
     )
-    print(datetime.now(timezone.utc), "Content ranking completed. Found", "files.")
 
     return combine_rankings(name_ranked_files, content_ranked_files)[:200]
 

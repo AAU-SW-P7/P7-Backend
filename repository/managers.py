@@ -48,19 +48,31 @@ class FileQuerySet(models.QuerySet):
         )
         query_set = query_set.filter(tsFilename=search_query)
 
+        token_match_expr = sum(
+            models.Case(
+                models.When(tsFilename=SearchQuery(t, search_type="plain", config="simple"),
+                     then=models.Value(1)),
+                default=models.Value(0),
+                output_field=models.IntegerField(),
+            )
+            for t in tokens
+        )
+        
         # Adds Final ranking composed of below and orders by it:
         #    1) Plain rank with normalization 16
         #       https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-RANKING
         #    2) Query Token coverage ratio (0.0 to 1.0)
         #    3) ordered bonus for phrase matches (0.5 bonus)
         return query_set.annotate(
-            plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=16, cover_density=True),
+            plain_rank=SearchRank(query_text_search_vector, plain_q, normalization=16),
+            matched_tokens=token_match_expr,
+            token_ratio= (F("matched_tokens") / Value(len(tokens), output_field=models.FloatField())),
             ordered_bonus=models.Case(
-                models.When(name__icontains=query_text, then=Value(0.5)),
-                default=Value(0.0),
-                output_field=FloatField(),
+                models.When(name__icontains=query_text, then=models.Value(0.1)),
+                default=models.Value(0.0),
+                output_field=models.FloatField(),
             ),
-            rank=((F("plain_rank")) + F("ordered_bonus")),
+            rank=((F("plain_rank") * F("token_ratio")) + F("ordered_bonus")),
         ).order_by("-rank")
 
     def ranking_based_on_content(
