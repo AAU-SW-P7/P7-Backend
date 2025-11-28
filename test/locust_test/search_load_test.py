@@ -11,7 +11,7 @@ class SearchLoadTestUser(HttpUser):
         query = "test"
         user_id = 1  # User id that all the load test requests will use
         self.client.get(
-            f"/api/search_files_by_filename/?user_id={user_id}&search_string={query}",
+            f"/api/search/?user_id={user_id}&search_string={query}",
             headers={"x-internal-auth": "p7"}
             )
 
@@ -21,6 +21,6 @@ class SearchLoadTestUser(HttpUser):
         query = "test"
         user_id = 2  # User id that all the load test requests will use
         self.client.get(
-            f"/api/search_files_by_filename/?user_id={user_id}&search_string={query}",
+            f"/api/search/?user_id={user_id}&search_string={query}",
             headers={"x-internal-auth": "p7"}
             )
