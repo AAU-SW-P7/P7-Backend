@@ -2,7 +2,7 @@
 
 from django.db import models
 from django.contrib.postgres.search import SearchQuery, SearchRank
-from django.db.models import F, Value, FloatField, Q
+from django.db.models import F, Value, FloatField
 from repository.helpers import (
     ts_tokenize,
     get_document_frequencies_matching_tokens,
@@ -46,7 +46,7 @@ class FileQuerySet(models.QuerySet):
             " | ".join(tokens), search_type="raw", config="simple"
         )
         query_set = query_set.filter(tsFilename=search_query)
-        
+
         token_match_expr = sum(
             models.Case(
                 models.When(tsFilename=SearchQuery(t, search_type="plain", config="simple"),
