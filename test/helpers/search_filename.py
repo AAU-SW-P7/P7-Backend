@@ -30,7 +30,6 @@ def assert_query_file_by_name(user_id, query, expected_name):
 
 def assert_query_matches_count(user_id, query, expected_count):
     """Assert that search returns no results for a missing query."""
-    print(query)
     for i, q in enumerate(query):
         query[i] = sanitize_user_search(q)
     print(query)
