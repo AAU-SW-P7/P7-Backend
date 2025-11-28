@@ -22,8 +22,8 @@ def sanitize_user_search(text: str) -> str:
     # 1. Lowercase everything
     text = text.lower()
 
-    # 2. Remove all punctution except for ' and - and _
-    text = re.sub(r"[^\w\s'\-_]", "", text)
+    # 2. Remove all punctution except for - and _
+    text = re.sub(r"[^\w\s\-_]", "", text)
 
     # 3. Replace the '-_' with space
     text = re.sub(r"[\-_]", " ", text)

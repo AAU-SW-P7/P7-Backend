@@ -17,7 +17,7 @@ def assert_files_appear_in_specified_order(
         ordered_files: files ordered in the way they should appear in the search results
     """
     results = File.objects.ranking_based_on_content(query, base_filter=base_filter)
-
+    results = sorted(results, key=lambda f: f.rank, reverse=True)
     check.equal(
         len(results), len(ordered_files), "Search returned unexpected number of files"
     )

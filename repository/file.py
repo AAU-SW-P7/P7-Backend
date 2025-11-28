@@ -186,7 +186,7 @@ def query_files(
         query_text, base_filter=q
     )
 
-    return combine_rankings(name_ranked_files, content_ranked_files)
+    return combine_rankings(name_ranked_files, content_ranked_files)[:200]
 
 
 def combine_rankings(
