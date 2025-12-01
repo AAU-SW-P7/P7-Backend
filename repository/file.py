@@ -29,10 +29,10 @@ def fetch_downloadable_files(service):
     if isinstance(service, Service):
         return list(
             File.objects.filter(
+                Q(modifiedAt__gt=F("indexedAt")) | Q(indexedAt__isnull=True),
                 serviceId=service,
                 extension__in=downloadable_file_extensions(),
                 downloadable=True,
-                modifiedAt__gt=F("indexedAt"),
             )
         )
 
