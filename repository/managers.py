@@ -113,7 +113,6 @@ class FileQuerySet(models.QuerySet):
 
         # Use the GIN index to find files matching query
         user_files_matching_query = list(all_user_files.filter(tsContent=search_query))
-        print(all_user_files.filter(tsContent=search_query).query)
         # Compute ltc stats for the query
         query_ltc = get_query_ltc(user_documents_count, tokens, document_frequencies)
 

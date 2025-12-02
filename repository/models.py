@@ -47,7 +47,7 @@ class Service(models.Model):
     accountId = pgcrypto.EncryptedTextField()
     email = pgcrypto.EncryptedTextField()
     scopeName = pgcrypto.EncryptedTextField()
-    indexedAt = pgcrypto.EncryptedDateTimeField(null=True, blank=True)
+    indexedAt = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         """Class defining metadata for the Service model."""
@@ -77,9 +77,9 @@ class File(models.Model):
     path = pgcrypto.EncryptedTextField()
     link = pgcrypto.EncryptedTextField()
     size = models.BigIntegerField()
-    createdAt = pgcrypto.EncryptedDateTimeField()
-    modifiedAt = pgcrypto.EncryptedDateTimeField()
-    indexedAt = pgcrypto.EncryptedDateTimeField(null=True, blank=True)
+    createdAt = models.DateTimeField()
+    modifiedAt = models.DateTimeField()
+    indexedAt = models.DateTimeField(null=True, blank=True)
     snippet = pgcrypto.EncryptedTextField(null=True, blank=True)
     tsFilename = SearchVectorField(null=True)
     tsContent = SearchVectorField(null=True)
