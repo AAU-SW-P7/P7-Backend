@@ -12,8 +12,8 @@ class SearchLoadTestUser(HttpUser):
         """Task to perform search requests."""
         query = ["test","test account","test case","test plan","test account plan"]
         user_id = 1  # User id that all the load test requests will use
-        random_nr = random.randint(0, 4)
-        for nr in range(random_nr):
+        random_nr = random.randint(1, 5)
+        for nr in range(0, random_nr):
             self.client.get(
                 f"/api/search/?user_id={user_id}&search_string={query[nr]}",
                 headers={"x-internal-auth": "p7"}
