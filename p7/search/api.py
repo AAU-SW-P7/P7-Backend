@@ -23,7 +23,7 @@ def sanitize_user_search(text: str) -> str:
     text = text.lower()
 
     # 2. Remove all punctution except for ' and - and _
-    text = re.sub(r"[^\w\s'\-_]", "", text)
+    text = re.sub(r"[^\w\s\'-_]", "", text)
 
     # 3. Replace the '-_' with space
     text = re.sub(r"[\-_]", " ", text)

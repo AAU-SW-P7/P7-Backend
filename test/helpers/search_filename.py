@@ -30,6 +30,7 @@ def assert_query_file_by_name(user_id, query, expected_name):
 
 def assert_query_matches_count(user_id, query, expected_count):
     """Assert that search returns no results for a missing query."""
+    query = sanitize_user_search(" ".join(query))
     results = query_files(query, user_id)
     for file in results:
         check.equal(file.serviceId.userId.id, user_id)
