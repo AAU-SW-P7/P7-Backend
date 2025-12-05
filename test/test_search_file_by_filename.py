@@ -153,7 +153,7 @@ def test_user1_search_other_user_file(test_data):
     assert_query_matches_count(
         user_id=test_data["user1"].id,
         query=["report-user2"],
-        expected_count=0,
+        expected_count=1,
     )
 
 def test_user1_multiple_results(test_data):

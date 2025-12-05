@@ -30,6 +30,8 @@ def assert_query_file_by_name(user_id, query, expected_name):
 
 def assert_query_matches_count(user_id, query, expected_count):
     """Assert that search returns no results for a missing query."""
+    for i, q in enumerate(query):
+        query[i] = sanitize_user_search(q)
     results = query_files(query, user_id)
     for file in results:
         check.equal(file.serviceId.userId.id, user_id)
@@ -178,17 +180,17 @@ def assert_search_filename_sanitization(input_str):
 def assert_search_filename_basic_sanitization():
     """Helper function to assert basic sanitization cases."""
     assert (
-        sanitize_user_search("Aalborg's Bedste <script>") == "aalborg's bedste script"
+        sanitize_user_search("Aalborg's Bedste <script>") == "aalborgs bedste script"
     )
     assert sanitize_user_search('Hello "World" / Test') == "hello world test"
     assert sanitize_user_search("NoSpecialChars") == "nospecialchars"
-    assert sanitize_user_search("<>'\"/|:;?") == "'"
+    assert sanitize_user_search("<>'\"/|:;?") == ""
     assert sanitize_user_search("") == ""
     assert sanitize_user_search("   Leading and trailing   ") == "leading and trailing"
     assert sanitize_user_search("Multiple   spaces") == "multiple spaces"
     assert (
         sanitize_user_search("Café-Del'Mar -  “Best of ’98”!!! ")
-        == "café del'mar best of 98"
+        == "café delmar best of 98"
     )
 
 

@@ -1,5 +1,7 @@
 """Helper functions for create_service module."""
+from datetime import timedelta
 from django.db import IntegrityError
+from django.utils.timezone import now
 from django_q.tasks import async_task, schedule
 from p7.get_google_drive_files.api import process_google_drive_files
 from p7.get_dropbox_files.api import process_dropbox_files
@@ -33,6 +35,7 @@ def schedule_fetching_files(cleaned):
                     user_id=cleaned["userId"],
                     priority="low",
                     cluster="low",
+                    next_run=now() + timedelta(hours=24),
                 )
             except IntegrityError as e:
                 print(f"Error scheduling Google Drive tasks: {e}")
@@ -49,6 +52,7 @@ def schedule_fetching_files(cleaned):
                     user_id=cleaned["userId"],
                     priority="low",
                     cluster="low",
+                    next_run=now() + timedelta(hours=24),
                 )
             except IntegrityError as e:
                 print(f"Error scheduling Dropbox tasks: {e}")
@@ -65,6 +69,7 @@ def schedule_fetching_files(cleaned):
                     user_id=cleaned["userId"],
                     priority="low",
                     cluster="low",
+                    next_run=now() + timedelta(hours=24),
                 )
             except IntegrityError as e:
                 print(f"Error scheduling OneDrive tasks: {e}")

@@ -65,7 +65,6 @@ def fetch_recursive_files(
 
     def walk(
         url: str,
-        depth: int = 0,
         access_token: str = access_token,
     ) -> list[
         dict
@@ -90,16 +89,11 @@ def fetch_recursive_files(
                 for obj in items:
                     if "folder" in obj:
                         child_id = obj["id"]
-                        print(
-                            f"Recursing into folder "
-                            f"{obj.get('name')} (id={child_id}) at depth {depth}"
-                        )
                         results.extend(
                             walk(
                                 f"https://graph.microsoft.com/"
                                 f"v1.0/me/drive/items/{child_id}/children"
                                 f"?$top={page_limit}",
-                                depth + 1,
                                 access_token,
                             )
                         )
@@ -107,14 +101,11 @@ def fetch_recursive_files(
                         results.append(obj)
 
             url = data.get("@odata.nextLink", None)  # follow paging if present
-            if "@odata.nextLink" in data:
-                print(f"Following paging link: {url}")
 
         return [result for result in results if not "folder" in result]
 
     return walk(
         f"https://graph.microsoft.com/v1.0/me/drive/root/children?$top={page_limit}",
-        depth=0,
         access_token=access_token,
     )
 
