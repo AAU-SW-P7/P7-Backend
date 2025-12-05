@@ -11,6 +11,7 @@ from django.db.models import (
 )
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
+from repository.helpers import sanitize_for_postgres
 from repository.models import File, Service, User
 from p7.helpers import downloadable_file_extensions, smart_extension
 
@@ -111,7 +112,14 @@ def remove_extension_from_ts_vector_smart(file: File) -> str:
 
 def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> None:
     """Update the tsvector field for full-text search on the given file instance."""
-
+    if not content:
+        cleaned_content = ""
+    else:
+        # hard cap at 20M chars
+        content = content[:20_000_000]
+        cleaned_content = sanitize_for_postgres(content)
+        cleaned_content = cleaned_content.encode("utf-8", "ignore").decode("utf-8", "ignore")
+        
     File.objects.filter(pk=file.pk).update(
         indexedAt=indexed_at,
         tsFilename=(
@@ -123,7 +131,7 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
         ),
         tsContent=(
             SearchVector(
-                Value(content or ""),
+                Value(cleaned_content),
                 weight="B",
                 config="english"
             )

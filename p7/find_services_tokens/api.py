@@ -51,6 +51,9 @@ def find_services(
                 "userId": ser.get("userId"),
                 "name": ser.get("name"),
                 "email": ser.get("email"),
+                "scopeName": ser.get("scopeName"),
+                "indexedAt": ser.get("indexedAt"),
+                "accountId": ser.get("accountId"),
             }
         )
 

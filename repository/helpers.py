@@ -1,5 +1,6 @@
 """Helper for working with ts_lexize() and ts_stat() from PostgreSQL"""
 
+import re
 from django.db import connection, models
 
 
@@ -70,3 +71,18 @@ def get_term_frequencies_for_file(file):
     with connection.cursor() as cursor:
         cursor.execute(ts_sql, [file.tsContent])
         return cursor.fetchall()
+
+def sanitize_for_postgres(text: str) -> str:
+    if text is None:
+        return ""
+
+    # Remove NULL characters
+    text = text.replace("\x00", "")
+
+    # Remove surrogate characters (D800–DFFF), PostgreSQL cannot store them
+    text = re.sub(r"[\ud800-\udfff]", "", text)
+
+    # Optionally remove other control chars except newline & tab
+    text = re.sub(r"[\x01-\x08\x0b-\x1f\x7f]", "", text)
+
+    return text
