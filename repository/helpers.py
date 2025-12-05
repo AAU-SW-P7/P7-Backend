@@ -73,6 +73,11 @@ def get_term_frequencies_for_file(file):
         return cursor.fetchall()
 
 def sanitize_for_postgres(text: str) -> str:
+    """
+    Sanitize text for PostgreSQL full-text search by removing problematic characters.
+    Args:
+        text: The input string to sanitize.
+    """
     if text is None:
         return ""
 
@@ -82,7 +87,7 @@ def sanitize_for_postgres(text: str) -> str:
     # Remove surrogate characters (D800–DFFF), PostgreSQL cannot store them
     text = re.sub(r"[\ud800-\udfff]", "", text)
 
-    # Optionally remove other control chars except newline & tab
+    # Remove other control chars except newline & tab
     text = re.sub(r"[\x01-\x08\x0b-\x1f\x7f]", "", text)
 
     return text

@@ -119,7 +119,7 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
         content = content[:20_000_000]
         cleaned_content = sanitize_for_postgres(content)
         cleaned_content = cleaned_content.encode("utf-8", "ignore").decode("utf-8", "ignore")
-        
+
     File.objects.filter(pk=file.pk).update(
         indexedAt=indexed_at,
         tsFilename=(
