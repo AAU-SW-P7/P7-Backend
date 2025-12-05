@@ -77,7 +77,7 @@ class File(models.Model):
     path = pgcrypto.EncryptedTextField()
     link = pgcrypto.EncryptedTextField()
     size = models.BigIntegerField()
-    createdAt = pgcrypto.EncryptedDateTimeField()
+    createdAt = models.DateTimeField()
     modifiedAt = models.DateTimeField()
     indexedAt = models.DateTimeField(null=True, blank=True)
     snippet = pgcrypto.EncryptedTextField(null=True, blank=True)

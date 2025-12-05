@@ -3,11 +3,12 @@
 from datetime import datetime, timezone
 from collections import defaultdict
 from typing import Iterable
-from django.db import transaction
+from django.db import transaction, models
 from django.db.models import (
     Value,
     Q,
     F,
+    TextField,
 )  # , F # enable F when re-enabling modifiedAt__gt=F("indexedAt")
 from django.contrib.postgres.search import SearchVector
 from django.http import JsonResponse
@@ -29,7 +30,7 @@ def fetch_downloadable_files(service):
     if isinstance(service, Service):
         return list(
             File.objects.filter(
-                Q(indexedAt__isnull=True) | Q(modifiedAt__gt=F('indexedAt')), # re-enable when debugging/coding is done
+                Q(indexedAt__isnull=True) | Q(modifiedAt__gt=F('indexedAt')),
                 serviceId=service,
                 extension__in=downloadable_file_extensions(),
                 downloadable=True,
@@ -121,7 +122,7 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
                 config="simple",
             )
         ),
-        tsContent=(SearchVector(Value(content or ""), weight="B", config="english")),
+        tsContent=(SearchVector(Value(content[:15000000] or ""), weight="B", config="english")),
     )
 
     file.refresh_from_db(fields=["tsFilename", "tsContent"])
