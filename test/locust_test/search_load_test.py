@@ -14,13 +14,3 @@ class SearchLoadTestUser(HttpUser):
             f"/api/search/?user_id={user_id}&search_string={query}",
             headers={"x-internal-auth": "p7"}
             )
-
-    @task
-    def search2(self):
-        """Task to perform search requests."""
-        query = "test"
-        user_id = 2  # User id that all the load test requests will use
-        self.client.get(
-            f"/api/search/?user_id={user_id}&search_string={query}",
-            headers={"x-internal-auth": "p7"}
-            )
