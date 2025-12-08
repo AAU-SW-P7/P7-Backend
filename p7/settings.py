@@ -231,4 +231,3 @@ PGCRYPTO_KEY = "your-very-secret-key"
 } """
 
 APPEND_SLASH = True  # Ensure trailing slashes are appended to URLs
-
