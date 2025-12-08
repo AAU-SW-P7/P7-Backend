@@ -83,7 +83,7 @@ ALLOWED_HOSTS = [
     "localhost", 
     "api.localhost",
     "127.0.0.1", 
-    "130.225.39.148", 
+    "10.92.0.115", 
     "swp7.dpdns.org",
     "backend", 
     "frontend"
@@ -95,8 +95,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://api.localhost",
     "http://127.0.0.1",
     "https://127.0.0.1",
-    "http://130.225.39.148",
-    "https://130.225.39.148",
+    "http://10.92.0.115",
+    "https://10.92.0.115",
     "http://swp7.dpdns.org",
     "https://swp7.dpdns.org",
     "http://frontend:3000", 
@@ -111,8 +111,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://api.localhost",
     "http://127.0.0.1",
     "https://127.0.0.1",
-    "http://130.225.39.148",
-    "https://130.225.39.148",
+    "http://10.92.0.115",
+    "https://10.92.0.115",
     "http://swp7.dpdns.org",
     "https://swp7.dpdns.org",
     "http://frontend:3000", 
@@ -231,3 +231,4 @@ PGCRYPTO_KEY = "your-very-secret-key"
 } """
 
 APPEND_SLASH = True  # Ensure trailing slashes are appended to URLs
+
