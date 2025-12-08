@@ -198,11 +198,12 @@ def query_files(
     )
     content_count = content_ranked_files.count()
 
+    rankings_combined = combine_rankings(name_ranked_files, content_ranked_files)
     print(
         f"query_files: name ranked files={name_count}, content ranked files={content_count}"
     )
-    print(f"total unique files: {len(combine_rankings(name_ranked_files, content_ranked_files))}")
-    return combine_rankings(name_ranked_files, content_ranked_files)[:200]
+    print(f"total unique files: {len(rankings_combined)}")
+    return rankings_combined[:200]
 
 
 def combine_rankings(
