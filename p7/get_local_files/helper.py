@@ -1,7 +1,10 @@
+""" Helper functions for local file handling. """
+
 import os
 from pathlib import Path
-from django.conf import settings
 from datetime import datetime, timezone
+from django.conf import settings
+
 
 from p7.helpers import smart_extension
 from repository.file import save_file
@@ -55,14 +58,14 @@ def fetch_recursive_local_files(user_id=None) -> list[dict]:
     if not root.exists():
         return files
     print(f"Scanning local files in: {root}")
-    for base, dirs, filenames in os.walk(root):
+    for base, _, filenames in os.walk(root):
         for filename in filenames:
             full_path = Path(base) / filename
             stat = full_path.stat()
             extension = smart_extension("local", filename, None)
             created_dt = datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc)
             modified_dt = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
-  
+
             files.append({
                 ".tag": "file",
                 "id": str(full_path),

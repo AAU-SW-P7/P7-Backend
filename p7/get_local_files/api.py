@@ -1,13 +1,13 @@
-from asyncio import sleep
+""" API endpoints for fetching local files. """
+
 from ninja import Router, Header
 from django.http import JsonResponse
 from django_q.tasks import async_task
-from p7.helpers import validate_internal_auth
 from repository.service import get_service
 from repository.user import get_user
-from p7.get_local_files.helper import fetch_recursive_local_files
+from p7.helpers import validate_internal_auth
+from p7.get_local_files.helper import fetch_recursive_local_files, update_or_create_local_file
 from p7.download_local_files.api import process_download_local_files
-from p7.get_local_files.helper import update_or_create_local_file
 
 fetch_local_files_router = Router()
 
@@ -18,6 +18,7 @@ def fetch_local_files(
     user_id: str,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ):
+    """Fetch and save local files for a given user."""
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
@@ -41,7 +42,6 @@ def process_local_files(user_id):
     try:
         files = fetch_recursive_local_files(user_id)
         service = get_service(user_id, "google")
-        batch = []
         for _, file in enumerate(files, start=1):
             if file[".tag"] != "file":
                 continue
@@ -57,5 +57,5 @@ def process_local_files(user_id):
 
         return files
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except (ValueError, TypeError, KeyError, RuntimeError) as e:
+        return JsonResponse({"error": str(e)}, status=400)

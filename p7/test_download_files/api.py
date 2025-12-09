@@ -2,7 +2,6 @@
 
 import io
 import os
-from django.utils import timezone
 from django.http import JsonResponse
 from ninja import Router, Header
 from django_q.tasks import async_task
@@ -13,9 +12,9 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.errors import HttpError
 
-from p7.helpers import validate_internal_auth, parse_file_content
+from p7.helpers import validate_internal_auth
 from p7.get_google_drive_files.helper import get_new_access_token
-from repository.file import update_tsvector, fetch_downloadable_files
+from repository.file import fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 
@@ -102,7 +101,7 @@ def download_recursive_files(
         print("No downloadable Google Drive files found for user.")
 
         return []
-    
+
     files = []
     errors = []
     for google_drive_file in google_drive_files:

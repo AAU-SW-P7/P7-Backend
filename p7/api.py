@@ -6,7 +6,9 @@ from p7.get_dropbox_files.api import fetch_dropbox_files_router
 from p7.get_google_drive_files.api import fetch_google_drive_files_router
 from p7.get_onedrive_files.api import fetch_onedrive_files_router
 from p7.get_local_files.api import fetch_local_files_router
-from p7.test_prepare_download_google_drive_files.api import fetch_test_prepare_download_google_drive_files_router
+from p7.test_prepare_download_google_drive_files.api import (
+    fetch_test_prepare_download_google_drive_files_router
+)
 
 from p7.download_dropbox_files.api import download_dropbox_files_router
 from p7.download_onedrive_files.api import download_onedrive_files_router
@@ -29,7 +31,8 @@ api.add_router("/fetch_dropbox_files/", fetch_dropbox_files_router)
 api.add_router("/fetch_google_drive_files/", fetch_google_drive_files_router)
 api.add_router("/fetch_onedrive_files/", fetch_onedrive_files_router)
 api.add_router("/fetch_local_files/", fetch_local_files_router)
-api.add_router("/fetch_test_prepare_download_google_drive_files/", fetch_test_prepare_download_google_drive_files_router)
+api.add_router("/fetch_test_prepare_download_google_drive_files/",
+               fetch_test_prepare_download_google_drive_files_router)
 
 api.add_router("/download_google_drive_files/", download_google_drive_files_router)
 api.add_router("/download_dropbox_files/", download_dropbox_files_router)

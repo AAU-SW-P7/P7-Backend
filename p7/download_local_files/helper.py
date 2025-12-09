@@ -1,3 +1,5 @@
+""" Helper functions for downloading local files."""
+
 from pathlib import Path
 from django.utils import timezone
 from p7.helpers import parse_file_content
@@ -12,7 +14,7 @@ def download_recursive_local_files(service):
     processed = []
     errors = []
     db_files = fetch_downloadable_files(service)
-    
+
     for f in db_files:
         path = Path(f.path)
 
@@ -40,7 +42,7 @@ def download_recursive_local_files(service):
                     "id": f.serviceFileId,
                     "parsed": False,
                 })
-        except Exception as e:
+        except RuntimeError as e:
             errors.append(str(e))
 
     return processed, errors
