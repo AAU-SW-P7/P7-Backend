@@ -202,15 +202,8 @@ def query_files(
     content_ranked_files = File.objects.ranking_based_on_content(
         query_text, base_filter=q
     )
-    content_count = content_ranked_files.count()
 
-    name_count = name_ranked_files.count()
-    rankings_combined = combine_rankings(name_ranked_files, content_ranked_files)
-    print(
-        f"query_files: name ranked files={name_count}, content ranked files={content_count}"
-    )
-    print(f"total unique files: {len(rankings_combined)}")
-    return rankings_combined[:200]
+    return combine_rankings(name_ranked_files, content_ranked_files)[:200]
 
 
 def combine_rankings(
