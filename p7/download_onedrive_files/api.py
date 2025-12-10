@@ -9,7 +9,7 @@ from ninja import Router, Header
 from django.http import JsonResponse
 from django.utils import timezone
 from django_q.tasks import async_task
-from repository.file import update_tsvector, fetch_downloadable_files
+from repository.file import update_tsvector_content, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth, parse_file_content
@@ -145,7 +145,7 @@ def download_recursive_files(
 
         if onedrive_content:
             try:
-                update_tsvector(
+                update_tsvector_content(
                     onedrive_file,
                     onedrive_content,
                     timezone.now(),

@@ -3,7 +3,7 @@
 from pathlib import Path
 from django.utils import timezone
 from p7.helpers import parse_file_content
-from repository.file import fetch_downloadable_files, update_tsvector
+from repository.file import fetch_downloadable_files, update_tsvector_content
 
 
 def download_recursive_local_files(service):
@@ -27,7 +27,7 @@ def download_recursive_local_files(service):
             content = path.read_bytes()
             parsed_text = parse_file_content(content, f)
             if parsed_text:
-                update_tsvector(
+                update_tsvector_content(
                     f,
                     parsed_text,
                     timezone.now(),

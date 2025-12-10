@@ -8,7 +8,7 @@ from django.utils import timezone
 from django_q.tasks import async_task
 from p7.helpers import validate_internal_auth, parse_file_content
 from p7.get_dropbox_files.helper import get_new_access_token
-from repository.file import update_tsvector, fetch_downloadable_files
+from repository.file import update_tsvector_content, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 
@@ -125,7 +125,7 @@ def download_recursive_files(
 
         if dropbox_content:
             try:
-                update_tsvector(
+                update_tsvector_content(
                     dropbox_file,
                     dropbox_content,
                     timezone.now(),
