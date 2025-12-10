@@ -103,7 +103,7 @@ def process_google_drive_files(user_id, prepare):
 
             if prepare:
                 update_or_create_file(file, service, file_by_id)
-        
+
         if not prepare:
             async_task(
                 test_process_download_google_drive_files,
@@ -111,7 +111,7 @@ def process_google_drive_files(user_id, prepare):
                 cluster="high",
                 group=f"Google-Drive-{user_id}"
             )
-            
+
         return files
 
     except (ValueError, TypeError, KeyError, RuntimeError) as e:
