@@ -1,6 +1,7 @@
 """API for fetching and saving Google Drive files."""
 
 import os
+
 from ninja import Router, Header
 from django.http import JsonResponse
 from django_q.tasks import async_task
@@ -10,6 +11,7 @@ from googleapiclient.discovery import build
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 from p7.helpers import validate_internal_auth
+from p7.test_download_files.api import test_process_download_google_drive_files
 from p7.get_google_drive_files.helper import (
     update_or_create_file,
     fetch_recursive_files,
@@ -23,6 +25,7 @@ fetch_test_prepare_download_google_drive_files_router = Router()
 def fetch_google_drive_files(
     request,
     user_id: str,
+    prepare: bool,
     x_internal_auth: str = Header(..., alias="x-internal-auth"),
 ):
     """Fetch and save Google Drive files for a given user.
@@ -42,12 +45,13 @@ def fetch_google_drive_files(
     task_id = async_task(
         process_google_drive_files,
         user_id,
+        prepare,
         cluster="high",
         group=f"Google-Drive-{user_id}"
     )
     return JsonResponse({"task_id": task_id, "status": "processing"}, status=202)
 
-def process_google_drive_files(user_id):
+def process_google_drive_files(user_id, prepare):
     """Process and sync Google Drive files for a given user.
     params:
         user_id (str): The ID of the user whose Google Drive files are to be processed.
@@ -97,7 +101,17 @@ def process_google_drive_files(user_id):
             ):  # https://developers.google.com/workspace/drive/api/guides/mime-types
                 continue
 
-            update_or_create_file(file, service, file_by_id)
+            if prepare:
+                update_or_create_file(file, service, file_by_id)
+        
+        if not prepare:
+            async_task(
+                test_process_download_google_drive_files,
+                user_id,
+                cluster="high",
+                group=f"Google-Drive-{user_id}"
+            )
+            
         return files
 
     except (ValueError, TypeError, KeyError, RuntimeError) as e:
