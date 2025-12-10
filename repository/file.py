@@ -91,7 +91,7 @@ def save_file(
             defaults=defaults,
         )
 
-        update_tsvector(file, None, indexed_at)
+        update_tsvector_filename(file, indexed_at)
 
     return file
 
@@ -110,8 +110,8 @@ def remove_extension_from_ts_vector_smart(file: File) -> str:
     return file.name
 
 
-def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> None:
-    """Update the tsvector field for full-text search on the given file instance."""
+def update_tsvector_content(file, content: str | None, indexed_at: datetime | None) -> None:
+    """Update the tsContent field for full-text search on the given file instance."""
     if not content:
         cleaned_content = ""
     else:
@@ -122,23 +122,31 @@ def update_tsvector(file, content: str | None, indexed_at: datetime | None) -> N
 
     File.objects.filter(pk=file.pk).update(
         indexedAt=indexed_at,
-        tsFilename=(
-            SearchVector(
-                Value(remove_extension_from_ts_vector_smart(file)),
-                weight="A",
-                config="simple",
-            )
-        ),
         tsContent=(
             SearchVector(
                 Value(cleaned_content),
                 weight="B",
                 config="english"
             )
-        ),
+        )
     )
 
-    file.refresh_from_db(fields=["tsFilename", "tsContent"])
+    file.refresh_from_db(fields=["tsContent"])
+
+def update_tsvector_filename(file, indexed_at: datetime | None) -> None:
+    """Update the tsFilename field for full-text search on the given file instance."""
+    File.objects.filter(pk=file.pk).update(
+        indexedAt=indexed_at,
+        tsFilename=(
+            SearchVector(
+                Value(remove_extension_from_ts_vector_smart(file)),
+                weight="A",
+                config="simple",
+            )
+        )
+    )
+
+    file.refresh_from_db(fields=["tsFilename"])
 
 
 def query_files(

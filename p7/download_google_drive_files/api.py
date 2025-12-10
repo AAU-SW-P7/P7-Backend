@@ -15,7 +15,7 @@ from googleapiclient.errors import HttpError
 
 from p7.helpers import validate_internal_auth, parse_file_content
 from p7.get_google_drive_files.helper import get_new_access_token
-from repository.file import update_tsvector, fetch_downloadable_files
+from repository.file import update_tsvector_content, fetch_downloadable_files
 from repository.service import get_tokens, get_service
 from repository.user import get_user
 
@@ -157,7 +157,7 @@ def download_recursive_files(
                 google_drive_file,
             )
 
-            update_tsvector(
+            update_tsvector_content(
                 google_drive_file,
                 google_drive_content,
                 timezone.now(),
