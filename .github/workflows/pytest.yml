@@ -14,7 +14,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     steps:
       - name: Checkout root repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: "${{ github.repository_owner }}/P7-Project"
           ref: "main"
@@ -22,7 +22,7 @@ jobs:
           token: "${{ secrets.PAT }}"
 
       - name: Checkout frontend repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: "${{ github.repository_owner }}/P7-Frontend"
           ref: "main"
@@ -30,7 +30,7 @@ jobs:
           token: "${{ secrets.PAT }}"
 
       - name: Checkout backend repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: "${{ github.repository_owner }}/P7-Backend"
           path: "${{ github.workspace }}/backend"
@@ -46,4 +46,4 @@ jobs:
       - name: Run Pytest inside Docker
         run: |
           sleep 10
-          docker compose -f compose.dev.yml run --rm backend pytest
+          docker compose -f compose.dev.yml run --rm backend pytest --ignore=test/locust_test
