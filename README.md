@@ -15,7 +15,7 @@ This codebase has 3 major components
 
 ## Installation
 
-Note: this codebase should be installed by it-self. Full Installation described in https://github.com/AAU-SW-P7/P7-Root
+Note: This codebase should not be installed by it-self. Full Installation described in https://github.com/AAU-SW-P7/P7-Root
 
 ---
 
