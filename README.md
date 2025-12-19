@@ -1,4 +1,4 @@
-## Backend Codebase
+## CloudFuse Backend Submodule
 
 This is the backend for CloudFuse
 
