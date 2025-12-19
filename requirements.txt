@@ -23,4 +23,3 @@ python-pptx
 openpyxl
 pypdf
 setuptools
-locust
