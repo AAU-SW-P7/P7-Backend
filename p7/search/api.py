@@ -1,6 +1,7 @@
 """API endpoint to search files by filename."""
 
 import re
+import time
 from ninja import Router, Header
 from django.http import JsonResponse
 from repository.file import query_files
@@ -58,26 +59,45 @@ def search_files_by_filename(
         x_internal_auth (str): The internal auth header for validating the request.
         filename (str): The filename or substring to search for.
     """
-
+    start_auth = time.perf_counter()
     auth_resp = validate_internal_auth(x_internal_auth)
     if auth_resp:
         return auth_resp
 
+    end_auth = time.perf_counter()
+    print(f"Internal auth validation took {end_auth - start_auth:.6f} seconds")
+
+    start_user = time.perf_counter()
     user = get_user(user_id)
     if isinstance(user, JsonResponse):
         return user
+    
+    end_user = time.perf_counter()
+    print(f"User retrieval took {end_user - start_user:.6f} seconds")
 
     if not search_string:
         return JsonResponse({"error": "search_string required"}, status=400)
 
+    start_sanitized_input = time.perf_counter()
     sanitized_input = sanitize_user_search(search_string)
+    end_sanitized_input = time.perf_counter()
+    print(f"Sanitizing input took {end_sanitized_input - start_sanitized_input:.6f} seconds")
+    
+    start_tokens = time.perf_counter()
     tokens = tokenize(sanitized_input)
+    end_tokens = time.perf_counter()
+    print(f"Tokenizing input took {end_tokens - start_tokens:.6f} seconds")
+    
+    start_results = time.perf_counter()
     results = query_files(tokens, user_id)
+    end_results = time.perf_counter()
+    print(f"Querying files took {end_results - start_results:.6f} seconds")
     # Cache service lookups to avoid repeated DB calls
     service_name_cache: dict = {}
 
     files_data = []
 
+    start_preprocess_files = time.perf_counter()
     for file in results:
         # Extract id as file.serviceId is a service object
         service_ref = file.serviceId
@@ -105,5 +125,7 @@ def search_files_by_filename(
                 "serviceName": service_name_cache.get(service_id),
             }
         )
-
+    end_total = time.perf_counter()
+    print(f"Preprocess Took {end_total - start_preprocess_files:.6f} seconds")
+    print(f"Total responsetime took {end_total - start_auth:.6f} seconds")
     return JsonResponse({"files": files_data}, status=200)

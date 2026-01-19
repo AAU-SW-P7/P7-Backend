@@ -1,5 +1,6 @@
 """Repository functions for handling File model operations."""
 
+import time
 from datetime import datetime
 from collections import defaultdict
 from typing import Iterable
@@ -176,6 +177,7 @@ def query_files(
         name_query, (list, tuple)
     ), "name_query must be a list or tuple of tokens"
 
+    start_query_building = time.perf_counter()
     # Q() object to combine queries
     q = Q()
     if provider:
@@ -190,20 +192,34 @@ def query_files(
             q &= Q(extension__iexact=ext)
     # Always filter by user_id
     q &= Q(serviceId__userId=user_id)
+    end_query_building = time.perf_counter()
+    print(f"Query building took {end_query_building - start_query_building:.6f} seconds")
 
     query_text = " ".join(name_query)
 
     # Rank files based on file name
+    start_name_ranking = time.perf_counter()
     name_ranked_files = File.objects.ranking_based_on_file_name(
         query_text, base_filter=q
     )
+    end_name_ranking = time.perf_counter()
+    print(f"Name ranking took {end_name_ranking - start_name_ranking:.6f} seconds")
+    
 
     # Rank files based on file content
+    start_content_ranking = time.perf_counter()
     content_ranked_files = File.objects.ranking_based_on_content(
         query_text, base_filter=q
     )
+    end_content_ranking = time.perf_counter()
+    print(f"Content ranking took {end_content_ranking - start_content_ranking:.6f} seconds")
+    
+    res = combine_rankings(name_ranked_files, content_ranked_files)[:200]
+    
+    print(f"Matching files - Filename: {name_ranked_files.count()}")
+    print(f"Matching files - Filecontent: {content_ranked_files.count()}")
 
-    return combine_rankings(name_ranked_files, content_ranked_files)[:200]
+    return res
 
 
 def combine_rankings(
@@ -225,14 +241,21 @@ def combine_rankings(
     scores = defaultdict(float)
     files_by_id = {}
 
+    start_combining = time.perf_counter()
     accumulate_file_scores(name_ranked_files, NAME_RANK_WEIGHT, scores, files_by_id)
     accumulate_file_scores(
         content_ranked_files, CONTENT_RANK_WEIGHT, scores, files_by_id
     )
+    end_combining = time.perf_counter()
+    print(f"Combining rankings took {end_combining - start_combining:.6f} seconds")
 
     # Sort ids by score descending
+    start_ordering = time.perf_counter()
     ordered_ids = sorted(scores, key=scores.get, reverse=True)
+    end_ordering = time.perf_counter()
+    print(f"Ordering took {end_ordering - start_ordering:.6f} seconds")
 
+    start_result_assembly = time.perf_counter()
     result = []
     for file_id in ordered_ids:
         file = files_by_id[file_id]
@@ -240,7 +263,8 @@ def combine_rankings(
             file_id
         ]  # Score is attached, if we want to log it in front end
         result.append(file)
-
+    end_result_assembly = time.perf_counter()
+    print(f"Result assembly took {end_result_assembly - start_result_assembly:.6f} seconds")
     return result
 
 

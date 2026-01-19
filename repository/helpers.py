@@ -91,3 +91,23 @@ def sanitize_for_postgres(text: str) -> str:
     text = re.sub(r"[\x01-\x08\x0b-\x1f\x7f]", "", text)
 
     return text
+
+def parse_tsvector(tsvector_str: str) -> dict[str, int]:
+    """
+    Parses a raw Postgres tsvector string into a frequency map.
+    """
+    if not tsvector_str:
+        return {}
+
+    freq_map = {}
+    # Regex explanation:
+    # '([^']+)':  -> Matches the word inside single quotes (e.g., 'apple')
+    # ([0-9,A-Za-z]+) -> Matches the positions following the colon (e.g., 1,5)
+    matches = re.findall(r"'([^']+)':([0-9,A-Za-z]+)", tsvector_str)
+
+    for word, positions in matches:
+        # The number of occurrences is the number of commas + 1
+        # e.g., "1,5" has one comma, so 2 items. "2" has zero commas, so 1 item.
+        freq_map[word] = positions.count(',') + 1
+
+    return freq_map
